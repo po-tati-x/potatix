@@ -7,7 +7,7 @@ import { MainNav } from '@/components/ui/layout/main-nav';
 import { HelpButton } from '@/components/ui/layout/help-button';
 import { ReferButton } from '@/components/ui/layout/refer-button';
 import { NewsComponent } from '@/components/ui/layout/news-component';
-import { useAuth } from '@/hooks/useAuth';
+import { useSession, signOut } from '@/lib/auth-client';
 
 export const dynamic = "force-static";
 
@@ -16,16 +16,16 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, isLoading, signOut } = useAuth();
+  const { data: session, isPending } = useSession();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isLoading && !user) {
+    if (!isPending && !session) {
       router.push('/login');
     }
-  }, [isLoading, user, router]);
+  }, [isPending, session, router]);
 
-  if (!user && !isLoading) return null;
+  if (!session && !isPending) return null;
 
   return (
     <>

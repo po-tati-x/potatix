@@ -1,1 +1,151 @@
 @import "tailwindcss";
+
+/* Theme tokens and design system */
+@theme {
+  /* Base colors */
+  --color-background: #ffffff;
+  --color-foreground: hsl(222.2 84% 4.9%);
+  
+  --color-card: #ffffff;
+  --color-card-foreground: hsl(222.2 84% 4.9%);
+  
+  --color-popover: #ffffff;
+  --color-popover-foreground: hsl(222.2 84% 4.9%);
+  
+  --color-primary: hsl(222.2 47.4% 11.2%);
+  --color-primary-foreground: hsl(210 40% 98%);
+  
+  --color-secondary: hsl(210 40% 96.1%);
+  --color-secondary-foreground: hsl(222.2 47.4% 11.2%);
+  
+  --color-muted: hsl(210 40% 96.1%);
+  --color-muted-foreground: hsl(215.4 16.3% 46.9%);
+  
+  --color-accent: hsl(210 40% 96.1%);
+  --color-accent-foreground: hsl(222.2 47.4% 11.2%);
+  
+  --color-destructive: hsl(0 84.2% 60.2%);
+  --color-destructive-foreground: hsl(210 40% 98%);
+
+  --color-border: hsl(214.3 31.8% 91.4%);
+  --color-input: hsl(214.3 31.8% 91.4%);
+  --color-ring: hsl(222.2 84% 4.9%);
+  
+  --radius-default: 0.75rem;
+
+  /* Brand colors */
+  --color-brand-primary: #06A28B;
+  --color-brand-secondary: #047b6a;
+  
+  /* Custom colors for gradients */
+  --color-gradient-start: hsl(248 20% 40%);  /* Deep purple */
+  --color-gradient-end: hsl(268 76% 55%);    /* Vibrant purple */
+  --color-hover-gradient-start: hsl(248 28% 45%);
+  --color-hover-gradient-end: hsl(268 84% 60%);
+  --color-glow: hsl(268 76% 85%);
+  
+  /* Animation keyframes */
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  
+  @keyframes slideInBottom {
+    from { 
+      transform: translateY(20px);
+      opacity: 0;
+    }
+    to { 
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+}
+
+/* Base element styling */
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-feature-settings: "ss01", "ss03", "cv01", "cv02", "cv03";
+  }
+  
+  /* Font family assignments from layout.tsx fonts */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-jakarta);
+  }
+  
+  body {
+    font-family: var(--font-inter);
+  }
+}
+
+/* Custom utilities */
+@utility hide-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;     /* Firefox */
+  &::-webkit-scrollbar {
+    display: none;           /* Chrome, Safari and Opera */
+  }
+}
+
+@utility text-balance {
+  text-wrap: balance;
+}
+
+/* UI Components */
+@utility glass-effect {
+  background-color: --alpha(var(--color-background) / 80%);
+  backdrop-filter: blur(12px);
+  border: 1px solid --alpha(#fff / 20%);
+}
+
+@utility btn-primary {
+  position: relative;
+  background-image: linear-gradient(to right, var(--color-gradient-start), var(--color-gradient-end));
+  color: white;
+  font-weight: 500;
+  border-radius: 9999px;
+  transition: all 0.2s;
+  
+  &:hover {
+    background-image: linear-gradient(to right, var(--color-hover-gradient-start), var(--color-hover-gradient-end));
+    box-shadow: 0 0 15px --alpha(var(--color-glow) / 70%);
+  }
+}
+
+@utility btn-subtle {
+  position: relative;
+  background-color: --alpha(white / 10%);
+  backdrop-filter: blur(4px);
+  border: 1px solid --alpha(white / 30%);
+  color: var(--color-primary);
+  font-weight: 500;
+  border-radius: 9999px;
+  transition: all 0.2s;
+  
+  &:hover {
+    background-color: --alpha(white / 20%);
+    border-color: --alpha(white / 40%);
+  }
+}
+
+/* Animation utilities */
+@utility fade-in {
+  animation: fadeIn 0.5s ease-in-out forwards;
+}
+
+@utility slide-in-bottom {
+  animation: slideInBottom 0.4s ease-out forwards;
+}
+
+@utility hover-lift {
+  transition: transform 0.3s;
+  &:hover {
+    transform: translateY(-4px);
+  }
+}
