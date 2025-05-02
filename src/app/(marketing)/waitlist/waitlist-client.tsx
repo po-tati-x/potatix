@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ArrowLeft, Check, Sparkles, Code } from "lucide-react";
 import { motion } from "framer-motion";
-import { useWaitlist } from "@/hooks/useWaitlist";
+import { useWaitlist } from "@/hooks/marketing/useWaitlist";
 import { useRef, useEffect, useCallback } from "react";
 import type { TurnstileInstance } from '@/types/turnstile';
 

@@ -8,16 +8,6 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePathname } from "next/navigation";
 
-// Define consistent sizes and spacings
-const NAV_PADDING = "px-4 py-1.5";
-const NAV_ROUNDED = "rounded-md";
-const ICON_SIZE = "w-4 h-4";
-const CONSISTENT_SPACING = "space-x-4";
-const PRIMARY_COLOR = "text-emerald-600";
-const PRIMARY_HOVER = "hover:text-emerald-700";
-const PRIMARY_BG = "bg-emerald-600";
-const PRIMARY_BG_HOVER = "hover:bg-emerald-700";
-
 type NavItem = {
   title: string;
   href: string;

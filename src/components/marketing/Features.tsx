@@ -87,7 +87,7 @@ const Card = memo(({ card, isActive }: { card: ValueCardProps; isActive: boolean
       backgroundImage: `linear-gradient(to right, var(--tw-gradient-stops))`,
       '--tw-gradient-from': card.color.split(' ')[0].replace('from-', ''),
       '--tw-gradient-to': card.color.split(' ')[1].replace('to-', '')
-    }} />
+    } as React.CSSProperties} />
     
     <div className="p-5 relative z-10">
       <div className="flex justify-between items-start mb-4">
