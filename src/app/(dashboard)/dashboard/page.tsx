@@ -1,14 +1,21 @@
 'use client';
 
-import { useAuth } from '@/hooks/useAuth';
+import { useSession } from '@/lib/auth-client';
 import { ChevronRight, Clock, GraduationCap, BarChart2, User } from 'lucide-react';
 import Link from 'next/link';
 
+interface UserData {
+  name?: string;
+  email?: string;
+  [key: string]: any;
+}
+
 export default function DashboardPage() {
-  const { user } = useAuth();
+  // Use the Better Auth session directly
+  const { data: session } = useSession();
 
   // Extract user info safely with proper type checks
-  const userInfo: any = user?.user || {}; 
+  const userInfo: UserData = session?.user || {}; 
   const userName = typeof userInfo.name === 'string' ? userInfo.name : 'User';
   const userEmail = typeof userInfo.email === 'string' ? userInfo.email : '';
   const userFirstLetter = userName.charAt(0) || 'U';
