@@ -1,8 +1,19 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
-import * as schema from './schema/auth-schema';
 
-// Create a database pool with all the needed options
+// Import schemas with explicit naming
+import * as authSchema from './schemas/users';
+import * as courseSchema from './schemas/course';
+// Create a combined schema with explicit sections
+const schema = {
+  // Auth-related tables managed by Better Auth
+  auth: authSchema,
+  
+  // Application-specific tables managed by the application
+  app: courseSchema
+};
+
+// Create a database pool with needed options
 const pool = new Pool({
   host: process.env.DB_HOST,
   port: parseInt(process.env.DB_PORT || '5432'),
@@ -14,8 +25,9 @@ const pool = new Pool({
   }
 });
 
-// Create drizzle instance with the schema
+// Create drizzle instance with the combined schema
 export const db = drizzle(pool, { schema });
 
-// Re-export schema for convenience
-export * from './schema/auth-schema'; 
+// Re-export schemas for convenience with clear namespacing
+export { authSchema };
+export { courseSchema }; 
