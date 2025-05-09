@@ -1,4 +1,4 @@
-# Potatix
+# Potatix [![starline](https://starlines.qoo.monster/assets/qoomon/5dfcdf8eec66a051ecd85625518cfd13@gist)](https://github.com/qoomon/starline)
 
 A modern platform for course creators who hate giving 30% to middlemen.
 
