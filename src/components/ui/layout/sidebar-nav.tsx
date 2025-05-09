@@ -11,8 +11,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
-import { ReactNode, useMemo, useState } from "react";
-import { WorkspaceDropdown } from "./workspace-dropdown";
+import { ReactNode, useMemo, useState } from "react"; 
 
 type NavItem = {
   name: string;
@@ -165,14 +164,7 @@ export function Sidebar({ slug, toolContent, newsContent, bottom }: SidebarProps
             <div className="h-8 w-8 rounded-full bg-gray-200"></div> {/* Placeholder */}
           </div>
         </div>
-
-        {/* Workspace Dropdown / Switcher */}
-        {currentArea === "default" && (
-          <div className="pt-2">
-            <WorkspaceDropdown />
-          </div>
-        )}
-
+        
         {/* Navigation Items */}
         <div className="flex flex-col gap-4 pt-4">
           {navSections.map((section, sectionIdx) => (
