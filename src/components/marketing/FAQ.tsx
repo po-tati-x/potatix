@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
 import {
   Accordion,
   AccordionContent,
@@ -8,14 +7,13 @@ import {
   AccordionTrigger,
 } from "@/components/ui/shadcn/accordion";
 import { MessageCircle } from "lucide-react";
-import { cn } from "@/lib/utils";
 
-type FAQItem = {
+interface FAQItem {
   question: string;
   answer: string;
-};
+}
 
-const faqItems: FAQItem[] = [
+const FAQ_ITEMS: FAQItem[] = [
   {
     question: "What exactly does Potatix do?",
     answer: "Potatix is a minimalist platform built specifically for software developers who want to sell technical courses. We handle payment processing, video hosting, and basic user auth - that's it. No bloat, no BS, just the core features you actually need."
@@ -54,94 +52,79 @@ const faqItems: FAQItem[] = [
   },
 ];
 
-const FAQAccordion = ({ items }: { items: FAQItem[] }) => (
-  <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700">
-    <Accordion type="single" collapsible className="w-full">
-      {items.map((item, index) => (
-        <AccordionItem 
-          key={index}
-          value={`item-${index}`} 
-          className={cn(
-            index === items.length - 1 ? "" : "border-b border-gray-200 dark:border-gray-700",
-            "group transition-all duration-200"
-          )}
-        >
-          <AccordionTrigger 
-            className="text-sm lg:text-base font-medium text-gray-900 dark:text-white py-3 px-4 hover:text-[#06A28B] dark:hover:text-[#06A28B] transition-colors data-[state=open]:text-[#06A28B]"
-          >
-            {item.question}
-          </AccordionTrigger>
-          <AccordionContent className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 px-4 pb-4">
-            {item.answer}
-          </AccordionContent>
-        </AccordionItem>
-      ))}
-    </Accordion>
-  </div>
-);
-
-const ContactInfo = () => (
-  <div className="mt-6 sm:mt-8 text-center">
-    <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-      Still have questions?{" "}
-      <a 
-        href="mailto:hi@potatix.com" 
-        className="inline-flex items-center gap-1 text-[#06A28B] hover:text-[#058d79] font-medium transition-colors"
-      >
-        Ask us directly
-        <MessageCircle className="w-3.5 h-3.5" />
-      </a>
-    </p>
-    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-      We reply within 24 hours at hi@potatix.com
-    </p>
-  </div>
-);
-
-const FAQ = () => {
+function FAQAccordion({ items }: { items: FAQItem[] }) {
   return (
-    <section id="faq" className="py-10 sm:py-12 md:py-16">
-      <div className="mx-auto px-6 sm:px-8 lg:px-10 max-w-5xl">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-          className="text-center mb-6 sm:mb-8"
+    <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
+      <Accordion type="single" collapsible className="w-full">
+        {items.map((item, index) => (
+          <AccordionItem 
+            key={index}
+            value={`item-${index}`} 
+            className={`${index === items.length - 1 ? "" : "border-b border-gray-200"} group transition-all`}
+          >
+            <AccordionTrigger 
+              className="text-sm lg:text-base font-medium text-gray-900 py-3 px-4 hover:text-emerald-600 transition-colors data-[state=open]:text-emerald-600"
+            >
+              {item.question}
+            </AccordionTrigger>
+            <AccordionContent className="text-xs sm:text-sm text-gray-600 px-4 pb-4">
+              {item.answer}
+            </AccordionContent>
+          </AccordionItem>
+        ))}
+      </Accordion>
+    </div>
+  );
+}
+
+function ContactInfo() {
+  return (
+    <div className="mt-6 sm:mt-8 text-center">
+      <p className="text-xs sm:text-sm text-gray-600">
+        Still have questions?{" "}
+        <a 
+          href="mailto:hi@potatix.com" 
+          className="inline-flex items-center gap-1 text-emerald-600 hover:text-emerald-700 font-medium transition-colors"
         >
-          <span className="inline-flex items-center gap-1.5 bg-[#06A28B]/10 text-[#06A28B] text-xs font-medium px-2.5 py-1 rounded-full mb-2">
-            <MessageCircle className="w-3.5 h-3.5" />
+          Ask us directly
+          <MessageCircle className="w-3.5 h-3.5" />
+        </a>
+      </p>
+      <p className="mt-1 text-xs text-gray-500">
+        We reply within 24 hours at hi@potatix.com
+      </p>
+    </div>
+  );
+}
+
+export default function FAQ() {
+  return (
+    <section 
+      id="faq" 
+      className="relative py-20"
+      aria-label="Frequently asked questions"
+    >
+      <div className="relative mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+        <div className="text-left w-full max-w-xl mb-6 sm:mb-8">
+          <div className="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-600">
+            <MessageCircle className="w-3.5 h-3.5 mr-1.5" /> 
             Common Questions
-          </span>
-          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2">
+          </div>
+          
+          <h2 className="mt-6 text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-neutral-900 leading-tight">
             Straight Answers
           </h2>
-          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+          
+          <p className="mt-4 text-sm md:text-base text-neutral-600 max-w-2xl">
             No marketing fluff. Here's what developers actually want to know.
           </p>
-        </motion.div>
+        </div>
 
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-          className="max-w-3xl mx-auto"
-        >
-          <FAQAccordion items={faqItems} />
-        </motion.div>
-        
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-        >
+        <div className="max-w-3xl mx-auto">
+          <FAQAccordion items={FAQ_ITEMS} />
           <ContactInfo />
-        </motion.div>
+        </div>
       </div>
     </section>
   );
-};
-
-export default FAQ; 
+} 

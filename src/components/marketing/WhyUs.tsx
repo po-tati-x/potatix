@@ -145,12 +145,12 @@ const FeatureRow = ({ feature, index, isExpanded, onToggle }: FeatureRowProps) =
         viewport={{ once: true }}
         transition={{ duration: 0.3, delay: index * 0.05 }}
         className={cn(
-          "grid grid-cols-12 border-b border-gray-200 dark:border-gray-700",
+          "grid grid-cols-12 border-b border-gray-200",
           "transition-colors duration-200",
           {
-            "bg-white dark:bg-gray-800": index % 2 === 0,
-            "bg-gray-50/70 dark:bg-gray-750": index % 2 !== 0,
-            "hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer": isExpandable,
+            "bg-white": index % 2 === 0,
+            "bg-gray-50/70": index % 2 !== 0,
+            "hover:bg-gray-50 cursor-pointer": isExpandable,
             "font-medium": feature.highlight
           }
         )}
@@ -169,19 +169,19 @@ const FeatureRow = ({ feature, index, isExpanded, onToggle }: FeatureRowProps) =
               <ChevronDown className="h-4 w-4" />
             </motion.span>
           )}
-          <span className={cn("text-gray-800 dark:text-gray-200", {
-            "text-[#06A28B] dark:text-[#06A28B]/90": feature.highlight
+          <span className={cn("text-gray-800", {
+            "text-[#06A28B]": feature.highlight
           })}>
             {feature.feature}
           </span>
           {feature.highlight && !isExpandable && (
-            <span className="ml-2 text-xs py-0.5 px-2 bg-[#06A28B]/10 dark:bg-[#06A28B]/20 text-[#06A28B] rounded-full">
+            <span className="ml-2 text-xs py-0.5 px-2 bg-[#06A28B]/10 text-[#06A28B] rounded-full">
               Core Benefit
             </span>
           )}
         </div>
 
-        <div className="flex justify-center items-center p-4 col-span-3 bg-[#06A28B]/5 dark:bg-[#06A28B]/10">
+        <div className="flex justify-center items-center p-4 col-span-3 bg-[#06A28B]/5">
           {feature.potatix ? (
             <CheckCircle2 className="h-5 w-5 text-green-500" />
           ) : (
@@ -189,7 +189,7 @@ const FeatureRow = ({ feature, index, isExpanded, onToggle }: FeatureRowProps) =
           )}
         </div>
 
-        <div className="flex justify-center items-center p-4 col-span-3 bg-gray-100/50 dark:bg-gray-700/50">
+        <div className="flex justify-center items-center p-4 col-span-3 bg-gray-100/50">
           {feature.competitors ? (
             <CheckCircle2 className="h-5 w-5 text-green-500" />
           ) : (
@@ -206,12 +206,12 @@ const FeatureRow = ({ feature, index, isExpanded, onToggle }: FeatureRowProps) =
             opacity: isExpanded ? 1 : 0
           }}
           transition={{ duration: 0.2 }}
-          className="overflow-hidden bg-gray-50/50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700"
+          className="overflow-hidden bg-gray-50/50 border-b border-gray-200"
         >
           <div className="p-4 pl-10 grid grid-cols-12">
             <div className="col-span-12 flex items-start gap-2">
               <Info className="h-4 w-4 text-[#06A28B] mt-0.5 flex-shrink-0" />
-              <p className="text-sm text-gray-600 dark:text-gray-400">{feature.description}</p>
+              <p className="text-sm text-gray-600">{feature.description}</p>
             </div>
           </div>
         </motion.div>
@@ -244,20 +244,20 @@ const CategorySection = ({ title, description, features }: CategorySectionProps)
   return (
     <div className="mb-10">
       <div className="mb-4">
-        <h3 className="text-xl font-bold text-gray-900 dark:text-white">{title}</h3>
-        <p className="text-sm text-gray-600 dark:text-gray-400">{description}</p>
+        <h3 className="text-xl font-bold text-gray-900">{title}</h3>
+        <p className="text-sm text-gray-600">{description}</p>
       </div>
 
-      <div className="overflow-hidden rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
-        <div className="grid grid-cols-12 bg-white dark:bg-gray-800">
-          <div className="p-4 col-span-6 border-b border-r border-gray-200 dark:border-gray-700">
-            <h4 className="font-bold text-gray-900 dark:text-white">Feature</h4>
+      <div className="overflow-hidden rounded-xl shadow-md border border-gray-200">
+        <div className="grid grid-cols-12 bg-white">
+          <div className="p-4 col-span-6 border-b border-r border-gray-200">
+            <h4 className="font-bold text-gray-900">Feature</h4>
           </div>
-          <div className="p-4 col-span-3 border-b border-r border-gray-200 dark:border-gray-700 bg-[#06A28B]/10 dark:bg-[#06A28B]/20">
-            <h4 className="font-bold text-[#06A28B] dark:text-[#06A28B]/90 text-center">Potatix</h4>
+          <div className="p-4 col-span-3 border-b border-r border-gray-200 bg-[#06A28B]/10">
+            <h4 className="font-bold text-[#06A28B] text-center">Potatix</h4>
           </div>
-          <div className="p-4 col-span-3 border-b border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-700">
-            <h4 className="font-bold text-gray-700 dark:text-gray-300 text-center">Others</h4>
+          <div className="p-4 col-span-3 border-b border-gray-200 bg-gray-100">
+            <h4 className="font-bold text-gray-700 text-center">Others</h4>
           </div>
         </div>
 
@@ -298,10 +298,10 @@ const ComparisonSection = () => {
           transition={{ duration: 0.5 }}
           className="text-center mb-10"
         >
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
             No BS Comparison
           </h2>
-          <p className="text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+          <p className="text-lg text-gray-600 max-w-3xl mx-auto">
             We don't try to be everything for everyone. We focus on what dev course creators actually need.
           </p>
         </motion.div>
@@ -317,15 +317,15 @@ const ComparisonSection = () => {
           ))}
         </div>
 
-        <div className="mt-12 max-w-3xl mx-auto text-center bg-gray-100 dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+        <div className="mt-12 max-w-3xl mx-auto text-center bg-gray-100 p-6 rounded-xl border border-gray-200">
+          <h3 className="text-xl font-bold text-gray-900 mb-2">
             Why Choose Potatix?
           </h3>
-          <p className="text-gray-700 dark:text-gray-300">
+          <p className="text-gray-700">
             "We'll move faster and focus exclusively on creators while bigger platforms try to please everyone.
             No grand vision. No revolution. Just solving a specific problem better than others for a small group of people who will pay us."
           </p>
-          <div className="mt-4 text-sm text-gray-500 dark:text-gray-400">
+          <div className="mt-4 text-sm text-gray-500">
             — From our actual business plan
           </div>
         </div>

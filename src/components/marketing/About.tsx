@@ -90,20 +90,20 @@ type FeatureTabProps = {
 
 const BenefitItem = ({ benefit }: { benefit: string }) => (
   <li className="flex items-start gap-2">
-    <span className="flex-shrink-0 w-4 h-4 bg-[#06A28B]/10 dark:bg-[#06A28B]/20 rounded-full flex items-center justify-center">
+    <span className="flex-shrink-0 w-4 h-4 bg-[#06A28B]/10 rounded-full flex items-center justify-center">
       <Check className="w-2.5 h-2.5 text-[#06A28B]" />
     </span>
-    <span className="text-sm text-gray-700 dark:text-gray-300 leading-tight">{benefit}</span>
+    <span className="text-sm text-gray-700 leading-tight">{benefit}</span>
   </li>
 );
 
 const FeatureImage = ({ feature }: { feature: Feature }) => (
   <div className="relative w-full max-w-[280px] xs:max-w-[320px] sm:max-w-[380px] lg:max-w-[440px] mx-auto">
     {/* Main image container */}
-    <div className="relative rounded-lg sm:rounded-xl overflow-hidden bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-md sm:shadow-lg z-10">
-      <div className="bg-gray-100 dark:bg-gray-700 aspect-[3/2] w-full">
-        <div className="flex items-center justify-center h-full w-full bg-gray-200 dark:bg-gray-600">
-          <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-medium px-3 text-center">
+    <div className="relative rounded-lg sm:rounded-xl overflow-hidden bg-white border border-gray-200 shadow-md sm:shadow-lg z-10">
+      <div className="bg-gray-100 aspect-[3/2] w-full">
+        <div className="flex items-center justify-center h-full w-full bg-gray-200">
+          <span className="text-xs sm:text-sm text-gray-500 font-medium px-3 text-center">
             {feature.title} Preview
           </span>
         </div>
@@ -112,7 +112,7 @@ const FeatureImage = ({ feature }: { feature: Feature }) => (
     
     {/* Decorative backgrounds */}
     <div 
-      className="absolute -top-2 -right-2 w-full h-full rounded-lg sm:rounded-xl transform rotate-2 bg-gradient-to-br from-[#06A28B]/20 to-[#06A28B]/5 dark:from-[#06A28B]/10 dark:to-transparent z-0" 
+      className="absolute -top-2 -right-2 w-full h-full rounded-lg sm:rounded-xl transform rotate-2 bg-gradient-to-br from-[#06A28B]/20 to-[#06A28B]/5 z-0" 
       aria-hidden="true"
     />
     <div 
@@ -124,14 +124,14 @@ const FeatureImage = ({ feature }: { feature: Feature }) => (
 
 const FeatureContent = ({ feature }: { feature: Feature }) => (
   <div className="space-y-3 sm:space-y-4">
-    <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2 sm:gap-3">
-      <span className="p-1.5 sm:p-2 bg-[#06A28B]/10 dark:bg-[#06A28B]/20 text-[#06A28B] dark:text-[#06A28B]/90 rounded-lg flex-shrink-0">
+    <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 flex items-center gap-2 sm:gap-3">
+      <span className="p-1.5 sm:p-2 bg-[#06A28B]/10 text-[#06A28B] rounded-lg flex-shrink-0">
         {feature.icon}
       </span>
       <span>{feature.title}</span>
     </h3>
     
-    <p className="text-sm sm:text-base lg:text-lg text-gray-600 dark:text-gray-300 leading-relaxed">
+    <p className="text-sm sm:text-base lg:text-lg text-gray-600 leading-relaxed">
       {feature.description}
     </p>
     
@@ -148,13 +148,13 @@ const MobileFeatureCard = ({ feature, isActive }: { feature: Feature; isActive: 
 
   return (
     <div className={cn(
-      "w-full bg-white dark:bg-gray-800 rounded-xl border-2 transition-all duration-300",
-      isActive ? "border-[#06A28B] shadow-lg" : "border-gray-200 dark:border-gray-700"
+      "w-full bg-white rounded-xl border-2 transition-all duration-300",
+      isActive ? "border-[#06A28B] shadow-lg" : "border-gray-200"
     )}>
       {/* Preview Image */}
-      <div className="relative w-full aspect-[2/1] rounded-t-xl overflow-hidden bg-gray-100 dark:bg-gray-700">
+      <div className="relative w-full aspect-[2/1] rounded-t-xl overflow-hidden bg-gray-100">
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-xs text-gray-500 dark:text-gray-400 font-medium px-3 text-center">
+          <span className="text-xs text-gray-500 font-medium px-3 text-center">
             {feature.title} Preview
           </span>
         </div>
@@ -163,13 +163,13 @@ const MobileFeatureCard = ({ feature, isActive }: { feature: Feature; isActive: 
       {/* Content */}
       <div className="p-4">
         <div className="flex items-center gap-2 mb-2">
-          <span className="p-1.5 bg-[#06A28B]/10 dark:bg-[#06A28B]/20 text-[#06A28B] rounded-lg">
+          <span className="p-1.5 bg-[#06A28B]/10 text-[#06A28B] rounded-lg">
             {feature.icon}
           </span>
-          <h3 className="text-base font-bold text-gray-900 dark:text-white">{feature.title}</h3>
+          <h3 className="text-base font-bold text-gray-900">{feature.title}</h3>
         </div>
         
-        <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
+        <p className="text-sm text-gray-600 mb-3">
           {feature.description}
         </p>
         
@@ -294,7 +294,7 @@ const About = () => {
   }, [swipeIndex]);
 
   return (
-    <section className="py-8 sm:py-12 md:py-16 bg-white dark:bg-gray-900">
+    <section className="py-8 sm:py-12 md:py-16 bg-white">
       <div className="container mx-auto px-4">
         {/* Header */}
         <motion.div 
@@ -304,11 +304,11 @@ const About = () => {
           transition={{ duration: 0.5 }}
           className="text-center mb-6"
         >
-          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2">
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-2">
             <span className="block">Powerful Features</span>
             <span className="text-[#06A28B] block">Without the Complexity</span>
           </h2>
-          <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+          <p className="text-sm sm:text-base text-gray-600 max-w-2xl mx-auto">
             Everything you need to create, sell, and deliver your courses.
           </p>
         </motion.div>
@@ -350,7 +350,7 @@ const About = () => {
                   "w-2 h-2 rounded-full transition-all",
                   index === swipeIndex
                     ? "bg-[#06A28B] w-4"
-                    : "bg-gray-300 dark:bg-gray-700"
+                    : "bg-gray-300"
                 )}
                 aria-label={`Go to ${feature.title}`}
               />
