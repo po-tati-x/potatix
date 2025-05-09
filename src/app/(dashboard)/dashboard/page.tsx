@@ -1,8 +1,9 @@
 'use client';
 
-import { useSession } from '@/lib/auth-client';
-import { ChevronRight, Clock, GraduationCap, BarChart2, User } from 'lucide-react';
+import { authClient, signOut } from '@/lib/auth/auth-client';
+import { ChevronRight, Clock, GraduationCap, BarChart2, User, LogOut } from 'lucide-react';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 
 interface UserData {
   name?: string;
@@ -11,8 +12,45 @@ interface UserData {
 }
 
 export default function DashboardPage() {
-  // Use the Better Auth session directly
-  const { data: session } = useSession();
+  // State to store session data
+  const [session, setSession] = useState<{ user: UserData } | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch session data on component mount
+  useEffect(() => {
+    const fetchSession = async () => {
+      try {
+        const { data } = await authClient.getSession();
+        setSession(data);
+      } catch (error) {
+        console.error('Failed to fetch session:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSession();
+  }, []);
+
+  // Show loading state
+  if (loading) {
+    return <div className="min-h-full w-full py-6 px-6 flex items-center justify-center">
+      <div className="animate-pulse text-neutral-500">Loading...</div>
+    </div>;
+  }
+
+  // Handle not authenticated state
+  if (!session) {
+    return <div className="min-h-full w-full py-6 px-6 flex items-center justify-center">
+      <div className="text-center space-y-4">
+        <h2 className="text-xl font-semibold text-neutral-900">Not Authenticated</h2>
+        <p className="text-neutral-500">Please sign in to access your dashboard.</p>
+        <Link href="/auth/sign-in" className="inline-block px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700">
+          Sign In
+        </Link>
+      </div>
+    </div>;
+  }
 
   // Extract user info safely with proper type checks
   const userInfo: UserData = session?.user || {}; 
@@ -59,13 +97,25 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="border-t border-neutral-200 bg-neutral-50 px-6 py-3">
-            <Link 
-              href="/profile" 
-              className="flex items-center justify-end gap-1 text-sm text-neutral-600 hover:text-neutral-900"
-            >
-              <span>View Profile</span>
-              <ChevronRight className="size-4" />
-            </Link>
+            <div className="flex items-center justify-between">
+              <button 
+                onClick={async () => {
+                  await signOut();
+                  window.location.href = '/auth/sign-in';
+                }}
+                className="flex items-center gap-1 text-sm text-red-600 hover:text-red-800"
+              >
+                <LogOut className="size-4" />
+                <span>Logout</span>
+              </button>
+              <Link 
+                href="/profile" 
+                className="flex items-center gap-1 text-sm text-neutral-600 hover:text-neutral-900"
+              >
+                <span>View Profile</span>
+                <ChevronRight className="size-4" />
+              </Link>
+            </div>
           </div>
         </div>
 
