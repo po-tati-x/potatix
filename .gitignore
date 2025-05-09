@@ -24,18 +24,35 @@
 .DS_Store
 *.pem
 
-# debug
-/docs
+# logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
+# local env files
+.env
+.env.*
+!.env.example
+
 # vercel
 .vercel
-.env.local
-
 
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# database
+/drizzle/.wrangler
+/drizzle/migrations
+/drizzle/.sqlite*
+
+# editor
+.vscode
+.idea
+.cursorrules
+
+# temporary files
+o
+tmp/
+temp/
