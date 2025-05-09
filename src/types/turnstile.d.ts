@@ -4,7 +4,7 @@ export interface TurnstileInstance {
     container: HTMLElement,
     options: {
       sitekey: string;
-      theme?: 'light' | 'dark' | 'auto';
+      theme?: 'light';
       callback?: (token: string) => void;
       'error-callback'?: () => void;
       'expired-callback'?: () => void;
