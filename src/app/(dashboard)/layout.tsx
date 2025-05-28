@@ -23,12 +23,20 @@ export default function DashboardLayout({
   useEffect(() => {
     const fetchSession = async () => {
       try {
-        const { data } = await authClient.getSession();
+        console.log('Fetching session in dashboard layout...');
+        const { data, error } = await authClient.getSession();
+        
+        if (error || !data) {
+          console.error('Session error:', error);
+          router.push('/login');
+          return;
+        }
+        
+        console.log('Session loaded, user:', data.user?.email);
         setSession(data);
       } catch (error) {
         console.error('Failed to fetch session:', error);
-        // On error, assume no session exists
-        router.push('/auth/sign-in');
+        router.push('/login');
       } finally {
         setLoading(false);
       }
@@ -38,12 +46,17 @@ export default function DashboardLayout({
   }, [router]);
 
   // While loading, show nothing to prevent flicker
-  if (loading) return null;
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500"></div>
+      </div>
+    );
+  }
 
   // If no session and not loading, redirect to login
   if (!session && !loading) {
-    // This is a safety net - the redirect should happen in the useEffect
-    router.push('/auth/sign-in');
+    router.push('/login');
     return null;
   }
 
