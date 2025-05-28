@@ -1,8 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { coursesApi, Course } from '@/lib/utils/api-client';
 import { use } from 'react';
+import { ArrowLeft, Loader2, AlertTriangle } from 'lucide-react';
+
+// Import components
+import { CourseHeader } from './components/CourseHeader';
+import { LessonList } from './components/LessonList';
+import { LessonContent } from './components/LessonContent';
+import { CourseOverview } from './components/CourseOverview';
 
 interface CourseViewerProps {
   params: Promise<{
@@ -11,15 +18,25 @@ interface CourseViewerProps {
 }
 
 export default function CourseViewerPage({ params }: CourseViewerProps) {
-  // Use React.use to unwrap the params Promise in Next.js 15
   const resolvedParams = use(params);
   const courseSlug = resolvedParams.slug;
   
-  console.log('[Viewer] Using slug from URL params:', courseSlug);
-  
   const [course, setCourse] = useState<Course | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [selectedLessonId, setSelectedLessonId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [videoError, setVideoError] = useState<string | null>(null);
+  
+  const selectedLesson = selectedLessonId && course?.lessons 
+    ? course.lessons.find(lesson => lesson.id === selectedLessonId) || null
+    : null;
+    
+  const currentLessonIndex = selectedLessonId && course?.lessons 
+    ? course.lessons.findIndex(lesson => lesson.id === selectedLessonId)
+    : -1;
+    
+  const lessonsWithVideos = course?.lessons?.filter(lesson => !!lesson.videoId).length || 0;
+  const totalLessons = course?.lessons?.length || 0;
 
   useEffect(() => {
     async function loadCourse() {
@@ -31,131 +48,131 @@ export default function CourseViewerPage({ params }: CourseViewerProps) {
 
       try {
         setLoading(true);
-        console.log(`[Viewer] Loading course with slug: ${courseSlug}`);
         const courseData = await coursesApi.getBySlug(courseSlug);
-        console.log(`[Viewer] Course data:`, courseData);
         setCourse(courseData);
+        
+        if (courseData.lessons?.length) {
+          setSelectedLessonId(courseData.lessons[0].id);
+        }
+        
         setLoading(false);
       } catch (err) {
-        console.error('[Viewer] Failed to load course:', err);
-        setError('Failed to load course. This course may not exist or you may not have access.');
+        setError('Course not found or unavailable');
         setLoading(false);
       }
     }
 
     loadCourse();
   }, [courseSlug]);
+  
+  const selectLesson = useCallback((lessonId: string) => {
+    setVideoError(null);
+    setSelectedLessonId(lessonId);
+  }, []);
+  
+  const goToNextLesson = useCallback(() => {
+    if (!course?.lessons || currentLessonIndex < 0 || currentLessonIndex >= course.lessons.length - 1) return;
+    selectLesson(course.lessons[currentLessonIndex + 1].id);
+  }, [course?.lessons, currentLessonIndex, selectLesson]);
+  
+  const goToPrevLesson = useCallback(() => {
+    if (!course?.lessons || currentLessonIndex <= 0) return;
+    selectLesson(course.lessons[currentLessonIndex - 1].id);
+  }, [course?.lessons, currentLessonIndex, selectLesson]);
+  
+  const handleVideoError = useCallback((e: any) => {
+    setVideoError('Failed to load video. Please try again.');
+  }, []);
 
-  // Debug info - REMOVE FOR PRODUCTION
-  const debugInfo = (
-    <div className="fixed bottom-2 right-2 bg-black/80 text-white text-xs p-2 rounded z-50">
-      <div><strong>Subdomain:</strong> {courseSlug || 'none'}</div>
-      <div><strong>Loading:</strong> {loading ? 'true' : 'false'}</div>
-      <div><strong>Error:</strong> {error || 'none'}</div>
-      {course && <div><strong>Course:</strong> {course.title}</div>}
-    </div>
-  );
+  const resetVideoError = useCallback(() => {
+    setVideoError(null);
+  }, []);
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-neutral-50">
         <div className="text-center">
-          <div className="h-8 w-8 border-t-2 border-emerald-500 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-neutral-600">Loading course...</p>
+          <Loader2 className="h-12 w-12 text-neutral-400 animate-spin mx-auto mb-4" />
+          <p className="text-neutral-600 text-lg">Loading course...</p>
         </div>
-        {debugInfo}
       </div>
     );
   }
 
   if (error || !course) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="max-w-md w-full p-8 bg-white rounded-lg shadow-md">
-          <h1 className="text-2xl font-bold text-red-600 mb-4">Course Not Found</h1>
-          <p className="text-neutral-600 mb-6">{error || 'This course does not exist or is currently unavailable.'}</p>
-          <a href="http://potatix.com:5005" className="text-emerald-600 hover:underline">
-            Return to Potatix
+      <div className="min-h-screen flex items-center justify-center bg-neutral-50">
+        <div className="max-w-md text-center p-8">
+          <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <AlertTriangle className="h-10 w-10 text-red-600" />
+          </div>
+          <h1 className="text-2xl font-bold text-neutral-900 mb-4">Course Not Found</h1>
+          <p className="text-neutral-600 mb-8">
+            {error || 'This course does not exist or is currently unavailable.'}
+          </p>
+          <a 
+            href="/" 
+            className="inline-flex items-center gap-2 px-6 py-3 bg-black text-white rounded-lg hover:bg-neutral-800 transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span>Back to Homepage</span>
           </a>
         </div>
-        {debugInfo}
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
-            <h1 className="text-xl font-bold text-gray-900 truncate">{course.title}</h1>
-            {/* Course navigation can go here */}
-          </div>
-        </div>
-      </header>
+  const lessons = course.lessons || [];
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Sidebar with lesson list */}
-          <div className="lg:col-span-1 bg-white rounded-lg shadow overflow-hidden">
-            <div className="p-4 border-b border-gray-200">
-              <h2 className="text-lg font-medium text-gray-900">Course Content</h2>
+  return (
+    <div className="min-h-screen bg-neutral-50">
+      <CourseHeader title={course.title} totalLessons={totalLessons} />
+
+      <main className="max-w-7xl mx-auto px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Lesson sidebar */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-xl border border-neutral-200 overflow-hidden sticky top-32">
+              <div className="border-b border-neutral-200 px-6 py-4">
+                <h2 className="font-semibold text-neutral-900">Course Content</h2>
+                <p className="text-sm text-neutral-500 mt-1">{lessons.length} lessons</p>
+              </div>
+              
+              <LessonList 
+                lessons={lessons}
+                selectedLessonId={selectedLessonId}
+                onSelectLesson={selectLesson}
+              />
             </div>
-            <ul className="divide-y divide-gray-200">
-              {course.lessons?.map((lesson) => (
-                <li key={lesson.id} className="p-4 hover:bg-gray-50 cursor-pointer">
-                  <div className="flex items-center">
-                    <div className="flex-1">
-                      <h3 className="text-sm font-medium text-gray-900">{lesson.title}</h3>
-                      {lesson.description && (
-                        <p className="text-xs text-gray-500 mt-1">{lesson.description}</p>
-                      )}
-                    </div>
-                  </div>
-                </li>
-              ))}
-              {!course.lessons?.length && (
-                <li className="p-4 text-sm text-gray-500">
-                  This course has no lessons yet.
-                </li>
-              )}
-            </ul>
           </div>
           
-          {/* Main content area - video player would go here */}
-          <div className="lg:col-span-2 bg-white rounded-lg shadow">
-            <div className="p-6">
-              <h2 className="text-xl font-medium text-gray-900 mb-4">About This Course</h2>
-              <div className="prose max-w-none">
-                <p>{course.description || 'No description available.'}</p>
-              </div>
-              
-              {/* Course details section */}
-              <div className="mt-8">
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Course Details</h3>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-gray-500">Lessons:</span>
-                    <span className="ml-2 text-gray-900">{course.lessons?.length || 0}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-500">Created:</span>
-                    <span className="ml-2 text-gray-900">
-                      {new Date(course.createdAt).toLocaleDateString()}
-                    </span>
-                  </div>
+          {/* Main content */}
+          <div className="lg:col-span-3">
+            <div className="bg-white rounded-xl border border-neutral-200 overflow-hidden">
+              {selectedLesson ? (
+                <LessonContent 
+                  lesson={selectedLesson}
+                  currentIndex={currentLessonIndex}
+                  totalLessons={totalLessons}
+                  videoError={videoError}
+                  onPrevLesson={goToPrevLesson}
+                  onNextLesson={goToNextLesson}
+                  onVideoError={handleVideoError}
+                  onResetError={resetVideoError}
+                />
+              ) : (
+                <div className="p-8">
+                  <CourseOverview 
+                    course={course}
+                    totalLessons={totalLessons}
+                    lessonsWithVideos={lessonsWithVideos}
+                  />
                 </div>
-              </div>
-              
-              {/* Video player would be added here once lessons are implemented */}
-              <div className="mt-8 bg-gray-100 rounded-lg p-12 flex items-center justify-center">
-                <p className="text-gray-500">Select a lesson to start learning</p>
-              </div>
+              )}
             </div>
           </div>
         </div>
       </main>
-      {debugInfo}
     </div>
   );
-} 
+}
