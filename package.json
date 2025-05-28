@@ -14,11 +14,16 @@
     "db:pull": "bunx drizzle-kit pull"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.812.0",
+    "@aws-sdk/s3-request-presigner": "^3.812.0",
     "@better-auth/cli": "^1.2.7",
     "@floating-ui/react": "^0.27.8",
     "@floating-ui/react-dom": "^2.1.2",
+    "@hello-pangea/dnd": "^18.0.1",
     "@hookform/resolvers": "^5.0.1",
+    "@mux/mux-node": "^11.0.2",
     "@mux/mux-player": "^3.4.0",
+    "@mux/mux-player-react": "^3.4.0",
     "@prisma/client": "^6.6.0",
     "@radix-ui/react-accordion": "^1.2.8",
     "@radix-ui/react-alert-dialog": "^1.1.11",
@@ -52,7 +57,8 @@
     "@types/js-cookie": "^3.0.6",
     "@types/pg": "^8.15.1",
     "@vercel/analytics": "^1.5.0",
-    "better-auth": "^1.2.7",
+    "axios": "^1.9.0",
+    "better-auth": "^1.2.8",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
@@ -65,7 +71,7 @@
     "install": "^0.13.0",
     "js-cookie": "^3.0.5",
     "lucide-react": "^0.503.0",
-    "next": "15.2.3",
+    "next": "15.2.4",
     "next-themes": "^0.4.6",
     "pg": "^8.15.6",
     "postcss": "^8.5.3",
@@ -85,8 +91,10 @@
     "tailwindcss": "^4.0.15",
     "tailwindcss-animate": "^1.0.7",
     "tw-animate-css": "^1.2.4",
+    "uuid": "^11.1.0",
     "vaul": "^1.1.2",
-    "zod": "^3.24.3"
+    "zod": "^3.24.3",
+    "zustand": "^5.0.4"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
@@ -95,7 +103,7 @@
     "@types/react-dom": "^19",
     "drizzle-kit": "^0.31.1",
     "eslint": "^9",
-    "eslint-config-next": "15.2.3",
+    "eslint-config-next": "15.2.4",
     "typescript": "^5"
   }
 }
