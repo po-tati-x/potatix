@@ -11,6 +11,7 @@ export const course = pgTable("course", {
   description: text('description'),
   price: doublePrecision('price').notNull().default(0),
   status: text('status').notNull().default('draft'), // 'draft' or 'published'
+  slug: text('slug').unique(), // URL-friendly identifier for the course
 
   // Ownership - critical for permission checks
   userId: text('userId').notNull().references(() => user.id, { onDelete: 'cascade' }),

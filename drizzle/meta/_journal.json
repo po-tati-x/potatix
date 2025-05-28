@@ -8,6 +8,13 @@
       "when": 1746780338286,
       "tag": "0000_free_major_mapleleaf",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1747686094269,
+      "tag": "0001_greedy_eddie_brock",
+      "breakpoints": true
     }
   ]
 }
