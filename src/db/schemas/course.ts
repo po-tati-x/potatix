@@ -35,6 +35,10 @@ export const lesson = pgTable("lesson", {
   // Video identifier (for future MUX integration)
   videoId: text('videoId'),
   
+  // Video upload status and metadata
+  uploadStatus: text('uploadStatus'),
+  duration: integer('duration'),
+  
   // Ordering is critical for correct display
   order: integer('order').notNull(),
   

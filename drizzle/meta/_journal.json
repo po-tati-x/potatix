@@ -15,6 +15,13 @@
       "when": 1747686094269,
       "tag": "0001_greedy_eddie_brock",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1748466222358,
+      "tag": "0002_flaky_leech",
+      "breakpoints": true
     }
   ]
 }
