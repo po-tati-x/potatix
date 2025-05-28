@@ -1,7 +1,7 @@
 'use client';
 
 import { CourseCard } from './CourseCard';
-import { Course } from './types';
+import { Course } from '@/lib/utils/api-client';
 
 interface CoursesGridProps {
   courses: Course[];
