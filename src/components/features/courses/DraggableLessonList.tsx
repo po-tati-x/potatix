@@ -1,18 +1,37 @@
-'use client';
+"use client";
 
-import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { Lesson } from '@/lib/stores/courseStore';
-import { GripVertical, Trash2, FilmIcon } from 'lucide-react';
+import {
+  DragDropContext,
+  Droppable,
+  Draggable,
+  DropResult,
+} from "@hello-pangea/dnd";
+import { Lesson } from "@/lib/stores/courseStore";
+import {
+  GripVertical,
+  Trash2,
+  FilmIcon,
+  PlayCircle,
+  ArrowUpCircle,
+  Upload,
+  CheckCircle,
+  AlertCircle,
+  Loader2,
+} from "lucide-react";
+import { useState } from "react";
+import MuxUploader from "@mux/mux-uploader-react";
 
 // Type for the core drag and drop functionality only
 interface DraggableLessonListProps {
   lessons: Lesson[];
   onReorder: (lessons: Lesson[]) => void;
-  renderLesson: (lesson: Lesson, index: number, dragHandleProps: any) => React.ReactNode;
+  renderLesson: (
+    lesson: Lesson,
+    index: number,
+    dragHandleProps: any,
+  ) => React.ReactNode;
   emptyState?: React.ReactNode;
 }
-
-// Separate components for different concerns
 
 /**
  * Core drag and drop functionality only - no UI specifics
@@ -21,42 +40,32 @@ export function DraggableLessonList({
   lessons,
   onReorder,
   renderLesson,
-  emptyState
+  emptyState,
 }: DraggableLessonListProps) {
-  // Handle drag end
   const handleDragEnd = (result: DropResult) => {
-    // Dropped outside the list
-    if (!result.destination) {
-      return;
-    }
-    
+    if (!result.destination) return;
+
     const sourceIndex = result.source.index;
     const destIndex = result.destination.index;
-    
-    // If position didn't change
-    if (sourceIndex === destIndex) {
-      return;
-    }
-    
-    // Reorder the lessons array
+
+    if (sourceIndex === destIndex) return;
+
     const reorderedItems = Array.from(lessons);
     const [removed] = reorderedItems.splice(sourceIndex, 1);
     reorderedItems.splice(destIndex, 0, removed);
-    
-    // Update the order property
+
     const updatedLessons = reorderedItems.map((lesson, index) => ({
       ...lesson,
-      order: index
+      order: index,
     }));
-    
-    // Send the updated array to parent
+
     onReorder(updatedLessons);
   };
-  
+
   if (lessons.length === 0 && emptyState) {
     return <>{emptyState}</>;
   }
-  
+
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
       <Droppable droppableId="lessons">
@@ -64,22 +73,18 @@ export function DraggableLessonList({
           <div
             {...provided.droppableProps}
             ref={provided.innerRef}
-            className="space-y-4"
+            className="space-y-3"
           >
             {lessons.map((lesson, index) => (
-              <Draggable 
-                key={lesson.id} 
-                draggableId={lesson.id} 
-                index={index}
-              >
+              <Draggable key={lesson.id} draggableId={lesson.id} index={index}>
                 {(provided, snapshot) => (
                   <div
                     ref={provided.innerRef}
                     {...provided.draggableProps}
-                    className={`border rounded-lg ${
-                      snapshot.isDragging 
-                        ? 'bg-neutral-50 border-neutral-400 shadow-lg' 
-                        : 'border-neutral-200'
+                    className={`bg-white border rounded-lg transition-all ${
+                      snapshot.isDragging
+                        ? "border-neutral-400 shadow-lg scale-[1.02]"
+                        : "border-neutral-200 hover:border-neutral-300"
                     }`}
                   >
                     {renderLesson(lesson, index, provided.dragHandleProps)}
@@ -95,6 +100,25 @@ export function DraggableLessonList({
   );
 }
 
+// Form field component for consistency
+const FormField = ({
+  label,
+  children,
+  required = false,
+}: {
+  label: string;
+  children: React.ReactNode;
+  required?: boolean;
+}) => (
+  <div className="space-y-2">
+    <label className="block text-sm font-medium text-neutral-700">
+      {label}
+      {required && <span className="text-red-500 ml-1">*</span>}
+    </label>
+    {children}
+  </div>
+);
+
 // Types for the lesson editor component
 interface LessonEditorProps {
   lesson: Lesson;
@@ -102,7 +126,10 @@ interface LessonEditorProps {
   dragHandleProps: any;
   onUpdateLesson: (id: string, field: keyof Lesson, value: string) => void;
   onRemoveLesson: (id: string) => void;
-  onFileChange: (e: React.ChangeEvent<HTMLInputElement>, lessonId: string) => void;
+  onFileChange: (
+    e: React.ChangeEvent<HTMLInputElement>,
+    lessonId: string,
+  ) => void;
   onFileRemove: (lessonId: string) => void;
 }
 
@@ -116,110 +143,254 @@ export function LessonEditor({
   onUpdateLesson,
   onRemoveLesson,
   onFileChange,
-  onFileRemove
+  onFileRemove,
 }: LessonEditorProps) {
   return (
-    <div className="p-4 space-y-4">
-      {/* Header with drag handle and remove button */}
-      <div className="flex items-center justify-between">
-        <div 
-          {...dragHandleProps} 
-          className="flex items-center gap-2 cursor-grab hover:text-emerald-600"
+    <div className="overflow-hidden">
+      {/* Header */}
+      <div className="bg-neutral-50 border-b border-neutral-200 px-6 py-4 flex items-center justify-between">
+        <div
+          {...dragHandleProps}
+          className="flex items-center gap-3 cursor-grab hover:cursor-grabbing group"
         >
-          <GripVertical className="h-5 w-5 text-neutral-400" />
-          <div className="h-6 w-6 bg-emerald-100 rounded-full text-emerald-700 flex items-center justify-center">
-            <span className="text-xs font-medium">{index + 1}</span>
+          <GripVertical className="h-5 w-5 text-neutral-400 group-hover:text-neutral-600 transition-colors" />
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-8 bg-black text-white rounded-full flex items-center justify-center">
+              <span className="text-sm font-medium">{index + 1}</span>
+            </div>
+            <h3 className="text-lg font-semibold text-neutral-900">
+              {lesson.title || `Lesson ${index + 1}`}
+            </h3>
           </div>
         </div>
+
         <button
           type="button"
           onClick={() => onRemoveLesson(lesson.id)}
-          className="text-neutral-400 hover:text-red-600"
+          className="p-2 text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-all"
         >
           <Trash2 className="h-4 w-4" />
         </button>
       </div>
-      
-      {/* Lesson title */}
-      <div>
-        <label className="block text-sm font-medium text-neutral-700 mb-1">
-          Lesson Title
-        </label>
-        <input
-          type="text"
-          value={lesson.title}
-          onChange={(e) => onUpdateLesson(lesson.id, 'title', e.target.value)}
-          placeholder="e.g. Introduction to TypeScript"
-          className="w-full px-3 py-2 border border-neutral-300 rounded-md"
-          required
-        />
-      </div>
-      
-      {/* Lesson description */}
-      <div>
-        <label className="block text-sm font-medium text-neutral-700 mb-1">
-          Description (Optional)
-        </label>
-        <textarea
-          value={lesson.description}
-          onChange={(e) => onUpdateLesson(lesson.id, 'description', e.target.value)}
-          rows={2}
-          placeholder="What will students learn in this lesson?"
-          className="w-full px-3 py-2 border border-neutral-300 rounded-md"
-        />
-      </div>
-      
-      {/* Video upload */}
-      <div>
-        <label className="block text-sm font-medium text-neutral-700 mb-2">
-          Lesson Video
-        </label>
-        
-        {!lesson.file ? (
-          <VideoUploader 
-            lessonId={lesson.id} 
-            onFileChange={onFileChange} 
-          />
-        ) : (
-          <VideoPreview 
-            lesson={lesson} 
-            onFileRemove={onFileRemove} 
-          />
-        )}
+
+      {/* Content */}
+      <div className="p-6 space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <FormField label="Lesson Title" required>
+            <input
+              type="text"
+              value={lesson.title}
+              onChange={(e) =>
+                onUpdateLesson(lesson.id, "title", e.target.value)
+              }
+              placeholder="e.g. Introduction to TypeScript"
+              className="w-full px-4 py-3 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-neutral-500 focus:border-neutral-500 transition-colors"
+              required
+            />
+          </FormField>
+
+          <FormField label="Description">
+            <textarea
+              value={lesson.description}
+              onChange={(e) =>
+                onUpdateLesson(lesson.id, "description", e.target.value)
+              }
+              rows={3}
+              placeholder="What will students learn in this lesson?"
+              className="w-full px-4 py-3 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-neutral-500 focus:border-neutral-500 transition-colors resize-none"
+            />
+          </FormField>
+        </div>
+
+        <FormField label="Lesson Video">
+          {!lesson.file && !lesson.videoId ? (
+            <VideoUploader lessonId={lesson.id} onFileChange={onFileChange} />
+          ) : (
+            <VideoPreview lesson={lesson} onFileRemove={onFileRemove} />
+          )}
+        </FormField>
       </div>
     </div>
   );
 }
 
-// Smaller, focused components for video handling
+// Video uploader component
 interface VideoUploaderProps {
   lessonId: string;
-  onFileChange: (e: React.ChangeEvent<HTMLInputElement>, lessonId: string) => void;
+  onFileChange: (
+    e: React.ChangeEvent<HTMLInputElement>,
+    lessonId: string,
+  ) => void;
 }
 
 export function VideoUploader({ lessonId, onFileChange }: VideoUploaderProps) {
+  const [isAdvancedUpload, setIsAdvancedUpload] = useState(false);
+  const [uploadUrl, setUploadUrl] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const getUploadUrl = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/mux/upload-url", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ lessonId }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to get upload URL");
+      }
+
+      const data = await response.json();
+      setUploadUrl(data.url);
+      setIsAdvancedUpload(true);
+    } catch (err) {
+      console.error("Error getting upload URL:", err);
+      setError("Failed to initialize uploader. Try again later.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleUploadSuccess = (data: any) => {
+    console.log("Upload success:", data);
+  };
+
+  // Advanced uploader
+  if (isAdvancedUpload && uploadUrl) {
+    return (
+      <div className="border border-neutral-200 rounded-lg overflow-hidden">
+        <div className="bg-neutral-50 border-b border-neutral-200 px-4 py-3">
+          <h4 className="text-sm font-medium text-neutral-900">
+            Direct Upload
+          </h4>
+        </div>
+        <div className="p-4">
+          <MuxUploader
+            endpoint={uploadUrl}
+            onSuccess={handleUploadSuccess}
+            className="mux-uploader"
+          />
+          <div className="mt-4 flex items-center justify-between">
+            <p className="text-xs text-neutral-500">
+              Video will be processed automatically after upload
+            </p>
+            <button
+              onClick={() => setIsAdvancedUpload(false)}
+              className="text-xs text-neutral-600 hover:text-neutral-900 underline"
+            >
+              Switch to basic uploader
+            </button>
+          </div>
+        </div>
+
+        <style jsx global>{`
+          .mux-uploader {
+            --mux-uploader-background: #ffffff;
+            --mux-uploader-drag-background: #f9fafb;
+            --mux-uploader-border: 1px dashed #d1d5db;
+            --mux-uploader-border-radius: 0.375rem;
+            --mux-uploader-primary-color: #000000;
+            width: 100%;
+            min-height: 120px;
+          }
+        `}</style>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="border border-red-200 rounded-lg p-6 bg-red-50">
+        <div className="flex items-center">
+          <AlertCircle className="h-5 w-5 text-red-500 mr-3" />
+          <div>
+            <p className="text-sm font-medium text-red-800">Upload Error</p>
+            <p className="text-sm text-red-600 mt-1">{error}</p>
+          </div>
+        </div>
+        <button
+          onClick={getUploadUrl}
+          className="mt-4 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-sm font-medium"
+        >
+          Try Again
+        </button>
+      </div>
+    );
+  }
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="border border-neutral-200 rounded-lg p-8 text-center">
+        <Loader2 className="h-8 w-8 text-neutral-400 animate-spin mx-auto mb-4" />
+        <p className="text-sm text-neutral-600">Initializing uploader...</p>
+      </div>
+    );
+  }
+
+  // Upload options
   return (
-    <div className="border-2 border-dashed border-neutral-300 rounded-lg p-4 text-center">
-      <input
-        type="file"
-        id={`video-upload-${lessonId}`}
-        className="hidden"
-        accept="video/*"
-        onChange={(e) => onFileChange(e, lessonId)}
-      />
-      
-      <label 
-        htmlFor={`video-upload-${lessonId}`} 
-        className="flex flex-col items-center justify-center cursor-pointer"
-      >
-        <FilmIcon className="h-8 w-8 text-neutral-400 mb-2" />
-        <p className="text-sm font-medium text-neutral-700">
-          Upload video for this lesson
+    <div className="space-y-4">
+      {/* Direct uploader option */}
+      <div className="border border-neutral-200 rounded-lg p-6 text-center">
+        <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-neutral-100 mb-4">
+          <ArrowUpCircle className="h-6 w-6 text-neutral-600" />
+        </div>
+        <h4 className="text-lg font-medium text-neutral-900 mb-2">
+          Direct Upload
+        </h4>
+        <p className="text-sm text-neutral-500 mb-4 max-w-md mx-auto">
+          Recommended for large files. Supports resumable uploads and better
+          error handling.
         </p>
-        <p className="text-xs text-neutral-500 mt-1">
-          MP4, MOV or WebM up to 2GB
-        </p>
-      </label>
+        <button
+          onClick={getUploadUrl}
+          className="px-6 py-3 bg-black text-white rounded-md hover:bg-neutral-800 transition-colors font-medium"
+        >
+          Initialize Direct Upload
+        </button>
+      </div>
+
+      {/* Divider */}
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-neutral-200" />
+        </div>
+        <div className="relative flex justify-center text-sm">
+          <span className="px-3 bg-white text-neutral-500">or</span>
+        </div>
+      </div>
+
+      {/* Basic file input */}
+      <div className="border-2 border-dashed border-neutral-300 rounded-lg p-8 text-center hover:border-neutral-400 transition-colors">
+        <input
+          type="file"
+          id={`video-upload-${lessonId}`}
+          className="hidden"
+          accept="video/*"
+          onChange={(e) => onFileChange(e, lessonId)}
+        />
+
+        <label
+          htmlFor={`video-upload-${lessonId}`}
+          className="flex flex-col items-center justify-center cursor-pointer group"
+        >
+          <div className="h-12 w-12 bg-neutral-100 rounded-full flex items-center justify-center mb-4 group-hover:bg-neutral-200 transition-colors">
+            <Upload className="h-6 w-6 text-neutral-600" />
+          </div>
+          <p className="text-sm font-medium text-neutral-700 mb-1">
+            Upload video file
+          </p>
+          <p className="text-xs text-neutral-500">MP4, MOV or WebM up to 2GB</p>
+        </label>
+      </div>
     </div>
   );
 }
@@ -230,39 +401,86 @@ interface VideoPreviewProps {
 }
 
 export function VideoPreview({ lesson, onFileRemove }: VideoPreviewProps) {
-  return (
-    <div className="border border-neutral-200 rounded-md p-3">
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center space-x-2">
-          <span className="text-sm font-medium truncate max-w-xs">
-            {lesson.fileName}
-          </span>
-          <span className="text-xs text-neutral-500">
-            {lesson.fileSize}
-          </span>
+  // Already uploaded video (has videoId)
+  if (lesson.videoId) {
+    return (
+      <div className="border border-neutral-200 rounded-lg overflow-hidden">
+        <div className="relative aspect-video bg-black group">
+          <img
+            src={`https://image.mux.com/${lesson.videoId}/thumbnail.jpg?width=1920&height=1080&fit_mode=preserve`}
+            alt={`Preview for ${lesson.title}`}
+            className="w-full h-full object-contain"
+          />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="bg-black bg-opacity-60 rounded-full p-4 group-hover:bg-opacity-80 transition-all">
+              <PlayCircle className="h-8 w-8 text-white" />
+            </div>
+          </div>
         </div>
-        
+
+        <div className="p-4 bg-neutral-50 border-t border-neutral-200">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <span className="text-sm font-medium text-neutral-900">
+                  Video uploaded
+                </span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => onFileRemove(lesson.id)}
+              className="p-2 text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-all"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // In-progress upload
+  return (
+    <div className="border border-neutral-200 rounded-lg p-4">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <FilmIcon className="h-5 w-5 text-neutral-500" />
+          <div>
+            <p className="text-sm font-medium text-neutral-900 truncate max-w-xs">
+              {lesson.fileName}
+            </p>
+            <p className="text-xs text-neutral-500">{lesson.fileSize}</p>
+          </div>
+        </div>
+
         <button
           type="button"
           onClick={() => onFileRemove(lesson.id)}
-          className="text-neutral-400 hover:text-red-500"
+          className="p-2 text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-all"
         >
           <Trash2 className="h-4 w-4" />
         </button>
       </div>
-      
-      <div className="w-full bg-neutral-100 rounded-full h-1.5">
-        <div
-          className="bg-emerald-500 h-1.5 rounded-full"
-          style={{ width: `${lesson.progress}%` }}
-        />
-      </div>
-      
-      <div className="mt-1 flex justify-between text-xs">
-        <span className="text-neutral-500">
-          {lesson.progress === 100 ? 'Completed' : 'Uploading...'}
-        </span>
-        <span className="text-neutral-500">{lesson.progress}%</span>
+
+      <div className="space-y-2">
+        <div className="flex justify-between text-sm">
+          <span className="text-neutral-600">
+            {lesson.progress === 100 ? "Processing..." : "Uploading..."}
+          </span>
+          <span className="text-neutral-900 font-medium">
+            {lesson.progress}%
+          </span>
+        </div>
+
+        <div className="w-full bg-neutral-200 rounded-full h-2">
+          <div
+            className="bg-black h-2 rounded-full transition-all duration-300"
+            style={{ width: `${lesson.progress}%` }}
+          />
+        </div>
       </div>
     </div>
   );
@@ -275,18 +493,24 @@ interface EmptyLessonStateProps {
 
 export function EmptyLessonState({ onAddLesson }: EmptyLessonStateProps) {
   return (
-    <div className="text-center py-8 border-2 border-dashed border-neutral-300 rounded-lg">
-      <div className="mb-3 text-neutral-400">
-        <FilmIcon className="h-10 w-10 mx-auto" />
+    <div className="text-center py-12 border-2 border-dashed border-neutral-300 rounded-lg bg-neutral-50">
+      <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-neutral-100 mb-6">
+        <FilmIcon className="h-8 w-8 text-neutral-500" />
       </div>
-      <p className="text-sm text-neutral-600 mb-4">
-        Your course doesn't have any lessons yet
+
+      <h3 className="text-lg font-medium text-neutral-900 mb-2">
+        No lessons yet
+      </h3>
+      <p className="text-neutral-500 mb-6 max-w-sm mx-auto">
+        Start building your course by adding your first lesson with video
+        content.
       </p>
+
       {onAddLesson && (
         <button
           type="button"
           onClick={onAddLesson}
-          className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 text-sm"
+          className="px-6 py-3 bg-black text-white rounded-md hover:bg-neutral-800 transition-colors font-medium"
         >
           Add Your First Lesson
         </button>
@@ -295,13 +519,16 @@ export function EmptyLessonState({ onAddLesson }: EmptyLessonStateProps) {
   );
 }
 
-// Composite component that puts it all together (for backward compatibility)
+// Main composite component
 interface CourseLessonEditorProps {
   lessons: Lesson[];
   onUpdateLesson: (id: string, field: keyof Lesson, value: string) => void;
   onRemoveLesson: (id: string) => void;
   onReorder: (lessons: Lesson[]) => void;
-  onFileChange: (e: React.ChangeEvent<HTMLInputElement>, lessonId: string) => void;
+  onFileChange: (
+    e: React.ChangeEvent<HTMLInputElement>,
+    lessonId: string,
+  ) => void;
   onFileRemove: (lessonId: string) => void;
   addLesson?: () => void;
 }
@@ -314,29 +541,25 @@ export function CourseLessonEditor(props: CourseLessonEditorProps) {
     onReorder,
     onFileChange,
     onFileRemove,
-    addLesson
+    addLesson,
   } = props;
-  
+
   return (
-    <div className="rounded-lg border border-neutral-200 bg-white overflow-hidden">
-      <div className="p-6">
-        <DraggableLessonList
-          lessons={lessons}
-          onReorder={onReorder}
-          emptyState={<EmptyLessonState onAddLesson={addLesson} />}
-          renderLesson={(lesson, index, dragHandleProps) => (
-            <LessonEditor
-              lesson={lesson}
-              index={index}
-              dragHandleProps={dragHandleProps}
-              onUpdateLesson={onUpdateLesson}
-              onRemoveLesson={onRemoveLesson}
-              onFileChange={onFileChange}
-              onFileRemove={onFileRemove}
-            />
-          )}
+    <DraggableLessonList
+      lessons={lessons}
+      onReorder={onReorder}
+      emptyState={<EmptyLessonState onAddLesson={addLesson} />}
+      renderLesson={(lesson, index, dragHandleProps) => (
+        <LessonEditor
+          lesson={lesson}
+          index={index}
+          dragHandleProps={dragHandleProps}
+          onUpdateLesson={onUpdateLesson}
+          onRemoveLesson={onRemoveLesson}
+          onFileChange={onFileChange}
+          onFileRemove={onFileRemove}
         />
-      </div>
-    </div>
+      )}
+    />
   );
 }

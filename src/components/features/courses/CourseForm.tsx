@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { CourseImageUploader } from './CourseImageUploader';
+import { useState } from "react";
+import { CourseImageUploader } from "./CourseImageUploader";
 
 interface CourseFormProps {
   title: string;
@@ -24,7 +24,7 @@ export function CourseForm({
   onDescriptionChange,
   onPriceChange,
   onImageUploaded,
-  onImageRemoved
+  onImageRemoved,
 }: CourseFormProps) {
   return (
     <div className="rounded-lg border border-neutral-200 bg-white overflow-hidden">
@@ -41,7 +41,10 @@ export function CourseForm({
           />
 
           <div>
-            <label htmlFor="title" className="block text-sm font-medium text-neutral-700 mb-1">
+            <label
+              htmlFor="title"
+              className="block text-sm font-medium text-neutral-700 mb-1"
+            >
               Course Title
             </label>
             <input
@@ -55,10 +58,13 @@ export function CourseForm({
               required
             />
           </div>
-          
+
           <div>
-            <label htmlFor="description" className="block text-sm font-medium text-neutral-700 mb-1">
-              Description (Optional)
+            <label
+              htmlFor="description"
+              className="block text-sm font-medium text-neutral-700 mb-1"
+            >
+              Description (Optional)123
             </label>
             <textarea
               id="description"
@@ -70,9 +76,12 @@ export function CourseForm({
               className="w-full px-3 py-2 border border-neutral-300 rounded-md"
             />
           </div>
-          
+
           <div>
-            <label htmlFor="price" className="block text-sm font-medium text-neutral-700 mb-1">
+            <label
+              htmlFor="price"
+              className="block text-sm font-medium text-neutral-700 mb-1"
+            >
               Price ($)
             </label>
             <input
@@ -95,4 +104,4 @@ export function CourseForm({
       </div>
     </div>
   );
-} 
+}
