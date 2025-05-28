@@ -9,7 +9,8 @@ export async function GET(
   request: Request,
   { params }: { params: { slug: string } }
 ) {
-  const { slug } = params;
+  // Await params to fix NextJS warning
+  const { slug } = await Promise.resolve(params);
   
   if (!slug) {
     return NextResponse.json(
