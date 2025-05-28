@@ -1,16 +1,20 @@
 "use client";
 
-import { useParams } from "next/navigation";
 import { ReactNode } from "react";
+import { useParams } from "next/navigation";
 import { Sidebar } from "./sidebar-nav";
+
+interface AppSidebarNavProps {
+  toolContent?: ReactNode;
+  newsContent?: ReactNode;
+  bottom?: ReactNode;
+}
 
 export function AppSidebarNav({
   toolContent,
   newsContent,
-}: {
-  toolContent?: ReactNode;
-  newsContent?: ReactNode;
-}) {
+  bottom,
+}: AppSidebarNavProps) {
   const { slug } = useParams() as { slug?: string };
 
   return (
@@ -18,10 +22,7 @@ export function AppSidebarNav({
       slug={slug || "workspace"}
       toolContent={toolContent}
       newsContent={newsContent}
-      bottom={
-        <>
-        </>
-      }
+      bottom={bottom}
     />
   );
 }
