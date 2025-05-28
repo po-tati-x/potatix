@@ -109,10 +109,10 @@ export default function DashboardPage() {
                 <span>Logout</span>
               </button>
               <Link 
-                href="/profile" 
+                href="/settings" 
                 className="flex items-center gap-1 text-sm text-neutral-600 hover:text-neutral-900"
               >
-                <span>View Profile</span>
+                <span>View Settings</span>
                 <ChevronRight className="size-4" />
               </Link>
             </div>

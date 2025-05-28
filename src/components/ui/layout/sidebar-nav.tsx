@@ -7,7 +7,8 @@ import {
   ChevronDown, 
   ChevronLeft, 
   BookOpen,
-  LayoutDashboard
+  LayoutDashboard,
+  Smile
 } from "lucide-react";
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
@@ -66,6 +67,11 @@ export function Sidebar({ slug, toolContent, newsContent, bottom }: SidebarProps
               name: "Settings",
               icon: Cog,
               href: `/settings`,
+            },
+            {
+              name: "Manpage",
+              icon: Smile,
+              href: `/manpage`,
             },
           ],
         },

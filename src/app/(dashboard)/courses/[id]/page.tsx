@@ -1,420 +1,202 @@
 'use client';
 
-import { useEffect, useState, use } from 'react';
+import { useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Play, Settings, Users, DollarSign, Star, Download } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, BookOpen, Play, Lock } from 'lucide-react';
+import { useCourseDetailStore } from '@/lib/stores/courseDetailStore';
+import { Lesson as CourseStoreLesson } from '@/lib/stores/courseStore';
+import { Lesson } from '@/lib/utils/api-client';
 
-// Define Course type to avoid 'any'
-interface Lesson {
-  id: string;
-  title: string;
-  description?: string;
-  videoId: string;
-  duration: string;
-  size: string;
-  watched: number;
-  order: number;
-}
-
-interface Course {
-  id: string;
-  title: string;
-  description: string;
-  price: number;
-  students: number;
-  revenue: number;
-  rating: number;
-  status: 'published' | 'draft';
-  lessons: Lesson[];
-}
-
-// Mock course data
-const MOCK_COURSES: Record<string, Course> = {
-  '1': {
-    id: '1',
-    title: 'Advanced TypeScript Patterns',
-    description: 'Learn advanced TypeScript patterns used by top-tier companies to build scalable applications. This course covers type manipulation, conditional types, mapped types, and more.',
-    price: 79.99,
-    students: 47,
-    revenue: 3760,
-    rating: 4.8,
-    status: 'published',
-    lessons: [
-      { 
-        id: 'l1', 
-        title: 'Introduction to Advanced Types', 
-        description: 'An overview of the advanced type system in TypeScript and why it matters for building robust applications.',
-        videoId: 'v1', 
-        duration: '8:24', 
-        size: '42MB', 
-        watched: 2103,
-        order: 1
-      },
-      { 
-        id: 'l2', 
-        title: 'Type Manipulation Fundamentals',
-        description: 'Learn the core techniques for manipulating types including generics, keyof, and typeof operators.',
-        videoId: 'v2', 
-        duration: '17:35', 
-        size: '89MB', 
-        watched: 1982,
-        order: 2
-      },
-      { 
-        id: 'l3', 
-        title: 'Mastering Conditional Types', 
-        description: 'Deep dive into conditional types, using infer, and building powerful type utilities.',
-        videoId: 'v3', 
-        duration: '22:12', 
-        size: '112MB', 
-        watched: 1873,
-        order: 3
-      },
-      { 
-        id: 'l4', 
-        title: 'Building with Mapped Types', 
-        videoId: 'v4', 
-        duration: '19:48', 
-        size: '101MB', 
-        watched: 1765,
-        order: 4
-      },
-      { 
-        id: 'l5', 
-        title: 'Advanced Template Literal Types', 
-        description: 'Using template literal types to create powerful string manipulation at the type level.',
-        videoId: 'v5', 
-        duration: '15:30', 
-        size: '78MB', 
-        watched: 1689,
-        order: 5
-      },
-    ]
-  },
-  '2': {
-    id: '2',
-    title: 'Rust for JavaScript Developers',
-    description: 'Bridge the gap between JavaScript and Rust. This course is designed specifically for JS developers looking to learn Rust without getting lost in computer science jargon.',
-    price: 89.99,
-    students: 12,
-    revenue: 960,
-    rating: 4.6,
-    status: 'published',
-    lessons: [
-      { 
-        id: 'l1', 
-        title: 'Why Rust for JavaScript Developers', 
-        description: 'Understanding the benefits of Rust from a JS developer perspective and setting up your environment.',
-        videoId: 'v1', 
-        duration: '10:14', 
-        size: '52MB', 
-        watched: 541,
-        order: 1
-      },
-      { 
-        id: 'l2', 
-        title: 'The Ownership Model Explained', 
-        description: 'Breaking down Rust\'s ownership model in terms that JavaScript developers can understand.',
-        videoId: 'v2', 
-        duration: '23:05', 
-        size: '118MB', 
-        watched: 487,
-        order: 2
-      },
-      { 
-        id: 'l3', 
-        title: 'Error Handling in Rust', 
-        description: 'How Rust\'s error handling compares to JavaScript\'s try/catch and promise patterns.',
-        videoId: 'v3', 
-        duration: '18:42', 
-        size: '96MB', 
-        watched: 423,
-        order: 3
-      },
-    ]
-  },
-  '3': {
-    id: '3',
-    title: 'Building a Compiler from Scratch',
-    description: 'Learn how compilers work by building one from scratch. This course covers lexical analysis, parsing, semantic analysis, and code generation.',
-    price: 99.99,
-    students: 0,
-    revenue: 0,
-    rating: 0,
-    status: 'draft',
-    lessons: [
-      { 
-        id: 'l1', 
-        title: 'Compiler Fundamentals', 
-        description: 'An introduction to how compilers work and the major phases of compilation.',
-        videoId: 'v1', 
-        duration: '12:33', 
-        size: '64MB', 
-        watched: 0,
-        order: 1
-      },
-      { 
-        id: 'l2', 
-        title: 'Building a Lexical Analyzer', 
-        description: 'Creating a lexer that converts source code into a stream of tokens.',
-        videoId: 'v2', 
-        duration: '20:17', 
-        size: '104MB', 
-        watched: 0,
-        order: 2
-      },
-    ]
-  }
-};
-
-export default function CourseDetailsPage({ params }: { params: { id: string } | Promise<{ id: string }> }) {
-  // Unwrap params safely with React.use()
-  const resolvedParams = params instanceof Promise ? use(params) : params;
-  const courseId = resolvedParams.id;
+export default function CoursePage() {
+  const params = useParams();
+  const router = useRouter();
+  const courseId = Array.isArray(params.id) ? params.id[0] : params.id;
   
-  const [course, setCourse] = useState<Course | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Get state and actions from store
+  const {
+    course,
+    loading,
+    error,
+    expandedLessons,
+    fetchCourse,
+    toggleLesson,
+    deleteCourse,
+  } = useCourseDetailStore();
   
+  // Load course on component mount
   useEffect(() => {
-    // Simulate API fetch with timeout
-    setTimeout(() => {
-      setCourse(MOCK_COURSES[courseId] || null);
-      setLoading(false);
-    }, 500);
-  }, [courseId]);
+    if (courseId) {
+      fetchCourse(courseId);
+    }
+  }, [courseId, fetchCourse]);
   
+  // Debug course data
+  useEffect(() => {
+    if (course) {
+      console.log('DEBUG COURSE DETAIL:', JSON.stringify(course, null, 2));
+    }
+  }, [course]);
+  
+  const handleDeleteCourse = async () => {
+    if (confirm('Are you sure you want to delete this course? This action cannot be undone.')) {
+      const success = await deleteCourse();
+      if (success) {
+        router.push('/courses');
+      } else {
+        alert('Failed to delete course. Please try again.');
+      }
+    }
+  };
+
   if (loading) {
     return (
-      <div className="min-h-full w-full py-6 px-6 flex items-center justify-center">
-        <div className="animate-pulse text-neutral-500">Loading course details...</div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500"></div>
       </div>
     );
   }
   
-  if (!course) {
+  if (error || !course) {
     return (
-      <div className="min-h-full w-full py-6 px-6">
-        <div className="space-y-8">
-          <div className="flex flex-col space-y-1">
-            <div className="flex items-center space-x-2">
-              <Link href="/courses" className="text-neutral-500 hover:text-neutral-700">
-                <ArrowLeft className="h-4 w-4" />
-              </Link>
-              <h1 className="text-2xl font-semibold text-neutral-900">Course Not Found</h1>
-            </div>
-          </div>
-          
-          <div className="bg-red-50 border border-red-200 text-red-700 p-6 rounded-md">
-            The course you're looking for doesn't exist or you don't have access to it.
-          </div>
-          
-          <div>
+      <div className="min-h-full w-full py-12 px-6">
+        <div className="max-w-3xl mx-auto text-center">
+          <BookOpen className="h-16 w-16 mx-auto text-neutral-400 mb-6" />
+          <h1 className="text-2xl font-bold text-neutral-900 mb-3">Course Not Found</h1>
+          <p className="text-neutral-600 mb-8">
+            {error || "The course you're looking for doesn't exist or you don't have access to it."}
+          </p>
             <Link href="/courses">
-              <button className="px-4 py-2 bg-neutral-800 text-white rounded-md hover:bg-neutral-700">
+            <button className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700">
                 Return to Courses
               </button>
             </Link>
-          </div>
         </div>
       </div>
     );
   }
-  
+
   return (
     <div className="min-h-full w-full py-6 px-6">
-      <div className="space-y-8">
-        {/* Header */}
-        <div className="flex flex-col space-y-1">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center space-x-2">
+      <div className="max-w-5xl mx-auto space-y-8">
+        {/* Header with back button and actions */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
               <Link href="/courses" className="text-neutral-500 hover:text-neutral-700">
-                <ArrowLeft className="h-4 w-4" />
+              <ArrowLeft className="h-5 w-5" />
               </Link>
               <h1 className="text-2xl font-semibold text-neutral-900">{course.title}</h1>
-              
-              <span className={`ml-3 inline-flex rounded-full px-2 text-xs font-medium ${
-                course.status === 'published' 
-                  ? 'bg-emerald-100 text-emerald-800' 
-                  : 'bg-neutral-100 text-neutral-800'
-              }`}>
-                {course.status === 'published' ? 'Published' : 'Draft'}
+            <span className="px-2 py-1 text-xs rounded-full bg-neutral-100 capitalize">
+              {course.status}
               </span>
             </div>
+          
+          <div className="flex items-center space-x-3">
+            <button 
+              className="flex items-center space-x-2 px-3 py-2 border border-neutral-300 rounded-md hover:bg-neutral-50"
+              onClick={() => router.push(`/courses/${courseId}/edit`)}
+            >
+              <Edit className="h-4 w-4" />
+              <span>Edit</span>
+            </button>
             
-            <div>
-              <Link href={`/courses/${course.id}/edit`}>
-                <button className="flex items-center px-3 py-1.5 border border-neutral-300 text-neutral-700 rounded-md hover:bg-neutral-50 text-sm">
-                  <Settings className="h-3.5 w-3.5 mr-1.5" />
-                  Edit Course
+            <button 
+              className="flex items-center space-x-2 px-3 py-2 border border-red-300 text-red-600 rounded-md hover:bg-red-50"
+              onClick={handleDeleteCourse}
+            >
+              <Trash2 className="h-4 w-4" />
+              <span>Delete</span>
                 </button>
-              </Link>
-            </div>
           </div>
         </div>
         
-        {/* Course info */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="rounded-lg border border-neutral-200 bg-white overflow-hidden md:col-span-2">
-            <div className="border-b border-neutral-200 px-6 py-4">
-              <h3 className="text-md font-medium text-neutral-900">Course Information</h3>
-            </div>
-            <div className="p-6">
-              <h3 className="font-medium mb-2 text-neutral-900">Description</h3>
-              <p className="text-sm text-neutral-600 mb-6">{course.description}</p>
-              
-              <div className="border-t border-neutral-100 pt-6">
-                <h3 className="font-medium mb-4 text-neutral-900">Course Content</h3>
-                
-                <div className="space-y-4">
-                  {course.lessons.sort((a, b) => a.order - b.order).map((lesson) => (
-                    <div key={lesson.id} className="border border-neutral-200 rounded-lg overflow-hidden">
-                      <div className="bg-neutral-50 p-4 border-b border-neutral-200">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-2">
-                            <div className="h-7 w-7 rounded-full bg-neutral-200 flex items-center justify-center">
-                              <span className="text-xs font-medium text-neutral-700">{lesson.order}</span>
-                            </div>
-                            <h4 className="font-medium text-neutral-800">{lesson.title}</h4>
-                          </div>
-                          <div className="text-xs text-neutral-500">
-                            {lesson.duration}
-                          </div>
-                        </div>
-                        
-                        {lesson.description && (
-                          <p className="text-sm text-neutral-600 mt-2 pl-9">
-                            {lesson.description}
-                          </p>
-                        )}
-                      </div>
-                      
-                      <div className="p-4 flex items-center justify-between bg-white">
-                        <div className="flex items-center">
-                          <div className="h-8 w-8 rounded-full bg-neutral-100 flex items-center justify-center mr-3">
-                            <Play className="h-3.5 w-3.5 text-neutral-600" />
-                          </div>
-                          <div>
-                            <div className="text-sm font-medium">Video</div>
-                            <div className="text-xs text-neutral-500">
-                              {lesson.size}
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-center">
-                          {course.status === 'published' && (
-                            <div className="text-xs text-neutral-500 mr-4">
-                              {lesson.watched.toLocaleString()} views
-                            </div>
-                          )}
-                          
-                          <button className="text-neutral-400 hover:text-neutral-700">
-                            <Download className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="space-y-6">
-            {/* Stats */}
-            <div className="rounded-lg border border-neutral-200 bg-white overflow-hidden">
-              <div className="border-b border-neutral-200 px-6 py-4">
-                <h3 className="text-md font-medium text-neutral-900">Course Stats</h3>
-              </div>
-              <div className="p-6 space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <div className="h-7 w-7 rounded-full bg-blue-100 flex items-center justify-center">
-                      <Users className="h-3.5 w-3.5 text-blue-600" />
-                    </div>
-                    <span className="text-sm text-neutral-600">Students</span>
-                  </div>
-                  <span className="font-medium">{course.students}</span>
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <div className="h-7 w-7 rounded-full bg-emerald-100 flex items-center justify-center">
-                      <DollarSign className="h-3.5 w-3.5 text-emerald-600" />
-                    </div>
-                    <span className="text-sm text-neutral-600">Revenue</span>
-                  </div>
-                  <span className="font-medium">${course.revenue}</span>
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <div className="h-7 w-7 rounded-full bg-amber-100 flex items-center justify-center">
-                      <Star className="h-3.5 w-3.5 text-amber-600" />
-                    </div>
-                    <span className="text-sm text-neutral-600">Rating</span>
-                  </div>
-                  <span className="font-medium">
-                    {course.rating > 0 ? course.rating.toFixed(1) : '-'}
-                  </span>
-                </div>
-              </div>
+        {/* Course details */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* Left column - Course info */}
+          <div className="md:col-span-2 space-y-6">
+            {/* Course image */}
+            <div className="h-60 bg-neutral-100 rounded-lg flex items-center justify-center">
+              {course.imageUrl ? (
+                <img 
+                  src={course.imageUrl} 
+                  alt={course.title} 
+                  className="w-full h-full object-cover rounded-lg"
+                />
+              ) : (
+                <BookOpen className="h-16 w-16 text-neutral-400" />
+              )}
             </div>
             
-            {/* Price info */}
-            <div className="rounded-lg border border-neutral-200 bg-white overflow-hidden">
-              <div className="border-b border-neutral-200 px-6 py-4">
-                <h3 className="text-md font-medium text-neutral-900">Pricing</h3>
-              </div>
-              <div className="p-6 space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-neutral-600">Price</span>
-                  <span className="font-medium">${course.price.toFixed(2)}</span>
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-neutral-600">Potatix Fee (10%)</span>
-                  <span className="font-medium text-neutral-500">
-                    ${(course.price * 0.1).toFixed(2)}
-                  </span>
-                </div>
-                
-                <div className="pt-2 border-t border-neutral-100 flex items-center justify-between">
-                  <span className="text-sm font-medium">You receive</span>
-                  <span className="font-medium text-emerald-600">
-                    ${(course.price * 0.9).toFixed(2)}
-                  </span>
-                </div>
-              </div>
+            {/* Course description */}
+            <div className="bg-white border border-neutral-200 rounded-lg p-6">
+              <h2 className="text-lg font-medium text-neutral-900 mb-3">About this course</h2>
+              <p className="text-neutral-700 whitespace-pre-line">
+                {course.description || "No description provided."}
+              </p>
             </div>
             
-            {/* Course link */}
-            {course.status === 'published' && (
-              <div className="rounded-lg border border-neutral-200 bg-white overflow-hidden">
+            {/* Lesson list */}
+            {course.lessons && course.lessons.length > 0 && (
+              <div className="bg-white border border-neutral-200 rounded-lg">
                 <div className="border-b border-neutral-200 px-6 py-4">
-                  <h3 className="text-md font-medium text-neutral-900">Share Your Course</h3>
+                  <h2 className="text-lg font-medium text-neutral-900">Course Content</h2>
                 </div>
+                
                 <div className="p-6">
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={`https://potatix.io/c/${course.id}`}
-                      readOnly
-                      className="w-full pr-20 pl-3 py-2 border border-neutral-300 rounded-md bg-neutral-50 text-sm"
-                    />
-                    <button
-                      className="absolute right-1 top-1 px-3 py-1 bg-neutral-200 rounded text-xs font-medium"
-                      onClick={() => {
-                        navigator.clipboard.writeText(`https://potatix.io/c/${course.id}`);
-                        alert('Link copied to clipboard!');
-                      }}
-                    >
-                      Copy
-                    </button>
-                  </div>
+                  <ul className="space-y-4">
+                    {course.lessons.map((lesson, index) => (
+                      <li key={lesson.id} className="border border-neutral-200 rounded-lg p-4">
+                        <div className="flex items-center">
+                          <div className="mr-4 flex-shrink-0 text-neutral-500 text-sm">
+                            {index + 1}.
+                          </div>
+                          <div className="flex-grow">
+                            <h3 className="text-md font-medium text-neutral-900">{lesson.title}</h3>
+                            {lesson.description && (
+                              <p className="text-sm text-neutral-500 mt-1">{lesson.description}</p>
+                            )}
+                          </div>
+                          <div className="flex-shrink-0 ml-4">
+                            {lesson.videoId ? (
+                              <Play className="h-5 w-5 text-emerald-600" />
+                            ) : (
+                              <Lock className="h-5 w-5 text-neutral-400" />
+                            )}
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               </div>
             )}
+          </div>
+          
+          {/* Right column - Course sidebar */}
+          <div>
+            {/* Course stats */}
+            <div className="bg-white border border-neutral-200 rounded-lg p-6">
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-sm font-medium text-neutral-500">Price</h3>
+                  <p className="text-xl font-semibold text-neutral-900">${course.price.toFixed(2)}</p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-neutral-500">Status</h3>
+                  <p className="text-xl font-semibold text-neutral-900 capitalize">{course.status}</p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-neutral-500">Created</h3>
+                  <p className="text-xl font-semibold text-neutral-900">
+                    {new Date(course.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-neutral-500">Lessons</h3>
+                  <p className="text-xl font-semibold text-neutral-900">{course.lessons?.length || 0}</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
