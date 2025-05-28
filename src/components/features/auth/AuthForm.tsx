@@ -12,26 +12,16 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from 'sonner';
 import { authClient } from '@/lib/auth/auth-client';
-import { OTPForm } from './OTPForm';
 
-// Password regex patterns
-const CONTAINS_NUMBER = /.*[0-9].*/;
-const CONTAINS_UPPERCASE = /.*[A-Z].*/;
-const CONTAINS_LOWERCASE = /.*[a-z].*/;
-const CONTAINS_SPECIAL = /.*[^A-Za-z0-9].*/;
-
-// Form validation schema - updated to match backend requirements
+// Form validation schema that matches backend requirements
 const authSchema = z.object({
   name: z.string().optional(),
   email: z.string().email({
     message: "Invalid email address",
   }),
   password: z.string()
-    .min(12, { message: "Password must be at least 12 characters" })
-    .regex(CONTAINS_NUMBER, { message: "Password must contain at least one number" })
-    .regex(CONTAINS_UPPERCASE, { message: "Password must contain at least one uppercase letter" })
-    .regex(CONTAINS_LOWERCASE, { message: "Password must contain at least one lowercase letter" })
-    .regex(CONTAINS_SPECIAL, { message: "Password must contain at least one special character" }),
+    // 8 chars min to match Better Auth default config
+    .min(8, { message: "Password must be at least 8 characters" })
 });
 
 interface AuthFormProps {
@@ -43,8 +33,6 @@ export default function AuthForm({ isLoginMode = false, callbackUrl = '/dashboar
   const [isSignUp, setIsSignUp] = useState(!isLoginMode);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [needsVerification, setNeedsVerification] = useState(false);
-  const [userEmail, setUserEmail] = useState("");
   const router = useRouter();
 
   // Initialize the auth form with conditional schema based on login/signup mode
@@ -62,7 +50,7 @@ export default function AuthForm({ isLoginMode = false, callbackUrl = '/dashboar
       email: "",
       password: "",
     },
-    mode: "onBlur", // Validate on blur for better UX
+    mode: "onBlur",
   });
 
   const onSubmit = async (values: z.infer<typeof authSchema>) => {
@@ -71,97 +59,43 @@ export default function AuthForm({ isLoginMode = false, callbackUrl = '/dashboar
     try {
       if (isSignUp) {
         // Handle sign up
-        const response = await authClient.signUp.email({
+        const { data, error } = await authClient.signUp.email({
           name: values.name || values.email.split('@')[0],
-          email: values.email,
-          password: values.password,
-        });
-        
-        if (response.error) {
-          // Better detailed error handling
-          const errorMsg = response.error.message || 
-            response.error.code === "email_exists" ? "Email already in use" :
-            response.error.code === "invalid_credentials" ? "Invalid email or password" :
-            response.error.code === "password_too_weak" ? "Password doesn't meet security requirements" :
-            "Failed to create account";
-          
-          throw new Error(errorMsg);
-        }
-
-        // Store email for verification
-        setUserEmail(values.email);
-        setNeedsVerification(true);
-      } else {
-        // Handle sign in
-        const response = await authClient.signIn.email({
           email: values.email,
           password: values.password,
           callbackURL: callbackUrl,
         });
         
-        if (response.error) {
-          const errorMsg = response.error.message ||
-            response.error.code === "invalid_credentials" ? "Invalid email or password" :
-            response.error.code === "not_verified" ? "Email not verified" :
-            response.error.code === "rate_limited" ? "Too many attempts, please try again later" :
-            response.error.code === "account_locked" ? "Account temporarily locked for security" :
-            "Failed to sign in";
-            
-          throw new Error(errorMsg);
+        if (error) {
+          throw new Error(error.message || "Failed to create account");
+        }
+
+        // Better Auth handles email verification and auto-signin
+        // Just redirect or show success
+        toast.success("Account created successfully");
+        router.push(callbackUrl);
+      } else {
+        // Handle sign in
+        const { data, error } = await authClient.signIn.email({
+          email: values.email,
+          password: values.password,
+          callbackURL: callbackUrl,
+        });
+        
+        if (error) {
+          throw new Error(error.message || "Authentication failed");
         }
         
         // Successful login
         router.push(callbackUrl);
       }
     } catch (error: any) {
-      // Enhanced error logging and user feedback
-      const errorMessage = error.message || "Authentication failed";
-      console.error("Auth error:", JSON.stringify(error, null, 2));
-      toast.error(errorMessage);
+      console.error("Auth error:", error);
+      toast.error(error.message || "Authentication failed");
     } finally {
       setIsLoading(false);
     }
   };
-
-  // When verification is needed, show OTP verification UI
-  if (needsVerification) {
-    return (
-      <div className="w-full">
-        <div className="mb-6 flex flex-col items-center justify-center">
-          <Image 
-            src="/potatix-logo.svg" 
-            alt="Potatix Logo" 
-            width={130} 
-            height={36} 
-            className="h-9 w-auto mb-4"
-            priority
-          />
-          <h2 className="text-2xl font-bold text-center text-gray-900">
-            Verify your email
-          </h2>
-          <p className="text-sm text-center text-gray-600 mt-1">
-            Complete verification to activate your account
-          </p>
-        </div>
-        
-        <OTPForm 
-          prefillEmail={userEmail}
-          otpType="email-verification"
-          hideHeader={true}
-          callbackUrl={callbackUrl}
-          onSuccess={() => {
-            toast.success("Account created successfully!");
-            router.push(callbackUrl);
-          }}
-          onCancel={() => {
-            setNeedsVerification(false);
-            setIsSignUp(false);
-            form.reset();
-          }}
-        />
-      </div>
-    );
-  }
 
   return (
     <div className="w-full">
@@ -267,7 +201,7 @@ export default function AuthForm({ isLoginMode = false, callbackUrl = '/dashboar
                 </div>
                 {isSignUp && (
                   <div className="text-xs text-gray-500 mt-1">
-                    Password must be at least 12 characters and include uppercase, lowercase, numbers, and special characters.
+                    Password must be at least 8 characters.
                   </div>
                 )}
                 <FormMessage className="text-xs" />

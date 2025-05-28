@@ -1,23 +1,9 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { emailOTP } from "better-auth/plugins";
-import { sendOTPEmail } from "@/lib/auth/email";
 import { db, authSchema } from "@/db";
 
-// Validate environment vars early to avoid runtime issues
-if (!process.env.BETTER_AUTH_SECRET) {
-  throw new Error("BETTER_AUTH_SECRET environment variable is required");
-}
-
-if (!process.env.NEXT_PUBLIC_APP_URL) {
-  console.warn("NEXT_PUBLIC_APP_URL not set. Using localhost as fallback.");
-}
-
-/**
- * Server-side auth configuration with minimal options to avoid errors
- */
 export const auth = betterAuth({
-  // Use drizzle adapter with minimal config
+  // Database adapter configuration
   database: drizzleAdapter(db, {
     provider: "pg",
     schema: {
@@ -28,58 +14,31 @@ export const auth = betterAuth({
     }
   }),
   
-  // Basic config
-  config: {
-    siteName: "Potatix",
-    siteUrl: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
-    session: {
-      strategy: "jwt",
-      maxAge: 7 * 24 * 60 * 60, // 7 days
-    },
-    paths: {
-      signIn: '/login',
-      signUp: '/signup',
-      error: '/login',
-      verifyEmail: '/login',
-      newUser: '/dashboard'
-    }
+  // Site configuration
+  siteName: "Potatix.com",
+  siteUrl: process.env.NEXT_PUBLIC_APP_URL,
+  
+  // Session configuration - using default cookie-based sessions
+  session: {
+    expiresIn: 7 * 24 * 60 * 60, // 7 days
+    updateAge: 24 * 60 * 60, // 1 day
   },
   
-  // Basic email & password authentication
+  // URL paths
+  paths: {
+    signIn: '/login',
+    signUp: '/signup',
+    error: '/login',
+    verifyEmail: '/login',
+    newUser: '/dashboard'
+  },
+  
+  // Auth methods
   emailAndPassword: {
     enabled: true,
-    minPasswordLength: 12,
-    autoSignIn: false,
+    minPasswordLength: 8
   },
   
-  // Email OTP plugin for verification
-  plugins: [
-    emailOTP({
-      sendVerificationOnSignUp: true,
-      async sendVerificationOTP({ email, otp, type }) {
-        try {
-          const emailType = type === 'sign-in' 
-            ? 'sign-in' 
-            : type === 'email-verification'
-              ? 'email-verification'
-              : 'password-reset';
-          
-          await sendOTPEmail({
-            to: email,
-            emailType,
-            otp,
-            expiresIn: "5 minutes"
-          });
-        } catch (error) {
-          console.error("Failed to send OTP email:", error);
-          throw new Error("Failed to send verification code");
-        }
-      },
-      otpLength: 6,
-      expiresIn: 300,
-    })
-  ],
-  
-  // Secret
+  // Secret for encryption
   secret: process.env.BETTER_AUTH_SECRET,
 });
