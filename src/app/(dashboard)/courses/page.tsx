@@ -1,12 +1,14 @@
 'use client';
 
 import { useEffect } from 'react';
-import Link from 'next/link';
-import { PlusCircle, Loader2, BookOpen, RefreshCcw, ArrowUpRight } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { PlusCircle, Loader2, BookOpen, RefreshCcw } from 'lucide-react';
 import { useCoursesListStore } from '@/lib/stores/coursesListStore';
 import { CourseCard } from '@/components/features/courses/CourseCard';
+import { Button } from '@/components/ui/potatix/Button';
 
 export default function CoursesPage() {
+  const router = useRouter();
   // Get state and actions from store
   const {
     courses,
@@ -21,106 +23,108 @@ export default function CoursesPage() {
   }, [fetchCourses]);
   
   return (
-    <div className="min-h-full w-full py-12 px-8 max-w-7xl mx-auto">
+    <div className="max-w-5xl mx-auto px-4 py-6">
       {/* Header Section */}
-      <header className="mb-10 border-b border-neutral-200 pb-6">
+      <header className="mb-6 border-b border-slate-200 pb-5">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-neutral-900">
+            <h1 className="text-xl font-medium text-slate-900">
               Courses
             </h1>
-            <p className="mt-1 text-neutral-500 max-w-2xl">
+            <p className="mt-1 text-sm text-slate-600 max-w-2xl">
               Create and manage your course content. Each course can contain multiple lessons with videos.
             </p>
           </div>
           
-          <Link 
-            href="/courses/new"
-            className="group flex items-center gap-2 px-5 py-2.5 bg-black text-white font-medium rounded-md hover:bg-neutral-800 transition-colors self-start md:self-center"
+          <Button
+            type="primary"
+            size="small"
+            icon={<PlusCircle className="h-3.5 w-3.5" />}
+            onClick={() => router.push('/courses/new')}
           >
-            <PlusCircle className="h-4 w-4" />
-            <span>New Course</span>
-            <ArrowUpRight className="h-3.5 w-3.5 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200" />
-          </Link>
+            New Course
+          </Button>
         </div>
       </header>
 
       {/* Loading State */}
       {loading && (
-        <div className="flex items-center justify-center py-32">
-          <div className="flex flex-col items-center">
-            <Loader2 className="h-10 w-10 animate-spin text-neutral-300 mb-4" />
-            <p className="text-neutral-500 animate-pulse">Loading your courses...</p>
-          </div>
+        <div className="flex flex-col items-center justify-center py-16">
+          <Loader2 className="h-5 w-5 animate-spin text-slate-400 mb-3" />
+          <p className="text-sm text-slate-500">Loading courses...</p>
         </div>
       )}
 
       {/* Error State */}
       {!loading && error && (
-        <div className="bg-red-50 border-l-4 border-red-500 p-8 rounded-md my-8">
-          <div className="flex flex-col items-center text-center">
-            <p className="text-red-700 mb-4 font-medium">{error}</p>
-            <p className="text-red-600 mb-6 max-w-md">
-              We couldn't load your courses. This could be due to a network issue or server problem.
-            </p>
-            <button 
-              onClick={fetchCourses}
-              className="px-5 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors flex items-center gap-2"
-            >
-              <RefreshCcw className="h-4 w-4" />
-              <span>Try Again</span>
-            </button>
+        <div className="border border-red-200 bg-red-50 rounded-md p-4 my-6">
+          <div className="flex gap-3">
+            <RefreshCcw className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
+            <div>
+              <h3 className="text-sm font-medium text-red-800 mb-1">{error}</h3>
+              <p className="text-sm text-red-600 mb-3">
+                We couldn't load your courses. This could be due to a network issue or server problem.
+              </p>
+              <Button 
+                type="danger"
+                size="small"
+                onClick={fetchCourses}
+              >
+                Try Again
+              </Button>
+            </div>
           </div>
         </div>
       )}
 
       {/* Empty State */}
       {!loading && !error && courses.length === 0 && (
-        <div className="mt-12 border-2 border-dashed border-neutral-200 rounded-lg p-12 bg-neutral-50">
+        <div className="border border-dashed border-slate-200 rounded-md p-8 bg-slate-50 my-6">
           <div className="max-w-md mx-auto text-center">
-            <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-neutral-100 mb-6">
-              <BookOpen className="h-8 w-8 text-neutral-500" />
+            <div className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 mb-4">
+              <BookOpen className="h-5 w-5 text-slate-500" />
             </div>
             
-            <h3 className="text-xl font-semibold text-neutral-900 mb-2">No courses yet</h3>
+            <h3 className="text-sm font-medium text-slate-900 mb-2">No courses yet</h3>
             
-            <p className="text-neutral-500 mb-8">
+            <p className="text-sm text-slate-500 mb-6">
               Get started by creating your first course. Add lessons, upload videos, and share your knowledge.
             </p>
             
-            <Link 
-              href="/courses/new" 
-              className="inline-flex items-center gap-2 px-5 py-3 bg-black text-white font-medium rounded-md hover:bg-neutral-800 transition-colors"
+            <Button
+              type="primary"
+              size="small"
+              icon={<PlusCircle className="h-3.5 w-3.5" />}
+              onClick={() => router.push('/courses/new')}
             >
-              <PlusCircle className="h-5 w-5" />
-              <span>Create Your First Course</span>
-            </Link>
+              Create Your First Course
+            </Button>
           </div>
         </div>
       )}
 
       {/* Course Grid */}
       {!loading && !error && courses.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {courses.map(course => (
             <CourseCard key={course.id} course={course} />
           ))}
           
           {/* "Create New" Card */}
-          <Link 
-            href="/courses/new"
-            className="group flex flex-col items-center justify-center p-8 border-2 border-dashed border-neutral-200 rounded-lg bg-neutral-50 hover:bg-neutral-100 hover:border-neutral-300 transition-all min-h-[240px]"
+          <div 
+            onClick={() => router.push('/courses/new')}
+            className="cursor-pointer group flex flex-col items-center justify-center p-6 border border-dashed border-slate-200 rounded-md bg-slate-50 hover:bg-slate-100 hover:border-slate-300 transition-all min-h-[220px]"
           >
             <div className="flex flex-col items-center text-center">
-              <div className="h-12 w-12 bg-black rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <PlusCircle className="h-6 w-6 text-white" />
+              <div className="h-10 w-10 bg-emerald-600 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                <PlusCircle className="h-5 w-5 text-white" />
               </div>
-              <h3 className="text-lg font-medium text-neutral-900 mb-1">Create a new course</h3>
-              <p className="text-sm text-neutral-500">
+              <h3 className="text-sm font-medium text-slate-900 mb-1">Create a new course</h3>
+              <p className="text-xs text-slate-500">
                 Add another course to your catalog
               </p>
             </div>
-          </Link>
+          </div>
         </div>
       )}
     </div>

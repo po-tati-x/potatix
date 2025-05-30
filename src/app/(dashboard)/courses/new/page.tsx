@@ -1,11 +1,11 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
-import Link from 'next/link';
+import { ArrowLeft, Plus, Save } from 'lucide-react';
 import { CourseForm } from '@/components/features/courses/CourseForm';
 import { CourseLessonEditor } from '@/components/features/courses/DraggableLessonList';
 import { useCourseStore } from '@/lib/stores/courseStore';
+import { Button } from '@/components/ui/potatix/Button';
 
 export default function NewCoursePage() {
   const router = useRouter();
@@ -49,49 +49,69 @@ export default function NewCoursePage() {
   };
   
   return (
-    <div className="min-h-full w-full py-6 px-6">
-      <div className="space-y-8">
-        {/* Header */}
-        <div className="flex flex-col space-y-1">
-          <div className="flex items-center space-x-2">
-            <Link href="/courses" className="text-neutral-500 hover:text-neutral-700">
-              <ArrowLeft className="h-4 w-4" />
-            </Link>
-            <h1 className="text-2xl font-semibold text-neutral-900">Create New Course</h1>
+    <div className="max-w-5xl mx-auto px-4 py-6">
+      {/* Back button */}
+      <div className="mb-6">
+        <Button
+          type="text"
+          size="tiny"
+          icon={
+            <span className="transition-transform duration-200 group-hover:-translate-x-0.5">
+              <ArrowLeft className="h-3 w-3" />
+            </span>
+          }
+          className="text-slate-500 hover:text-slate-900 group"
+          onClick={() => router.push('/courses')}
+        >
+          Back to courses
+        </Button>
+      </div>
+      
+      {/* Header */}
+      <header className="mb-6 border-b border-slate-200 pb-5">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-xl font-medium text-slate-900">Create New Course</h1>
+            <p className="mt-1 text-sm text-slate-600">
+              Upload videos, set a price, and start selling
+            </p>
           </div>
-          <p className="pl-6 text-sm text-neutral-500">
-            Upload videos, set a price, and start selling
-          </p>
         </div>
+      </header>
+      
+      {/* Course form */}
+      <form onSubmit={handleSubmit} className="space-y-5">
+        {/* Course Details */}
+        <CourseForm 
+          title={title}
+          description={description}
+          price={price}
+          imageUrl={imageUrl}
+          onTitleChange={setTitle}
+          onDescriptionChange={setDescription}
+          onPriceChange={setPrice}
+          onImageUploaded={setImageUrl}
+          onImageRemoved={() => setImageUrl(null)}
+        />
         
-        {/* Course form */}
-        <form onSubmit={handleSubmit} className="space-y-8">
-          {/* Course Details */}
-          <CourseForm 
-            title={title}
-            description={description}
-            price={price}
-            imageUrl={imageUrl}
-            onTitleChange={setTitle}
-            onDescriptionChange={setDescription}
-            onPriceChange={setPrice}
-            onImageUploaded={setImageUrl}
-            onImageRemoved={() => setImageUrl(null)}
-          />
+        {/* Lessons Section */}
+        <div className="border border-slate-200 rounded-md overflow-hidden bg-white">
+          <div className="border-b border-slate-200 px-4 py-2.5 bg-slate-50 flex items-center justify-between">
+            <div>
+              <h2 className="text-sm font-medium text-slate-900">Course Content</h2>
+              <p className="text-xs text-slate-500 mt-0.5">Add lessons and organize your course content</p>
+            </div>
+            <Button 
+              type="primary"
+              size="small"
+              icon={<Plus className="h-3.5 w-3.5" />}
+              onClick={addLesson}
+            >
+              Add Lesson
+            </Button>
+          </div>
           
-          {/* Lessons Section */}
-          <section>
-            <header className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-medium text-neutral-900">Course Content</h2>
-              <button 
-                type="button"
-                onClick={addLesson}
-                className="px-3 py-1 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 text-sm"
-              >
-                Add Lesson
-              </button>
-            </header>
-            
+          <div className="p-4">
             <CourseLessonEditor
               lessons={lessons}
               onUpdateLesson={updateLesson}
@@ -99,30 +119,32 @@ export default function NewCoursePage() {
               onReorder={reorderLessons}
               onFileChange={handleFileChange}
               onFileRemove={removeFile}
+              addLesson={addLesson}
             />
-          </section>
-          
-          {/* Action buttons */}
-          <div className="flex justify-end space-x-4">
-            <Link href="/courses">
-              <button
-                type="button"
-                className="px-4 py-2 border border-neutral-300 text-neutral-700 rounded-md hover:bg-neutral-50"
-              >
-                Cancel
-              </button>
-            </Link>
-            
-            <button
-              type="submit"
-              className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 flex items-center"
-              disabled={uploading || submitting || lessons.length === 0}
-            >
-              {uploading ? 'Uploading...' : submitting ? 'Creating...' : 'Create Course'}
-            </button>
           </div>
-        </form>
-      </div>
+        </div>
+        
+        {/* Action buttons */}
+        <div className="flex justify-end items-center gap-3 pt-3">
+          <Button
+            type="outline"
+            size="small"
+            onClick={() => router.push('/courses')}
+          >
+            Cancel
+          </Button>
+          
+          <Button
+            type="primary"
+            size="small"
+            icon={<Save className="h-3.5 w-3.5" />}
+            disabled={uploading || submitting || !title || lessons.length === 0}
+            onClick={handleSubmit}
+          >
+            {submitting ? 'Creating...' : 'Create Course'}
+          </Button>
+        </div>
+      </form>
     </div>
   );
 } 

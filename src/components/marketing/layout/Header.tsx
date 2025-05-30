@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Menu, X, ChevronDown, Sparkles } from "lucide-react";
+import { Menu, X, ChevronDown, Sparkles, LayoutDashboard } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePathname, useRouter } from "next/navigation";
+import { Button } from "@/components/ui/potatix/Button";
+import { authClient } from "@/lib/auth/auth-client";
 
 // Types
 type NavItem = {
@@ -23,217 +25,57 @@ const navItems: NavItem[] = [
   { title: "FAQ", href: "#faq" },
 ];
 
-// Submenu component
-function Submenu({ item, scrolled }: { item: NavItem; scrolled: boolean }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const router = useRouter();
-
-  const handleItemClick = (href: string) => {
-    setIsOpen(false);
-    if (href.startsWith('#')) {
-      const element = document.getElementById(href.substring(1));
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    } else {
-      router.push(href);
-    }
-  };
-
-  return (
-    <div className="relative" onMouseEnter={() => setIsOpen(true)} onMouseLeave={() => setIsOpen(false)}>
-      <button
-        className={cn(
-          "flex items-center font-medium px-4 py-1.5 rounded-md transition-colors w-full justify-between",
-          isOpen
-            ? "text-emerald-600 bg-white/90" 
-            : scrolled
-              ? "text-gray-800 hover:text-emerald-700 hover:bg-white/80"
-              : "text-gray-800 hover:text-emerald-700 hover:bg-white/30"
-        )}
-        aria-expanded={isOpen}
-        onClick={() => handleItemClick(item.href)}
-      >
-        {item.title}
-        <ChevronDown className={cn("ml-1 w-4 h-4 transition-transform duration-150", isOpen ? "rotate-180" : "")} />
-      </button>
-      
-      {isOpen && (
-        <div 
-          className="absolute top-full left-0 w-56 bg-white/95 backdrop-blur-sm rounded-lg py-2 mt-1 z-50 shadow-lg border border-gray-100 animate-in fade-in slide-in-from-top-1 duration-150"
-        >
-          {item.subItems?.map((subItem) => (
-            <button
-              key={subItem.title}
-              className="block w-full text-left px-4 py-1.5 text-gray-700 hover:text-emerald-700 hover:bg-gray-50 transition-colors rounded-md mx-1"
-              onClick={() => handleItemClick(subItem.href)}
-            >
-              {subItem.title}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// NavLink component
-function NavLink({ item, scrolled, isLoginPage }: { item: NavItem; scrolled: boolean; isLoginPage: boolean }) {
-  const router = useRouter();
-  
-  const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    if (isLoginPage) return;
-    e.preventDefault();
-    
-    if (item.href.startsWith('#')) {
-      const element = document.getElementById(item.href.substring(1));
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    } else {
-      router.push(item.href);
-    }
-  };
-
-  return (
-    <Link
-      href={isLoginPage ? `/${item.href}` : item.href}
-      className={cn(
-        "flex items-center font-medium px-4 py-1.5 rounded-md transition-colors",
-        scrolled
-          ? "text-gray-800 hover:text-emerald-700 hover:bg-white/90"
-          : "text-gray-800 hover:text-emerald-700 hover:bg-white/30"
-      )}
-      onClick={handleClick}
-    >
-      {item.title}
-    </Link>
-  );
-}
-
-// MobileNavItem component
-function MobileNavItem({ item, onItemClick }: { item: NavItem; onItemClick: (href: string) => void }) {
-  const [isOpen, setIsOpen] = useState(false);
-  
-  if (!item.submenu) {
-    return (
-      <li>
-        <button
-          onClick={() => onItemClick(item.href)}
-          className="flex items-center w-full px-4 py-1.5 text-gray-800 hover:text-emerald-700 hover:bg-emerald-50 rounded-md transition-colors font-medium"
-        >
-          {item.title}
-        </button>
-      </li>
-    );
-  }
-  
-  return (
-    <li>
-      <div className="w-full">
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          className={cn(
-            "flex items-center justify-between w-full px-4 py-1.5 rounded-md font-medium",
-            isOpen ? "text-emerald-600 bg-emerald-50" : "text-gray-800"
-          )}
-          aria-expanded={isOpen}
-        >
-          {item.title}
-          <ChevronDown className={cn("w-4 h-4 transition-transform duration-150", isOpen ? "rotate-180" : "")} />
-        </button>
-        
-        {isOpen && (
-          <div className="pl-4 mt-1 space-y-1 border-l-2 border-emerald-100 ml-3 animate-in slide-in-from-top-1 duration-150">
-            {item.subItems?.map((subItem) => (
-              <button
-                key={subItem.title}
-                className="block w-full text-left px-4 py-1.5 text-gray-700 hover:text-emerald-700 hover:bg-emerald-50 rounded-md transition-colors"
-                onClick={() => onItemClick(subItem.href)}
-              >
-                {subItem.title}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-    </li>
-  );
-}
-
-// MobileMenu component
-function MobileMenu({ isOpen, onLinkClick, isLoginPage }: { 
-  isOpen: boolean; 
-  onLinkClick: (href: string) => void;
-  isLoginPage: boolean;
-}) {
-  if (!isOpen) return null;
-  
-  return (
-    <div className="md:hidden bg-white/95 backdrop-blur-md absolute inset-x-0 top-full mt-2 rounded-lg shadow-lg overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-      <div className="p-3">
-        <ul className="space-y-1">
-          {navItems.map((item) => (
-            <MobileNavItem key={item.title} item={item} onItemClick={onLinkClick} />
-          ))}
-        </ul>
-        {!isLoginPage && (
-          <div className="mt-3 pt-3 border-t border-gray-100">
-            <Link
-              href="/login"
-              className="flex items-center font-medium transition-all px-4 py-1.5 rounded-md justify-center w-full bg-emerald-600 text-white hover:bg-emerald-700"
-              onClick={() => onLinkClick("/login")}
-            >
-              <Sparkles className="w-4 h-4 mr-1.5 opacity-80" />
-              <span>Login</span>
-            </Link>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
 // Main Header component
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   
   const isLoginPage = pathname === '/login';
   
+  // Check auth status
+  useEffect(() => {
+    const checkAuthStatus = async () => {
+      try {
+        const { data } = await authClient.getSession();
+        setIsLoggedIn(!!data);
+      } catch (error) {
+        setIsLoggedIn(false);
+      }
+    };
+    
+    checkAuthStatus();
+  }, []);
+
   // Handle scroll effect
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 10);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
-  
-  // Handle click outside to close menu
+
+  // Close menu on click outside
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (isMenuOpen && !(e.target as Element).closest('nav')) {
-        setIsMenuOpen(false);
-      }
+    if (!isMenuOpen) return;
+    
+    const closeMenu = (e: MouseEvent) => {
+      if (!(e.target as Element).closest('nav')) setIsMenuOpen(false);
     };
     
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('mousedown', closeMenu);
+    const handleEsc = (e: KeyboardEvent) => e.key === 'Escape' && setIsMenuOpen(false);
+    document.addEventListener('keydown', handleEsc);
+    
+    return () => {
+      document.removeEventListener('mousedown', closeMenu);
+      document.removeEventListener('keydown', handleEsc);
+    };
   }, [isMenuOpen]);
   
-  // Handle escape key
-  useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setIsMenuOpen(false);
-    };
-    
-    document.addEventListener('keydown', handleEsc);
-    return () => document.removeEventListener('keydown', handleEsc);
-  }, []);
-  
-  // Handle navigation
-  const handleNavigation = useCallback((href: string) => {
+  // Handle navigation and smooth scrolling
+  const handleNavigation = (href: string) => {
     setIsMenuOpen(false);
     
     if (href.startsWith('#')) {
@@ -253,21 +95,21 @@ export default function Header() {
     } else {
       router.push(href);
     }
-  }, [isLoginPage, router]);
+  };
   
   return (
-    <div className="w-full flex justify-center fixed top-0 left-0 right-0 z-50 px-4 pt-3">
+    <div className="fixed inset-x-0 top-0 z-50 flex justify-center px-4 pt-3">
       <nav
         className={cn(
-          "relative w-full max-w-5xl transition-all duration-300",
-          scrolled ? "bg-white/80 backdrop-blur-md shadow-sm rounded-xl py-1.5" : "bg-transparent py-2"
+          "relative w-full max-w-5xl transition-all duration-300 rounded-md px-4",
+          scrolled ? "bg-white/80 backdrop-blur-md shadow-sm py-1.5" : "bg-transparent py-2"
         )}
       >
-        <div className="px-4 flex items-center justify-between">
+        <div className="flex items-center justify-between">
           {/* Logo */}
           <Link 
             href="/" 
-            className="flex items-center z-10 relative" 
+            className="relative z-10 flex items-center" 
             aria-label="Potatix homepage"
           >
             <Image 
@@ -281,53 +123,228 @@ export default function Header() {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center">
-            <ul className="flex items-center space-x-4">
-              {navItems.map((item) => (
-                <li key={item.title} className="relative">
-                  {item.submenu ? 
-                    <Submenu item={item} scrolled={scrolled} /> : 
-                    <NavLink item={item} scrolled={scrolled} isLoginPage={isLoginPage} />
-                  }
-                </li>
-              ))}
-            </ul>
+          <div className="hidden md:flex items-center space-x-4">
+            {navItems.map((item) => (
+              <NavItem 
+                key={item.title} 
+                item={item} 
+                scrolled={scrolled}
+                isLoginPage={isLoginPage}
+                onNavigate={handleNavigation}
+              />
+            ))}
+            
             {!isLoginPage && (
-              <div className="ml-4">
-                <Link
-                  href="/login"
-                  className={cn(
-                    "flex items-center font-medium transition-all px-4 py-1.5 rounded-md group",
-                    scrolled
-                      ? "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm hover:shadow-md"
-                      : "bg-white/30 text-gray-800 hover:bg-white/50"
-                  )}
-                  aria-label="Login to your account"
-                >
-                  <Sparkles className={cn("w-4 h-4 mr-1.5", scrolled ? "opacity-80" : "opacity-60")} />
-                  <span>Login</span>
-                </Link>
-              </div>
+              <Button
+                type={scrolled ? "primary" : "text"}
+                size="small"
+                icon={isLoggedIn ? <LayoutDashboard className="h-4 w-4" /> : <Sparkles className="h-4 w-4 opacity-80" />}
+                onClick={() => router.push(isLoggedIn ? "/dashboard" : "/login")}
+                className={scrolled ? "" : "bg-white/30 hover:bg-white/50 text-slate-800"}
+              >
+                {isLoggedIn ? "Dashboard" : "Login"}
+              </Button>
             )}
           </div>
 
           {/* Mobile Menu Button */}
-          <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
+          <Button
+            type="text"
+            size="small"
             className={cn(
-              "md:hidden flex items-center justify-center px-4 py-1.5 transition-colors z-50 rounded-md",
-              scrolled ? "bg-white/70 hover:bg-white/90 text-gray-800" : "bg-white/20 hover:bg-white/40 text-gray-800"
+              "md:hidden",
+              scrolled 
+                ? "bg-white/70 hover:bg-white/90" 
+                : "bg-white/20 hover:bg-white/40"
             )}
+            icon={isMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
             aria-label={isMenuOpen ? "Close menu" : "Open menu"}
             aria-expanded={isMenuOpen}
-          >
-            {isMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
-          </button>
+          />
         </div>
 
-        {/* Mobile Navigation */}
-        <MobileMenu isOpen={isMenuOpen} onLinkClick={handleNavigation} isLoginPage={isLoginPage} />
+        {/* Mobile Menu */}
+        {isMenuOpen && (
+          <div className="absolute inset-x-0 top-full mt-2 animate-in fade-in slide-in-from-top-2 duration-200 rounded-md bg-white/95 backdrop-blur-md shadow-lg overflow-hidden md:hidden">
+            <div className="p-3 space-y-1">
+              {navItems.map((item) => (
+                <MobileNavItem 
+                  key={item.title} 
+                  item={item} 
+                  onNavigate={handleNavigation} 
+                />
+              ))}
+              
+              {!isLoginPage && (
+                <div className="border-t border-slate-100 mt-3 pt-3">
+                  <Button
+                    type="primary" 
+                    size="small"
+                    block
+                    icon={isLoggedIn ? <LayoutDashboard className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
+                    onClick={() => handleNavigation(isLoggedIn ? "/dashboard" : "/login")}
+                  >
+                    {isLoggedIn ? "Dashboard" : "Login"}
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </nav>
+    </div>
+  );
+}
+
+// NavItem component
+function NavItem({ 
+  item, 
+  scrolled, 
+  isLoginPage,
+  onNavigate 
+}: { 
+  item: NavItem; 
+  scrolled: boolean;
+  isLoginPage: boolean;
+  onNavigate: (href: string) => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  
+  if (!item.submenu) {
+    return (
+      <Button
+        type="text"
+        size="small"
+        onClick={() => onNavigate(item.href)}
+        className={cn(
+          scrolled
+            ? "hover:bg-white/90 hover:text-emerald-700"
+            : "bg-transparent hover:bg-white/30 hover:text-emerald-700"
+        )}
+      >
+        {item.title}
+      </Button>
+    );
+  }
+
+  return (
+    <div 
+      className="relative" 
+      onMouseEnter={() => setIsOpen(true)} 
+      onMouseLeave={() => setIsOpen(false)}
+    >
+      <Button
+        type="text"
+        size="small"
+        onClick={() => onNavigate(item.href)}
+        className={cn(
+          "justify-between",
+          isOpen
+            ? "bg-white/90 text-emerald-600" 
+            : scrolled
+              ? "hover:bg-white/80 hover:text-emerald-700"
+              : "bg-transparent hover:bg-white/30 hover:text-emerald-700"
+        )}
+        iconRight={
+          <ChevronDown 
+            className={cn(
+              "h-4 w-4 transition-transform duration-150", 
+              isOpen ? "rotate-180" : ""
+            )} 
+          />
+        }
+        aria-expanded={isOpen}
+      >
+        {item.title}
+      </Button>
+      
+      {isOpen && (
+        <div className="absolute left-0 top-full z-50 mt-1 w-56 animate-in fade-in slide-in-from-top-1 duration-150 rounded-md border border-slate-100 bg-white/95 py-2 shadow-lg backdrop-blur-sm">
+          {item.subItems?.map((subItem) => (
+            <Button
+              key={subItem.title}
+              type="text"
+              size="small"
+              className="mx-1 w-[calc(100%-0.5rem)] justify-start hover:bg-slate-50 hover:text-emerald-700"
+              onClick={() => {
+                onNavigate(subItem.href);
+                setIsOpen(false);
+              }}
+            >
+              {subItem.title}
+            </Button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Mobile nav item component
+function MobileNavItem({ 
+  item, 
+  onNavigate 
+}: { 
+  item: NavItem; 
+  onNavigate: (href: string) => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  
+  if (!item.submenu) {
+    return (
+      <Button
+        type="text"
+        size="small"
+        block
+        onClick={() => onNavigate(item.href)}
+        className="justify-start hover:bg-emerald-50 hover:text-emerald-700"
+      >
+        {item.title}
+      </Button>
+    );
+  }
+  
+  return (
+    <div className="w-full">
+      <Button
+        type={isOpen ? "text" : "text"}
+        size="small"
+        block
+        onClick={() => setIsOpen(!isOpen)}
+        className={cn(
+          "justify-between",
+          isOpen ? "bg-emerald-50 text-emerald-600" : ""
+        )}
+        iconRight={
+          <ChevronDown 
+            className={cn(
+              "h-4 w-4 transition-transform duration-150", 
+              isOpen ? "rotate-180" : ""
+            )} 
+          />
+        }
+        aria-expanded={isOpen}
+      >
+        {item.title}
+      </Button>
+      
+      {isOpen && (
+        <div className="ml-3 mt-1 animate-in slide-in-from-top-1 duration-150 space-y-1 border-l-2 border-emerald-100 pl-4">
+          {item.subItems?.map((subItem) => (
+            <Button
+              key={subItem.title}
+              type="text"
+              size="small"
+              block
+              className="justify-start hover:bg-emerald-50 hover:text-emerald-700"
+              onClick={() => onNavigate(subItem.href)}
+            >
+              {subItem.title}
+            </Button>
+          ))}
+        </div>
+      )}
     </div>
   );
 } 

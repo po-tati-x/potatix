@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Save, User, Shield, Bell, CreditCard, LogOut, Loader2, AlertTriangle } from 'lucide-react';
+import { Save, User, Shield, Bell, CreditCard, LogOut, Loader2, AlertTriangle, ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/potatix/Button';
 
 // Form field component
 const FormField = ({ 
@@ -16,14 +17,14 @@ const FormField = ({
   required?: boolean;
   description?: string;
 }) => (
-  <div className="space-y-2">
-    <label className="block text-sm font-medium text-neutral-700">
+  <div className="space-y-1.5">
+    <label className="block text-sm font-medium text-slate-700">
       {label}
       {required && <span className="text-red-500 ml-1">*</span>}
     </label>
     {children}
     {description && (
-      <p className="text-xs text-neutral-500">{description}</p>
+      <p className="text-xs text-slate-500">{description}</p>
     )}
   </div>
 );
@@ -46,7 +47,7 @@ const Toggle = ({
       defaultChecked={defaultChecked}
       className="sr-only peer"
     />
-    <div className="w-11 h-6 bg-neutral-200 rounded-full peer peer-checked:bg-black transition-colors cursor-pointer peer-focus:ring-2 peer-focus:ring-neutral-500"></div>
+    <div className="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:bg-emerald-600 transition-colors cursor-pointer peer-focus:ring-2 peer-focus:ring-emerald-500"></div>
     <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-5 shadow-sm"></div>
   </div>
 );
@@ -64,70 +65,71 @@ export default function SettingsPage() {
     }, 600);
   };
   
-  const handleSignOut = () => {
-    router.push('/auth/login');
-  };
-  
   return (
-    <div className="min-h-full w-full py-12 px-8 max-w-7xl mx-auto">
+    <div className="max-w-5xl mx-auto px-4 py-6">
+      {/* Back button */}
+      <div className="mb-6">
+        <Button
+          type="text"
+          size="tiny"
+          icon={
+            <span className="transition-transform duration-200 group-hover:-translate-x-0.5">
+              <ArrowLeft className="h-3 w-3" />
+            </span>
+          }
+          className="text-slate-500 hover:text-slate-900 group"
+          onClick={() => router.push('/dashboard')}
+        >
+          Back to dashboard
+        </Button>
+      </div>
+
       {/* Header */}
-      <header className="mb-12">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+      <header className="mb-6 border-b border-slate-200 pb-5">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-4xl font-bold tracking-tight text-neutral-900 mb-4">
-              Settings
-            </h1>
-            <p className="text-lg text-neutral-600">
+            <h1 className="text-xl font-medium text-slate-900">Settings</h1>
+            <p className="mt-1 text-sm text-slate-600">
               Manage your account settings and preferences.
             </p>
           </div>
           
-          <div className="flex items-center gap-3">
-            <button
-              type="submit"
-              form="settings-form"
+          <div className="flex items-center">
+            <Button
+              type="primary"
+              size="small"
+              icon={saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
               disabled={saving}
-              className="px-5 py-2 bg-black text-white rounded-md hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors text-sm font-medium"
+              onClick={handleSubmit}
+              form="settings-form"
             >
-              {saving ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Saving...</span>
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4" />
-                  <span>Save Changes</span>
-                </>
-              )}
-            </button>
+              {saving ? 'Saving...' : 'Save Changes'}
+            </Button>
           </div>
         </div>
       </header>
 
-      <form id="settings-form" onSubmit={handleSubmit} className="space-y-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+      <form id="settings-form" onSubmit={handleSubmit} className="space-y-5">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main content */}
-          <div className="lg:col-span-3 space-y-8">
+          <div className="lg:col-span-2 space-y-5">
             {/* Profile Section */}
-            <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
-              <div className="bg-neutral-50 border-b border-neutral-200 px-6 py-4">
+            <div className="border border-slate-200 rounded-md overflow-hidden bg-white">
+              <div className="border-b border-slate-200 px-4 py-2.5 bg-slate-50">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-neutral-100 rounded-full flex items-center justify-center">
-                    <User className="h-5 w-5 text-neutral-600" />
-                  </div>
-                  <h2 className="text-xl font-semibold text-neutral-900">Profile</h2>
+                  <User className="h-4 w-4 text-slate-600" />
+                  <h2 className="text-sm font-medium text-slate-900">Profile</h2>
                 </div>
               </div>
               
-              <div className="p-6 space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="p-4 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField label="Full Name" required>
                     <input
                       type="text"
                       name="name"
                       defaultValue="John Developer"
-                      className="w-full px-4 py-3 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-neutral-500 focus:border-neutral-500 transition-colors"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
                     />
                   </FormField>
                   
@@ -137,7 +139,7 @@ export default function SettingsPage() {
                       name="email"
                       defaultValue="john@example.com"
                       disabled
-                      className="w-full px-4 py-3 border border-neutral-300 rounded-md bg-neutral-50 text-neutral-500 cursor-not-allowed"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-md bg-slate-50 text-slate-500 cursor-not-allowed text-sm"
                     />
                   </FormField>
                 </div>
@@ -145,40 +147,38 @@ export default function SettingsPage() {
                 <FormField label="Bio" description="Brief description for your profile. Max 160 characters.">
                   <textarea
                     name="bio"
-                    rows={4}
+                    rows={3}
                     defaultValue="Software developer specializing in TypeScript and React."
-                    className="w-full px-4 py-3 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-neutral-500 focus:border-neutral-500 transition-colors resize-none"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 text-sm resize-none"
                   />
                 </FormField>
               </div>
             </div>
 
             {/* Security Section */}
-            <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
-              <div className="bg-neutral-50 border-b border-neutral-200 px-6 py-4">
+            <div className="border border-slate-200 rounded-md overflow-hidden bg-white">
+              <div className="border-b border-slate-200 px-4 py-2.5 bg-slate-50">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-neutral-100 rounded-full flex items-center justify-center">
-                    <Shield className="h-5 w-5 text-neutral-600" />
-                  </div>
-                  <h2 className="text-xl font-semibold text-neutral-900">Security</h2>
+                  <Shield className="h-4 w-4 text-slate-600" />
+                  <h2 className="text-sm font-medium text-slate-900">Security</h2>
                 </div>
               </div>
               
-              <div className="p-6 space-y-6">
+              <div className="p-4 space-y-4">
                 <FormField label="Current Password">
                   <input
                     type="password"
                     name="currentPassword"
-                    className="w-full px-4 py-3 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-neutral-500 focus:border-neutral-500 transition-colors"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
                   />
                 </FormField>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField label="New Password">
                     <input
                       type="password"
                       name="newPassword"
-                      className="w-full px-4 py-3 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-neutral-500 focus:border-neutral-500 transition-colors"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
                     />
                   </FormField>
                   
@@ -186,7 +186,7 @@ export default function SettingsPage() {
                     <input
                       type="password"
                       name="confirmPassword"
-                      className="w-full px-4 py-3 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-neutral-500 focus:border-neutral-500 transition-colors"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
                     />
                   </FormField>
                 </div>
@@ -194,29 +194,27 @@ export default function SettingsPage() {
             </div>
 
             {/* Notifications Section */}
-            <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
-              <div className="bg-neutral-50 border-b border-neutral-200 px-6 py-4">
+            <div className="border border-slate-200 rounded-md overflow-hidden bg-white">
+              <div className="border-b border-slate-200 px-4 py-2.5 bg-slate-50">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-neutral-100 rounded-full flex items-center justify-center">
-                    <Bell className="h-5 w-5 text-neutral-600" />
-                  </div>
-                  <h2 className="text-xl font-semibold text-neutral-900">Notifications</h2>
+                  <Bell className="h-4 w-4 text-slate-600" />
+                  <h2 className="text-sm font-medium text-slate-900">Notifications</h2>
                 </div>
               </div>
               
-              <div className="p-6 space-y-6">
+              <div className="p-4 space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="font-medium text-neutral-900">Email Notifications</h3>
-                    <p className="text-sm text-neutral-600 mt-1">Receive emails about your account activity</p>
+                    <h3 className="text-sm font-medium text-slate-900">Email Notifications</h3>
+                    <p className="text-xs text-slate-600 mt-0.5">Receive emails about your account activity</p>
                   </div>
                   <Toggle id="email-notifications" name="emailNotifications" defaultChecked />
                 </div>
                 
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="font-medium text-neutral-900">Marketing Emails</h3>
-                    <p className="text-sm text-neutral-600 mt-1">Receive emails about new features and offers</p>
+                    <h3 className="text-sm font-medium text-slate-900">Marketing Emails</h3>
+                    <p className="text-xs text-slate-600 mt-0.5">Receive emails about new features and offers</p>
                   </div>
                   <Toggle id="marketing-emails" name="marketingEmails" />
                 </div>
@@ -225,60 +223,61 @@ export default function SettingsPage() {
           </div>
           
           {/* Sidebar */}
-          <div className="space-y-6">
+          <div className="space-y-5">
             {/* Billing */}
-            <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
-              <div className="bg-neutral-50 border-b border-neutral-200 px-6 py-4">
+            <div className="border border-slate-200 rounded-md overflow-hidden bg-white">
+              <div className="border-b border-slate-200 px-4 py-2.5 bg-slate-50">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-neutral-100 rounded-full flex items-center justify-center">
-                    <CreditCard className="h-4 w-4 text-neutral-600" />
-                  </div>
-                  <h3 className="font-semibold text-neutral-900">Billing</h3>
+                  <CreditCard className="h-4 w-4 text-slate-600" />
+                  <h3 className="text-sm font-medium text-slate-900">Billing</h3>
                 </div>
               </div>
               
-              <div className="p-6">
-                <div className="text-center">
-                  <h4 className="font-medium text-neutral-900 mb-2">Free Plan</h4>
-                  <p className="text-sm text-neutral-600 mb-4">You're currently on the free plan</p>
-                  <button
-                    type="button"
+              <div className="p-4">
+                <div className="space-y-3">
+                  <div className="text-center">
+                    <h4 className="text-sm font-medium text-slate-900">Free Plan</h4>
+                    <p className="text-xs text-slate-600 mt-0.5 mb-3">You're currently on the free plan</p>
+                  </div>
+                  <Button
+                    type="outline"
+                    size="small"
                     onClick={() => router.push('/plans')}
-                    className="w-full px-4 py-2 border border-neutral-300 rounded-md hover:bg-neutral-50 transition-colors text-sm font-medium"
+                    className="w-full"
                   >
                     Upgrade Plan
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
 
             {/* Danger Zone */}
-            <div className="bg-white border border-red-200 rounded-xl overflow-hidden">
-              <div className="bg-red-50 border-b border-red-200 px-6 py-4">
+            <div className="border border-red-200 rounded-md overflow-hidden bg-white">
+              <div className="border-b border-red-200 px-4 py-2.5 bg-red-50">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-                    <AlertTriangle className="h-4 w-4 text-red-600" />
-                  </div>
-                  <h3 className="font-semibold text-red-900">Danger Zone</h3>
+                  <AlertTriangle className="h-4 w-4 text-red-600" />
+                  <h3 className="text-sm font-medium text-red-900">Danger Zone</h3>
                 </div>
               </div>
               
-              <div className="p-6 space-y-4">
-                <button
-                  type="button"
-                  onClick={handleSignOut}
-                  className="w-full flex items-center gap-2 px-4 py-2 border border-neutral-300 text-neutral-700 rounded-md hover:bg-neutral-50 transition-colors text-sm font-medium"
+              <div className="p-4 space-y-3">
+                <Button
+                  type="outline"
+                  size="small"
+                  icon={<LogOut className="h-3.5 w-3.5" />}
+                  onClick={() => router.push('/auth/sign-in')}
+                  className="w-full"
                 >
-                  <LogOut className="h-4 w-4" />
                   Sign Out
-                </button>
+                </Button>
                 
-                <button
-                  type="button"
-                  className="w-full px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-sm font-medium"
+                <Button
+                  type="danger"
+                  size="small"
+                  className="w-full"
                 >
                   Delete Account
-                </button>
+                </Button>
               </div>
             </div>
           </div>
