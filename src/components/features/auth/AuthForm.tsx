@@ -1,17 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/shadcn/form';
-import { Button } from '@/components/ui/shadcn/button';
+import { Button } from '@/components/ui/potatix/Button';
 import { Input } from '@/components/ui/shadcn/input';
-import { EyeIcon, EyeOffIcon } from 'lucide-react';
+import { EyeIcon, EyeOffIcon, Loader2 } from 'lucide-react';
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from 'sonner';
-import { authClient } from '@/lib/auth/auth-client';
+import { signIn, signUp } from '@/lib/auth/auth-client';
 
 // Form validation schema that matches backend requirements
 const authSchema = z.object({
@@ -33,7 +33,24 @@ export default function AuthForm({ isLoginMode = false, callbackUrl = '/dashboar
   const [isSignUp, setIsSignUp] = useState(!isLoginMode);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [debugError, setDebugError] = useState<string | null>(null);
+  const [logMessages, setLogMessages] = useState<string[]>([]);
   const router = useRouter();
+
+  // Debug logger
+  const logDebug = (message: string) => {
+    console.log(`[AuthForm] ${message}`);
+    setLogMessages(prev => [...prev, `${new Date().toISOString().slice(11, 19)} - ${message}`]);
+  };
+
+  // Add a useEffect to check if the auth client is even loaded
+  useEffect(() => {
+    logDebug(`Auth form mounted. isLoginMode=${isLoginMode}, signIn=${!!signIn}, signUp=${!!signUp}`);
+    // Check if auth client is properly loaded
+    if (!signIn || !signUp) {
+      setDebugError("Auth client not properly loaded! Check imports and configuration.");
+    }
+  }, [isLoginMode]);
 
   // Initialize the auth form with conditional schema based on login/signup mode
   const form = useForm<z.infer<typeof authSchema>>({
@@ -54,52 +71,139 @@ export default function AuthForm({ isLoginMode = false, callbackUrl = '/dashboar
   });
 
   const onSubmit = async (values: z.infer<typeof authSchema>) => {
+    logDebug(`Form submitted! Values: ${JSON.stringify({
+      email: values.email,
+      password: values.password ? '****' : undefined,
+      name: values.name,
+      isSignUp
+    })}`);
+    
+    if (isLoading) {
+      logDebug('Submission blocked: Already loading');
+      return;
+    }
+    
+    // Visually indicate we're processing
+    toast.info(isSignUp ? "Creating account..." : "Signing in...");
     setIsLoading(true);
+    setDebugError(null);
     
     try {
       if (isSignUp) {
         // Handle sign up
-        const { data, error } = await authClient.signUp.email({
-          name: values.name || values.email.split('@')[0],
-          email: values.email,
-          password: values.password,
-          callbackURL: callbackUrl,
-        });
+        logDebug(`Calling signUp.email with ${values.email}`);
         
-        if (error) {
-          throw new Error(error.message || "Failed to create account");
-        }
+        try {
+          const response = await signUp.email({
+            name: values.name || values.email.split('@')[0],
+            email: values.email,
+            password: values.password,
+            callbackURL: callbackUrl,
+          }, {
+            onError: (ctx) => {
+              logDebug(`signUp onError callback: ${ctx.error.message}`);
+              throw new Error(ctx.error.message || "Failed to create account");
+            }
+          });
+          
+          logDebug(`signUp.email response: ${JSON.stringify(response)}`);
+          
+          // Check for errors in response (belt and suspenders)
+          if (response.error) {
+            throw new Error(response.error.message || "Failed to create account");
+          }
 
-        // Better Auth handles email verification and auto-signin
-        // Just redirect or show success
-        toast.success("Account created successfully");
-        router.push(callbackUrl);
+          toast.success("Account created successfully");
+          logDebug(`Signup successful, redirecting to ${callbackUrl}`);
+          
+          // Use timeout to ensure toast is seen before redirect
+          setTimeout(() => {
+            router.push(callbackUrl);
+            router.refresh(); // Force refresh the Next.js router
+            logDebug("Router navigation triggered");
+          }, 300);
+        } catch (err) {
+          logDebug(`Inner signUp.email error: ${err instanceof Error ? err.message : String(err)}`);
+          throw err;
+        }
       } else {
         // Handle sign in
-        const { data, error } = await authClient.signIn.email({
-          email: values.email,
-          password: values.password,
-          callbackURL: callbackUrl,
-        });
+        logDebug(`Calling signIn.email with ${values.email}`);
         
-        if (error) {
-          throw new Error(error.message || "Authentication failed");
+        try {
+          const response = await signIn.email({
+            email: values.email,
+            password: values.password,
+            callbackURL: callbackUrl,
+            rememberMe: true,
+          }, {
+            onError: (ctx) => {
+              logDebug(`signIn onError callback: ${ctx.error.message}`);
+              throw new Error(ctx.error.message || "Login failed");
+            },
+            onSuccess: (ctx) => {
+              logDebug(`signIn onSuccess callback triggered!`);
+            }
+          });
+          
+          logDebug(`signIn.email response: ${JSON.stringify(response)}`);
+          
+          // Double check for errors
+          if (response.error) {
+            throw new Error(response.error.message || "Authentication failed");
+          }
+          
+          toast.success("Login successful");
+          logDebug(`Login successful, redirecting to ${callbackUrl}`);
+          
+          // Use both methods to ensure navigation works
+          setTimeout(() => {
+            logDebug("Attempting hard navigation");
+            // Try window location change first
+            window.location.href = callbackUrl;
+          }, 300);
+        } catch (err) {
+          logDebug(`Inner signIn.email error: ${err instanceof Error ? err.message : String(err)}`);
+          throw err;
         }
-        
-        // Successful login
-        router.push(callbackUrl);
       }
     } catch (error: any) {
+      // Enhanced error logging
+      logDebug(`Auth error caught: ${error instanceof Error ? error.message : String(error)}`);
       console.error("Auth error:", error);
-      toast.error(error.message || "Authentication failed");
+      
+      let errorMessage = "Authentication failed";
+      
+      if (typeof error === 'string') {
+        errorMessage = error;
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (error && typeof error === 'object') {
+        try {
+          const stringified = JSON.stringify(error, null, 2);
+          setDebugError(stringified);
+          errorMessage = error.message || stringified.substring(0, 100);
+        } catch (e) {
+          errorMessage = "Unknown error format";
+        }
+      }
+      
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
+      logDebug("Form submission process completed");
     }
+  };
+
+  // Manual form submission for fallback
+  const handleManualSubmit = () => {
+    logDebug("Manual form submission triggered");
+    form.handleSubmit(onSubmit)();
   };
 
   return (
     <div className="w-full">
-      <div className="mb-6 flex flex-col items-center justify-center">
+      <div className="mb-5 flex flex-col items-center justify-center">
         <Image 
           src="/potatix-logo.svg" 
           alt="Potatix Logo" 
@@ -108,10 +212,10 @@ export default function AuthForm({ isLoginMode = false, callbackUrl = '/dashboar
           className="h-9 w-auto mb-4"
           priority
         />
-        <h2 className="text-2xl font-bold text-center text-gray-900">
+        <h2 className="text-xl font-medium text-center text-slate-900">
           {isSignUp ? "Create your account" : "Welcome back"}
         </h2>
-        <p className="text-sm text-center text-gray-600 mt-1">
+        <p className="text-sm text-center text-slate-600 mt-1">
           {isSignUp 
             ? "Fill out the form below to get started" 
             : "Enter your credentials to access your account"}
@@ -119,14 +223,21 @@ export default function AuthForm({ isLoginMode = false, callbackUrl = '/dashboar
       </div>
       
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <form 
+          onSubmit={(e) => {
+            e.preventDefault();
+            logDebug("Form onSubmit event triggered");
+            form.handleSubmit(onSubmit)(e);
+          }} 
+          className="space-y-4"
+        >
           {isSignUp && (
             <FormField
               control={form.control}
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-sm font-medium text-gray-700">
+                  <FormLabel className="text-sm font-medium text-slate-700">
                     Name
                   </FormLabel>
                   <FormControl>
@@ -134,7 +245,7 @@ export default function AuthForm({ isLoginMode = false, callbackUrl = '/dashboar
                       {...field} 
                       type="text" 
                       placeholder="Your name" 
-                      className="h-10 bg-white border border-gray-300 shadow-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 rounded-md"
+                      className="h-10 bg-white border border-slate-300 shadow-sm focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 rounded-md"
                     />
                   </FormControl>
                   <FormMessage className="text-xs" />
@@ -148,7 +259,7 @@ export default function AuthForm({ isLoginMode = false, callbackUrl = '/dashboar
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-sm font-medium text-gray-700">
+                <FormLabel className="text-sm font-medium text-slate-700">
                   Email
                 </FormLabel>
                 <FormControl>
@@ -156,7 +267,7 @@ export default function AuthForm({ isLoginMode = false, callbackUrl = '/dashboar
                     {...field} 
                     type="email" 
                     placeholder="you@example.com" 
-                    className="h-10 bg-white border border-gray-300 shadow-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 rounded-md"
+                    className="h-10 bg-white border border-slate-300 shadow-sm focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 rounded-md"
                   />
                 </FormControl>
                 <FormMessage className="text-xs" />
@@ -170,13 +281,13 @@ export default function AuthForm({ isLoginMode = false, callbackUrl = '/dashboar
             render={({ field }) => (
               <FormItem>
                 <div className="flex justify-between items-center">
-                  <FormLabel className="text-sm font-medium text-gray-700">
+                  <FormLabel className="text-sm font-medium text-slate-700">
                     Password
                   </FormLabel>
                   {!isSignUp && (
                     <a 
                       href="/forgot-password" 
-                      className="text-xs text-emerald-600 hover:text-emerald-800 font-medium"
+                      className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
                     >
                       Forgot password?
                     </a>
@@ -187,20 +298,20 @@ export default function AuthForm({ isLoginMode = false, callbackUrl = '/dashboar
                     <Input 
                       {...field} 
                       type={showPassword ? "text" : "password"} 
-                      className="h-10 bg-white border border-gray-300 shadow-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 rounded-md pr-10" 
+                      className="h-10 bg-white border border-slate-300 shadow-sm focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 rounded-md pr-10" 
                     />
                   </FormControl>
                   <button
                     type="button"
                     tabIndex={-1}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 transition-colors"
                     onClick={() => setShowPassword(!showPassword)}
                   >
                     {showPassword ? <EyeOffIcon size={16} /> : <EyeIcon size={16} />}
                   </button>
                 </div>
                 {isSignUp && (
-                  <div className="text-xs text-gray-500 mt-1">
+                  <div className="text-xs text-slate-500 mt-1">
                     Password must be at least 8 characters.
                   </div>
                 )}
@@ -209,34 +320,59 @@ export default function AuthForm({ isLoginMode = false, callbackUrl = '/dashboar
             )}
           />
           
-          <div className="pt-2">
-            <Button 
-              type="submit" 
+          <div className="pt-2 space-y-2">
+            <button 
+              type="submit"
               disabled={isLoading}
-              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-md transition-colors h-10"
+              className="w-full h-10 px-4 py-2 bg-emerald-600 text-white font-medium rounded-md hover:bg-emerald-700 transition-colors flex items-center justify-center space-x-2"
             >
-              {isLoading ? (
-                <span className="flex items-center justify-center">
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Processing...
-                </span>
-              ) : isSignUp ? "Create Account" : "Sign In"}
-            </Button>
+              {isLoading && <Loader2 className="animate-spin h-4 w-4 mr-2" />}
+              {isLoading ? "Processing..." : (isSignUp ? "Create Account" : "Sign In")}
+            </button>
+            
+            {/* Fallback manual submission button */}
+            <button
+              type="button"
+              onClick={handleManualSubmit}
+              className="text-xs text-center w-full text-slate-500 hover:text-slate-700"
+            >
+              Having trouble? Try manual submission
+            </button>
           </div>
+          
+          {debugError && (
+            <div className="mt-4 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-700 overflow-auto max-h-32">
+              <details>
+                <summary className="font-medium cursor-pointer">Debug Error</summary>
+                <pre className="mt-2 whitespace-pre-wrap">{debugError}</pre>
+              </details>
+            </div>
+          )}
+          
+          {logMessages.length > 0 && (
+            <div className="mt-4 p-2 bg-slate-50 border border-slate-200 rounded text-xs text-slate-700 overflow-auto max-h-40">
+              <details>
+                <summary className="font-medium cursor-pointer">Debug Log ({logMessages.length})</summary>
+                <pre className="mt-2 whitespace-pre-wrap text-xs">
+                  {logMessages.map((msg, i) => (
+                    <div key={i} className="py-1 border-b border-slate-100">{msg}</div>
+                  ))}
+                </pre>
+              </details>
+            </div>
+          )}
         </form>
       </Form>
       
-      <div className="mt-6 text-center">
+      <div className="mt-5 text-center">
         <button
           type="button"
           onClick={() => {
             setIsSignUp(!isSignUp);
+            setDebugError(null);
             form.reset();
           }}
-          className="text-sm text-emerald-600 hover:text-emerald-800 font-medium transition-colors"
+          className="text-sm text-emerald-600 hover:text-emerald-700 font-medium transition-colors cursor-pointer"
         >
           {isSignUp 
             ? "Already have an account? Sign in" 
