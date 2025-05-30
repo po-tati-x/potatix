@@ -16,8 +16,8 @@ export default function LoginPage() {
       
       <SocialLogin callbackUrl={callbackUrl} />
       
-      <div className="mt-6 pt-6 border-t border-gray-200">
-        <div className="text-center text-sm text-gray-600">
+      <div className="mt-5 pt-5 border-t border-slate-200">
+        <div className="text-center text-sm text-slate-600">
           <span>Don't have an account?</span>
           <Link 
             href="/signup" 
