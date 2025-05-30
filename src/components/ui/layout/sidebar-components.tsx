@@ -25,8 +25,8 @@ export function SidebarHeader({ title, backHref, toolContent }: SidebarHeaderPro
         )}
       >
         {title && backHref ? (
-          <div className="group flex items-center gap-2 text-sm font-medium text-neutral-800">
-            <ChevronLeft className="size-4 text-neutral-600 transition-transform duration-100 group-hover:-translate-x-0.5" />
+          <div className="group flex items-center gap-2 text-sm font-medium text-slate-800">
+            <ChevronLeft className="size-4 text-slate-600 transition-transform duration-100 group-hover:-translate-x-0.5" />
             {title}
           </div>
         ) : (
@@ -58,7 +58,7 @@ export function SidebarSection({ section }: SidebarSectionProps) {
   return (
     <div className="flex flex-col gap-0.5">
       {section.name && (
-        <div className="mb-2 pl-1 text-sm font-semibold text-neutral-700">
+        <div className="mb-2 pl-1 text-sm font-semibold text-slate-700">
           {section.name}
         </div>
       )}
@@ -84,25 +84,25 @@ export function SidebarItem({ item }: SidebarItemProps) {
         href={href}
         data-active={isActive}
         className={cn(
-          'group flex items-center gap-2.5 rounded-md p-2 text-sm leading-none text-neutral-600 transition-[background-color,color,font-weight] duration-75 hover:bg-neutral-200/50 active:bg-neutral-200/80',
+          'group flex items-center gap-2.5 rounded-md p-2 text-sm leading-none text-slate-600 transition-[background-color,color,font-weight] duration-75 hover:bg-slate-200/50 active:bg-slate-200/80',
           'outline-none focus-visible:ring-2 focus-visible:ring-black/50',
           isActive &&
             !items &&
-            'bg-blue-100/50 font-medium text-blue-600 hover:bg-blue-100/80 active:bg-blue-100'
+            'bg-emerald-100/50 font-medium text-emerald-600 hover:bg-emerald-100/80 active:bg-emerald-100'
         )}
       >
         {Icon && (
           <Icon
             className={cn(
-              'size-4 text-neutral-500 transition-colors duration-75',
-              !items && isActive && 'text-blue-600'
+              'size-4 text-slate-500 transition-colors duration-75',
+              !items && isActive && 'text-emerald-600'
             )}
           />
         )}
         <span className="font-medium">{name}</span>
         {items && (
           <div className="flex grow justify-end">
-            <ChevronDown className="size-3.5 text-neutral-500 transition-transform duration-75 group-data-[active=true]:rotate-180" />
+            <ChevronDown className="size-3.5 text-slate-500 transition-transform duration-75 group-data-[active=true]:rotate-180" />
           </div>
         )}
       </Link>
@@ -131,7 +131,7 @@ export function SidebarSubMenu({ items, isParentActive }: SidebarSubMenuProps) {
     >
       <div className="pl-px pt-1">
         <div className="pl-3.5">
-          <div className="flex flex-col gap-0.5 border-l border-neutral-200 pl-2">
+          <div className="flex flex-col gap-0.5 border-l border-slate-200 pl-2">
             {items.map((subItem) => (
               <SidebarSubItem key={subItem.name} item={subItem} />
             ))}
@@ -156,10 +156,10 @@ export function SidebarSubItem({ item }: SidebarSubItemProps) {
       href={href}
       data-active={isActive}
       className={cn(
-        'group flex items-center gap-2.5 rounded-md p-2 text-sm leading-none text-neutral-600 transition-[background-color,color,font-weight] duration-75 hover:bg-neutral-200/50 active:bg-neutral-200/80',
+        'group flex items-center gap-2.5 rounded-md p-2 text-sm leading-none text-slate-600 transition-[background-color,color,font-weight] duration-75 hover:bg-slate-200/50 active:bg-slate-200/80',
         'outline-none focus-visible:ring-2 focus-visible:ring-black/50',
         isActive &&
-          'bg-blue-100/50 font-medium text-blue-600 hover:bg-blue-100/80 active:bg-blue-100'
+          'bg-emerald-100/50 font-medium text-emerald-600 hover:bg-emerald-100/80 active:bg-emerald-100'
       )}
     >
       <span className="font-medium">{name}</span>
