@@ -24,16 +24,16 @@ export function CourseCard({ course }: CourseCardProps) {
     
   // Determine status badge styling
   const statusStyles = {
-    draft: "bg-amber-50 text-amber-800 border-amber-200",
-    published: "bg-emerald-50 text-emerald-800 border-emerald-200",
-    archived: "bg-neutral-100 text-neutral-600 border-neutral-200"
+    draft: "bg-amber-50 text-amber-700 border-amber-200",
+    published: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    archived: "bg-slate-50 text-slate-600 border-slate-200"
   }[course.status || 'draft'];
     
   return (
     <Link href={`/courses/${course.id}`} className="block group">
-      <div className="relative h-full border border-neutral-200 rounded-lg overflow-hidden hover:border-neutral-400 transition-all duration-200 bg-white">
+      <div className="relative h-full border border-slate-200 rounded-lg overflow-hidden hover:border-slate-400 hover:shadow-sm transition-all duration-200 bg-white">
         {/* Course image or placeholder */}
-        <div className="h-44 bg-neutral-100 overflow-hidden">
+        <div className="h-44 bg-slate-50 overflow-hidden">
           {course.imageUrl ? (
             <img 
               src={course.imageUrl} 
@@ -41,8 +41,8 @@ export function CourseCard({ course }: CourseCardProps) {
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center bg-neutral-100 group-hover:bg-neutral-200 transition-colors">
-              <BookOpen className="h-12 w-12 text-neutral-300" />
+            <div className="w-full h-full flex items-center justify-center bg-slate-50 group-hover:bg-slate-100 transition-colors">
+              <BookOpen className="h-12 w-12 text-slate-300" />
             </div>
           )}
         </div>
@@ -56,24 +56,24 @@ export function CourseCard({ course }: CourseCardProps) {
         
         {/* Course info */}
         <div className="p-5">
-          <h3 className="font-semibold text-lg text-neutral-900 mb-2 line-clamp-2 group-hover:text-black">
+          <h3 className="font-medium text-lg text-slate-900 mb-2 line-clamp-2 group-hover:text-slate-800">
             {course.title}
           </h3>
           
           {course.description && (
-            <p className="text-neutral-500 text-sm mb-4 line-clamp-2">
+            <p className="text-slate-500 text-sm mb-4 line-clamp-2">
               {course.description}
             </p>
           )}
           
-          <div className="flex items-center justify-between border-t border-neutral-100 pt-4 mt-4">
+          <div className="flex items-center justify-between border-t border-slate-100 pt-4 mt-4">
             <div className="flex items-center gap-3">
-              <div className="flex items-center text-xs text-neutral-500">
+              <div className="flex items-center text-xs text-slate-500">
                 <BookText className="h-3.5 w-3.5 mr-1.5" />
                 <span>{lessonCount} {lessonCount === 1 ? 'lesson' : 'lessons'}</span>
               </div>
               
-              <div className="flex items-center text-xs text-neutral-500">
+              <div className="flex items-center text-xs text-slate-500">
                 <Clock className="h-3.5 w-3.5 mr-1.5" />
                 <span>
                   {course.updatedAt ? new Date(course.updatedAt).toLocaleDateString(undefined, { 
@@ -84,11 +84,11 @@ export function CourseCard({ course }: CourseCardProps) {
               </div>
             </div>
             
-            <div className="flex items-center">
-              <span className="font-medium text-sm">
+            <div className="flex items-center gap-1 text-sm">
+              <span className="font-medium text-slate-700">
                 {formattedPrice}
               </span>
-              <ExternalLink className="h-3.5 w-3.5 ml-1 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200" />
+              <ExternalLink className="h-3.5 w-3.5 text-slate-400 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200" />
             </div>
           </div>
         </div>

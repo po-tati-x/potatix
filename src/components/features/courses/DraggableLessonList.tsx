@@ -17,9 +17,11 @@ import {
   CheckCircle,
   AlertCircle,
   Loader2,
+  Plus,
 } from "lucide-react";
 import { useState } from "react";
 import MuxUploader from "@mux/mux-uploader-react";
+import { Button } from "@/components/ui/potatix/Button";
 
 // Type for the core drag and drop functionality only
 interface DraggableLessonListProps {
@@ -77,19 +79,25 @@ export function DraggableLessonList({
           >
             {lessons.map((lesson, index) => (
               <Draggable key={lesson.id} draggableId={lesson.id} index={index}>
-                {(provided, snapshot) => (
-                  <div
-                    ref={provided.innerRef}
-                    {...provided.draggableProps}
-                    className={`bg-white border rounded-lg transition-all ${
-                      snapshot.isDragging
-                        ? "border-neutral-400 shadow-lg scale-[1.02]"
-                        : "border-neutral-200 hover:border-neutral-300"
-                    }`}
-                  >
-                    {renderLesson(lesson, index, provided.dragHandleProps)}
-                  </div>
-                )}
+                {(provided, snapshot) => {
+                  // Cast style to any to avoid TypeScript errors with DraggableStyle
+                  const style = provided.draggableProps.style as React.CSSProperties;
+                  
+                  return (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.draggableProps}
+                      style={style}
+                      className={`bg-white border rounded-md overflow-hidden transition-all ${
+                        snapshot.isDragging
+                          ? "border-slate-400 shadow-sm"
+                          : "border-slate-200 hover:border-slate-300"
+                      }`}
+                    >
+                      {renderLesson(lesson, index, provided.dragHandleProps)}
+                    </div>
+                  );
+                }}
               </Draggable>
             ))}
             {provided.placeholder}
@@ -110,8 +118,8 @@ const FormField = ({
   children: React.ReactNode;
   required?: boolean;
 }) => (
-  <div className="space-y-2">
-    <label className="block text-sm font-medium text-neutral-700">
+  <div className="space-y-1.5">
+    <label className="block text-sm font-medium text-slate-700">
       {label}
       {required && <span className="text-red-500 ml-1">*</span>}
     </label>
@@ -148,17 +156,17 @@ export function LessonEditor({
   return (
     <div className="overflow-hidden">
       {/* Header */}
-      <div className="bg-neutral-50 border-b border-neutral-200 px-6 py-4 flex items-center justify-between">
+      <div className="bg-slate-50 border-b border-slate-200 px-4 py-3 flex items-center justify-between">
         <div
           {...dragHandleProps}
           className="flex items-center gap-3 cursor-grab hover:cursor-grabbing group"
         >
-          <GripVertical className="h-5 w-5 text-neutral-400 group-hover:text-neutral-600 transition-colors" />
-          <div className="flex items-center gap-3">
-            <div className="h-8 w-8 bg-black text-white rounded-full flex items-center justify-center">
-              <span className="text-sm font-medium">{index + 1}</span>
+          <GripVertical className="h-4 w-4 text-slate-400 group-hover:text-slate-600 transition-colors" />
+          <div className="flex items-center gap-2">
+            <div className="h-6 w-6 bg-slate-700 text-white rounded-full flex items-center justify-center">
+              <span className="text-xs font-medium">{index + 1}</span>
             </div>
-            <h3 className="text-lg font-semibold text-neutral-900">
+            <h3 className="text-sm font-medium text-slate-900">
               {lesson.title || `Lesson ${index + 1}`}
             </h3>
           </div>
@@ -167,15 +175,15 @@ export function LessonEditor({
         <button
           type="button"
           onClick={() => onRemoveLesson(lesson.id)}
-          className="p-2 text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-all"
+          className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded transition-all"
         >
-          <Trash2 className="h-4 w-4" />
+          <Trash2 className="h-3.5 w-3.5" />
         </button>
       </div>
 
       {/* Content */}
-      <div className="p-6 space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="p-4 space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField label="Lesson Title" required>
             <input
               type="text"
@@ -184,7 +192,7 @@ export function LessonEditor({
                 onUpdateLesson(lesson.id, "title", e.target.value)
               }
               placeholder="e.g. Introduction to TypeScript"
-              className="w-full px-4 py-3 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-neutral-500 focus:border-neutral-500 transition-colors"
+              className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
               required
             />
           </FormField>
@@ -197,7 +205,7 @@ export function LessonEditor({
               }
               rows={3}
               placeholder="What will students learn in this lesson?"
-              className="w-full px-4 py-3 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-neutral-500 focus:border-neutral-500 transition-colors resize-none"
+              className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 text-sm resize-none"
             />
           </FormField>
         </div>
@@ -264,9 +272,9 @@ export function VideoUploader({ lessonId, onFileChange }: VideoUploaderProps) {
   // Advanced uploader
   if (isAdvancedUpload && uploadUrl) {
     return (
-      <div className="border border-neutral-200 rounded-lg overflow-hidden">
-        <div className="bg-neutral-50 border-b border-neutral-200 px-4 py-3">
-          <h4 className="text-sm font-medium text-neutral-900">
+      <div className="border border-slate-200 rounded-md overflow-hidden">
+        <div className="bg-slate-50 border-b border-slate-200 px-4 py-2">
+          <h4 className="text-xs font-medium text-slate-700">
             Direct Upload
           </h4>
         </div>
@@ -276,13 +284,13 @@ export function VideoUploader({ lessonId, onFileChange }: VideoUploaderProps) {
             onSuccess={handleUploadSuccess}
             className="mux-uploader"
           />
-          <div className="mt-4 flex items-center justify-between">
-            <p className="text-xs text-neutral-500">
+          <div className="mt-3 flex items-center justify-between">
+            <p className="text-xs text-slate-500">
               Video will be processed automatically after upload
             </p>
             <button
               onClick={() => setIsAdvancedUpload(false)}
-              className="text-xs text-neutral-600 hover:text-neutral-900 underline"
+              className="text-xs text-slate-600 hover:text-slate-900 underline"
             >
               Switch to basic uploader
             </button>
@@ -292,12 +300,12 @@ export function VideoUploader({ lessonId, onFileChange }: VideoUploaderProps) {
         <style jsx global>{`
           .mux-uploader {
             --mux-uploader-background: #ffffff;
-            --mux-uploader-drag-background: #f9fafb;
+            --mux-uploader-drag-background: #f8fafc;
             --mux-uploader-border: 1px dashed #d1d5db;
             --mux-uploader-border-radius: 0.375rem;
-            --mux-uploader-primary-color: #000000;
+            --mux-uploader-primary-color: #334155;
             width: 100%;
-            min-height: 120px;
+            min-height: 100px;
           }
         `}</style>
       </div>
@@ -307,20 +315,23 @@ export function VideoUploader({ lessonId, onFileChange }: VideoUploaderProps) {
   // Error state
   if (error) {
     return (
-      <div className="border border-red-200 rounded-lg p-6 bg-red-50">
+      <div className="border border-red-200 rounded-md p-4 bg-red-50">
         <div className="flex items-center">
-          <AlertCircle className="h-5 w-5 text-red-500 mr-3" />
+          <AlertCircle className="h-4 w-4 text-red-500 mr-2" />
           <div>
-            <p className="text-sm font-medium text-red-800">Upload Error</p>
-            <p className="text-sm text-red-600 mt-1">{error}</p>
+            <p className="text-xs font-medium text-red-700">Upload Error</p>
+            <p className="text-xs text-red-600 mt-0.5">{error}</p>
           </div>
         </div>
-        <button
+        <Button
+          type="outline"
+          size="small"
+          icon={<AlertCircle className="h-3.5 w-3.5" />}
           onClick={getUploadUrl}
-          className="mt-4 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-sm font-medium"
+          className="mt-3 bg-white"
         >
           Try Again
-        </button>
+        </Button>
       </div>
     );
   }
@@ -328,48 +339,49 @@ export function VideoUploader({ lessonId, onFileChange }: VideoUploaderProps) {
   // Loading state
   if (isLoading) {
     return (
-      <div className="border border-neutral-200 rounded-lg p-8 text-center">
-        <Loader2 className="h-8 w-8 text-neutral-400 animate-spin mx-auto mb-4" />
-        <p className="text-sm text-neutral-600">Initializing uploader...</p>
+      <div className="border border-slate-200 rounded-md p-6 text-center">
+        <Loader2 className="h-6 w-6 text-slate-400 animate-spin mx-auto mb-3" />
+        <p className="text-xs text-slate-600">Initializing uploader...</p>
       </div>
     );
   }
 
   // Upload options
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Direct uploader option */}
-      <div className="border border-neutral-200 rounded-lg p-6 text-center">
-        <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-neutral-100 mb-4">
-          <ArrowUpCircle className="h-6 w-6 text-neutral-600" />
+      <div className="border border-slate-200 rounded-md p-4 text-center">
+        <div className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 mb-3">
+          <ArrowUpCircle className="h-5 w-5 text-slate-600" />
         </div>
-        <h4 className="text-lg font-medium text-neutral-900 mb-2">
+        <h4 className="text-sm font-medium text-slate-900 mb-1">
           Direct Upload
         </h4>
-        <p className="text-sm text-neutral-500 mb-4 max-w-md mx-auto">
-          Recommended for large files. Supports resumable uploads and better
-          error handling.
+        <p className="text-xs text-slate-500 mb-3 max-w-md mx-auto">
+          Recommended for large files. Supports resumable uploads.
         </p>
-        <button
+        <Button
+          type="primary"
+          size="small"
+          icon={<ArrowUpCircle className="h-3.5 w-3.5" />}
           onClick={getUploadUrl}
-          className="px-6 py-3 bg-black text-white rounded-md hover:bg-neutral-800 transition-colors font-medium"
         >
           Initialize Direct Upload
-        </button>
+        </Button>
       </div>
 
       {/* Divider */}
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-neutral-200" />
+          <div className="w-full border-t border-slate-200" />
         </div>
-        <div className="relative flex justify-center text-sm">
-          <span className="px-3 bg-white text-neutral-500">or</span>
+        <div className="relative flex justify-center text-xs">
+          <span className="px-2 bg-white text-slate-500">or</span>
         </div>
       </div>
 
       {/* Basic file input */}
-      <div className="border-2 border-dashed border-neutral-300 rounded-lg p-8 text-center hover:border-neutral-400 transition-colors">
+      <div className="border border-dashed border-slate-300 rounded-md p-5 text-center hover:border-slate-400 transition-colors">
         <input
           type="file"
           id={`video-upload-${lessonId}`}
@@ -382,13 +394,13 @@ export function VideoUploader({ lessonId, onFileChange }: VideoUploaderProps) {
           htmlFor={`video-upload-${lessonId}`}
           className="flex flex-col items-center justify-center cursor-pointer group"
         >
-          <div className="h-12 w-12 bg-neutral-100 rounded-full flex items-center justify-center mb-4 group-hover:bg-neutral-200 transition-colors">
-            <Upload className="h-6 w-6 text-neutral-600" />
+          <div className="h-10 w-10 bg-slate-100 rounded-full flex items-center justify-center mb-3 group-hover:bg-slate-200 transition-colors">
+            <Upload className="h-5 w-5 text-slate-600" />
           </div>
-          <p className="text-sm font-medium text-neutral-700 mb-1">
+          <p className="text-sm font-medium text-slate-700 mb-1">
             Upload video file
           </p>
-          <p className="text-xs text-neutral-500">MP4, MOV or WebM up to 2GB</p>
+          <p className="text-xs text-slate-500">MP4, MOV or WebM up to 2GB</p>
         </label>
       </div>
     </div>
@@ -404,7 +416,7 @@ export function VideoPreview({ lesson, onFileRemove }: VideoPreviewProps) {
   // Already uploaded video (has videoId)
   if (lesson.videoId) {
     return (
-      <div className="border border-neutral-200 rounded-lg overflow-hidden">
+      <div className="border border-slate-200 rounded-md overflow-hidden">
         <div className="relative aspect-video bg-black group">
           <img
             src={`https://image.mux.com/${lesson.videoId}/thumbnail.jpg?width=1920&height=1080&fit_mode=preserve`}
@@ -412,29 +424,27 @@ export function VideoPreview({ lesson, onFileRemove }: VideoPreviewProps) {
             className="w-full h-full object-contain"
           />
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="bg-black bg-opacity-60 rounded-full p-4 group-hover:bg-opacity-80 transition-all">
-              <PlayCircle className="h-8 w-8 text-white" />
+            <div className="bg-black bg-opacity-60 rounded-full p-3 group-hover:bg-opacity-80 transition-all">
+              <PlayCircle className="h-6 w-6 text-white" />
             </div>
           </div>
         </div>
 
-        <div className="p-4 bg-neutral-50 border-t border-neutral-200">
+        <div className="p-3 bg-slate-50 border-t border-slate-200">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <span className="text-sm font-medium text-neutral-900">
-                  Video uploaded
-                </span>
-              </div>
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-3.5 w-3.5 text-emerald-500" />
+              <span className="text-xs font-medium text-slate-900">
+                Video uploaded
+              </span>
             </div>
 
             <button
               type="button"
               onClick={() => onFileRemove(lesson.id)}
-              className="p-2 text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-all"
+              className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded transition-all"
             >
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="h-3.5 w-3.5" />
             </button>
           </div>
         </div>
@@ -444,40 +454,40 @@ export function VideoPreview({ lesson, onFileRemove }: VideoPreviewProps) {
 
   // In-progress upload
   return (
-    <div className="border border-neutral-200 rounded-lg p-4">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <FilmIcon className="h-5 w-5 text-neutral-500" />
+    <div className="border border-slate-200 rounded-md p-3">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <FilmIcon className="h-4 w-4 text-slate-500" />
           <div>
-            <p className="text-sm font-medium text-neutral-900 truncate max-w-xs">
+            <p className="text-xs font-medium text-slate-900 truncate max-w-xs">
               {lesson.fileName}
             </p>
-            <p className="text-xs text-neutral-500">{lesson.fileSize}</p>
+            <p className="text-xs text-slate-500">{lesson.fileSize}</p>
           </div>
         </div>
 
         <button
           type="button"
           onClick={() => onFileRemove(lesson.id)}
-          className="p-2 text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-all"
+          className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded transition-all"
         >
-          <Trash2 className="h-4 w-4" />
+          <Trash2 className="h-3.5 w-3.5" />
         </button>
       </div>
 
-      <div className="space-y-2">
-        <div className="flex justify-between text-sm">
-          <span className="text-neutral-600">
+      <div className="space-y-1.5">
+        <div className="flex justify-between text-xs">
+          <span className="text-slate-600">
             {lesson.progress === 100 ? "Processing..." : "Uploading..."}
           </span>
-          <span className="text-neutral-900 font-medium">
+          <span className="text-slate-900 font-medium">
             {lesson.progress}%
           </span>
         </div>
 
-        <div className="w-full bg-neutral-200 rounded-full h-2">
+        <div className="w-full bg-slate-200 rounded-full h-1.5">
           <div
-            className="bg-black h-2 rounded-full transition-all duration-300"
+            className="bg-emerald-600 h-1.5 rounded-full transition-all duration-300"
             style={{ width: `${lesson.progress}%` }}
           />
         </div>
@@ -493,27 +503,27 @@ interface EmptyLessonStateProps {
 
 export function EmptyLessonState({ onAddLesson }: EmptyLessonStateProps) {
   return (
-    <div className="text-center py-12 border-2 border-dashed border-neutral-300 rounded-lg bg-neutral-50">
-      <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-neutral-100 mb-6">
-        <FilmIcon className="h-8 w-8 text-neutral-500" />
+    <div className="text-center py-8 border border-dashed border-slate-300 rounded-md bg-slate-50">
+      <div className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 mb-4">
+        <FilmIcon className="h-5 w-5 text-slate-500" />
       </div>
 
-      <h3 className="text-lg font-medium text-neutral-900 mb-2">
+      <h3 className="text-sm font-medium text-slate-900 mb-1">
         No lessons yet
       </h3>
-      <p className="text-neutral-500 mb-6 max-w-sm mx-auto">
-        Start building your course by adding your first lesson with video
-        content.
+      <p className="text-xs text-slate-500 mb-4 max-w-sm mx-auto">
+        Start building your course by adding your first lesson with video content.
       </p>
 
       {onAddLesson && (
-        <button
-          type="button"
+        <Button
+          type="primary"
+          size="small"
+          icon={<Plus className="h-3.5 w-3.5" />}
           onClick={onAddLesson}
-          className="px-6 py-3 bg-black text-white rounded-md hover:bg-neutral-800 transition-colors font-medium"
         >
           Add Your First Lesson
-        </button>
+        </Button>
       )}
     </div>
   );
