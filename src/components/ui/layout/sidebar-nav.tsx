@@ -18,7 +18,7 @@ export function Sidebar({ slug, toolContent, newsContent, bottom }: SidebarProps
 
   return (
     <div className="scrollbar-hide relative flex h-full w-full flex-col overflow-y-auto overflow-x-hidden">
-      <nav className="relative flex grow flex-col p-3 text-neutral-800">
+      <nav className="relative flex grow flex-col p-3 text-slate-800">
         <SidebarHeader 
           title={config.title}
           backHref={config.backHref}

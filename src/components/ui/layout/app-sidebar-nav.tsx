@@ -19,7 +19,7 @@ export function AppSidebarNav({
 
   return (
     <Sidebar
-      slug={slug || "workspace"}
+      slug={slug || "dashboard"}
       toolContent={toolContent}
       newsContent={newsContent}
       bottom={bottom}
