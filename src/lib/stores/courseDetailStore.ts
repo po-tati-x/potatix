@@ -11,6 +11,11 @@ interface CourseDetailState {
   // UI states
   loading: boolean;
   error: string | null;
+
+
+
+
+  
   
   // Actions
   fetchCourse: (id: string) => Promise<void>;
