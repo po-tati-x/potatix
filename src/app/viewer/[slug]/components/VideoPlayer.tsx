@@ -6,16 +6,14 @@ import { Lock, AlertTriangle, RotateCcw } from "lucide-react";
 
 interface VideoPlayerProps {
   videoId: string | null | undefined;
-  title: string;
   lessonId: string;
   error: string | null;
-  onError: (e: any) => void;
+  onError: (e: Error | unknown) => void;
   onResetError: () => void;
 }
 
 export function VideoPlayer({
   videoId,
-  title,
   lessonId,
   error,
   onError,
@@ -31,7 +29,7 @@ export function VideoPlayer({
         </div>
         <h3 className="text-xl font-medium mb-2">No Video Available</h3>
         <p className="text-neutral-400 text-center max-w-md">
-          This lesson doesn't have a video yet. Check back later or contact the
+          This lesson doesn&apos;t have a video yet. Check back later or contact the
           instructor.
         </p>
       </div>
@@ -59,7 +57,7 @@ export function VideoPlayer({
 
   const handleLoadStart = () => setIsLoading(true);
   const handleCanPlay = () => setIsLoading(false);
-  const handleVideoError = (e: any) => {
+  const handleVideoError = (e: Error | unknown) => {
     setIsLoading(false);
     onError(e);
   };
