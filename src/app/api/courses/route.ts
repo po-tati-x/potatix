@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
-import { courseSchema, authSchema } from '@/db';
+import { courseSchema } from '@/db';
 import { nanoid } from 'nanoid';
 import { z } from 'zod';
 import { auth } from '@/lib/auth/auth';

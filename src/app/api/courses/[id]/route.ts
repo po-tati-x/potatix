@@ -1,11 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
-import { courseSchema, authSchema } from '@/db';
+import { courseSchema } from '@/db';
 import { auth } from '@/lib/auth/auth';
 import { eq, asc } from 'drizzle-orm';
 
+// Define proper types for course and lesson
+interface Lesson {
+  id: string;
+  title: string;
+  description: string | null;
+  videoId: string | null;
+  order: number;
+}
+
+interface Course {
+  id: string;
+  title: string;
+  description: string | null;
+  price: number | null;
+  status: string;
+  imageUrl: string | null;
+  userId: string;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+  lessons?: Lesson[];
+}
+
 // Type for the structured API response
-type ApiResponse<T = any> = {
+type ApiResponse<T = Course> = {
   course?: T;
   error?: string;
   status?: number;
@@ -75,10 +97,10 @@ async function getCourseWithAuth(request: NextRequest, courseId: string): Promis
 // GET handler to retrieve a single course
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  // Await params to fix NextJS warning
-  const { id: courseId } = await Promise.resolve(params);
+  // Get courseId from params
+  const { id: courseId } = await params;
   
   if (!courseId) {
     return NextResponse.json(
@@ -102,10 +124,10 @@ export async function GET(
 // PATCH handler to update a course
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  // Await params to fix NextJS warning
-  const { id: courseId } = await Promise.resolve(params);
+  // Get courseId from params
+  const { id: courseId } = await params;
   
   if (!courseId) {
     return NextResponse.json(
@@ -164,10 +186,10 @@ export async function PATCH(
 // DELETE handler to delete a course
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  // Await params to fix NextJS warning
-  const { id: courseId } = await Promise.resolve(params);
+  // Get courseId from params
+  const { id: courseId } = await params;
   
   if (!courseId) {
     return NextResponse.json(
