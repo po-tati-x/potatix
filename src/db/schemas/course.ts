@@ -1,4 +1,4 @@
-import { pgTable, text, integer, timestamp, doublePrecision, boolean, json } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, timestamp, doublePrecision } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { user } from "./users";
 
@@ -61,7 +61,7 @@ export const courseRelations = relations(course, ({ many, one }) => ({
   lessons: many(lesson),
 }));
 
-export const lessonRelations = relations(lesson, ({ one, many }) => ({
+export const lessonRelations = relations(lesson, ({ one }) => ({
   course: one(course, {
     fields: [lesson.courseId],
     references: [course.id],
