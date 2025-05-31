@@ -1,17 +1,33 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { nanoid } from 'nanoid';
-import { Course, Lesson as APILesson, coursesApi } from '../utils/api-client';
+import { Lesson as APILesson, coursesApi, CreateCourseData } from '../utils/api-client';
 import { Lesson as CourseStoreLesson } from './courseStore';
 
-type WithLessons = {
+// Since there are two different lesson types (API and Store), we need to create
+// types that clearly separate them to avoid confusion
+
+// This type is specifically for course data in our store
+interface CourseFormData {
+  id?: string;
+  title?: string;
+  description?: string;
+  price?: number;
+  status?: 'draft' | 'published' | 'archived';
+  imageUrl?: string;
   lessons?: CourseStoreLesson[];
-};
+  // Exclude API-specific fields we don't need
+  userId?: string;
+  lessonCount?: number;
+  createdAt?: string;
+  updatedAt?: string;
+  slug?: string;
+}
 
 interface CourseEditState {
   // Data 
   courseId: string | null;
-  formData: Partial<Course> & WithLessons;
+  formData: CourseFormData;
   
   // UI states
   loading: boolean;
@@ -27,7 +43,7 @@ interface CourseEditState {
   fetchCourse: (id: string) => Promise<void>;
   
   // Actions - form handling
-  setField: <K extends keyof Course>(field: K, value: Course[K]) => void;
+  setField: <K extends keyof CourseFormData>(field: K, value: CourseFormData[K]) => void;
   
   // Actions - image handling
   handleImageUpload: (file: File) => Promise<void>;
@@ -57,6 +73,13 @@ const convertToStoreLesson = (apiLesson: APILesson): CourseStoreLesson => ({
   progress: 0,
   fileName: '',
   fileSize: '',
+});
+
+// Convert CourseStoreLesson to a format suitable for the API
+const convertToAPILesson = (storeLesson: CourseStoreLesson) => ({
+  title: storeLesson.title,
+  description: storeLesson.description,
+  videoId: storeLesson.videoId,
 });
 
 export const useCourseEditStore = create<CourseEditState>()(
@@ -96,16 +119,18 @@ export const useCourseEditStore = create<CourseEditState>()(
           // Transform API lessons to CourseStore lesson format
           const transformedLessons = data.lessons?.map(convertToStoreLesson) || [];
           
-          // Use type assertion to bypass type checking
+          // Create properly typed form data
+          const formData: CourseFormData = {
+            title: data.title,
+            description: data.description || '',
+            price: data.price,
+            status: data.status,
+            imageUrl: data.imageUrl || '',
+            lessons: transformedLessons,
+          };
+          
           set({
-            formData: {
-              title: data.title,
-              description: data.description || '',
-              price: data.price,
-              status: data.status,
-              imageUrl: data.imageUrl || '',
-              lessons: transformedLessons,
-            } as any,
+            formData,
             loading: false,
             // Set image preview if there's an existing image
             imagePreview: data.imageUrl || null
@@ -185,7 +210,7 @@ export const useCourseEditStore = create<CourseEditState>()(
       })),
       
       // Action - Add a new lesson
-      addLesson: () => set((state: any) => {
+      addLesson: () => set((state) => {
         const newLesson: CourseStoreLesson = {
           id: `lesson-${nanoid()}`,
           title: '',
@@ -196,38 +221,50 @@ export const useCourseEditStore = create<CourseEditState>()(
           fileSize: '',
         };
 
+        const updatedLessons = [...(state.formData.lessons || []), newLesson];
+
         return {
           formData: {
             ...state.formData,
-            lessons: [...(state.formData.lessons || []), newLesson]
+            lessons: updatedLessons
           }
         };
       }),
       
       // Action - Remove a lesson
-      removeLesson: (id: string) => set((state: any) => {
+      removeLesson: (id: string) => set((state) => {
+        if (!state.formData.lessons) return { formData: { ...state.formData } };
+        
+        const updatedLessons = state.formData.lessons.filter(
+          (lesson) => lesson.id !== id
+        );
+        
         return {
           formData: {
             ...state.formData,
-            lessons: state.formData.lessons?.filter((lesson: any) => lesson.id !== id)
+            lessons: updatedLessons
           }
         };
       }),
       
       // Action - Update a lesson field
-      updateLesson: (id: string, field: keyof CourseStoreLesson, value: string) => set((state: any) => {
+      updateLesson: (id: string, field: keyof CourseStoreLesson, value: string) => set((state) => {
+        if (!state.formData.lessons) return { formData: { ...state.formData } };
+        
+        const updatedLessons = state.formData.lessons.map((lesson) => 
+          lesson.id === id ? { ...lesson, [field]: value } : lesson
+        );
+        
         return {
           formData: {
             ...state.formData,
-            lessons: state.formData.lessons?.map((lesson: any) => 
-              lesson.id === id ? { ...lesson, [field]: value } : lesson
-            )
+            lessons: updatedLessons
           }
         };
       }),
       
       // Action - Reorder lessons
-      reorderLessons: (updatedLessons: CourseStoreLesson[]) => set((state: any) => {
+      reorderLessons: (updatedLessons: CourseStoreLesson[]) => set((state) => {
         return {
           formData: {
             ...state.formData,
@@ -240,38 +277,46 @@ export const useCourseEditStore = create<CourseEditState>()(
       handleLessonFileUpload: async (file: File, lessonId: string) => {
         // TODO: Implement video file upload logic
         // For now just update the lesson with file info
-        set((state: any) => {
+        set((state) => {
+          if (!state.formData.lessons) return { formData: { ...state.formData } };
+          
+          const updatedLessons = state.formData.lessons.map((lesson) => 
+            lesson.id === lessonId ? { 
+              ...lesson, 
+              file,
+              fileName: file.name,
+              fileSize: `${Math.round(file.size / 1024)}KB`, 
+              progress: 100
+            } : lesson
+          );
+          
           return {
             formData: {
               ...state.formData,
-              lessons: state.formData.lessons?.map((lesson: any) => 
-                lesson.id === lessonId ? { 
-                  ...lesson, 
-                  file,
-                  fileName: file.name,
-                  fileSize: `${Math.round(file.size / 1024)}KB`, 
-                  progress: 100
-                } : lesson
-              )
+              lessons: updatedLessons
             }
           };
         });
       },
       
       // Action - Remove a lesson file
-      removeLessonFile: (lessonId: string) => set((state: any) => {
+      removeLessonFile: (lessonId: string) => set((state) => {
+        if (!state.formData.lessons) return { formData: { ...state.formData } };
+        
+        const updatedLessons = state.formData.lessons.map((lesson) => 
+          lesson.id === lessonId ? { 
+            ...lesson, 
+            file: undefined,
+            fileName: '',
+            fileSize: '',
+            progress: 0 
+          } : lesson
+        );
+        
         return {
           formData: {
             ...state.formData,
-            lessons: state.formData.lessons?.map((lesson: any) => 
-              lesson.id === lessonId ? { 
-                ...lesson, 
-                file: undefined,
-                fileName: '',
-                fileSize: '',
-                progress: 0 
-              } : lesson
-            )
+            lessons: updatedLessons
           }
         };
       }),
@@ -291,19 +336,17 @@ export const useCourseEditStore = create<CourseEditState>()(
         set({ saving: true, error: null });
         
         try {
-          // Convert CourseStoreLesson back to APILesson format for saving
-          const apiFormData = {
-            ...formData,
-            lessons: formData.lessons?.map(lesson => ({
-              id: lesson.id,
-              title: lesson.title,
-              description: lesson.description,
-              videoId: lesson.videoId,
-              // Any other API fields would go here
-            }))
+          // Convert CourseStoreLesson back to API format for saving
+          const apiFormData: CreateCourseData = {
+            title: formData.title || '',
+            description: formData.description,
+            price: formData.price || 0,
+            status: formData.status,
+            imageUrl: formData.imageUrl,
+            lessons: formData.lessons?.map(convertToAPILesson)
           };
           
-          await coursesApi.update(courseId, apiFormData as any);
+          await coursesApi.update(courseId, apiFormData);
           set({ saving: false });
           return true;
         } catch (err) {

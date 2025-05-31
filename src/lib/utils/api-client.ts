@@ -115,9 +115,9 @@ export const coursesApi = {
   },
   
   // Update a course
-  update: async (id: string, data: Partial<Course>): Promise<{ success: boolean }> => {
+  update: async (id: string, data: CreateCourseData): Promise<{ success: boolean }> => {
     try {
-      const response = await axios.patch(`/api/courses/${id}`, data);
+      await axios.patch(`/api/courses/${id}`, data);
       return { success: true };
     } catch (error) {
       return handleApiError(error, `Failed to update course ${id}`);
