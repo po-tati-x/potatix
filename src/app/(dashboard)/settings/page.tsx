@@ -237,7 +237,7 @@ export default function SettingsPage() {
                 <div className="space-y-3">
                   <div className="text-center">
                     <h4 className="text-sm font-medium text-slate-900">Free Plan</h4>
-                    <p className="text-xs text-slate-600 mt-0.5 mb-3">You're currently on the free plan</p>
+                    <p className="text-xs text-slate-600 mt-0.5 mb-3">You&apos;re currently on the free plan</p>
                   </div>
                   <Button
                     type="outline"

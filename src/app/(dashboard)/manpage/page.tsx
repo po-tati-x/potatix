@@ -4,15 +4,12 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
-  Globe,
   Trash2,
   PlusCircle,
   Eye,
   EyeOff,
   Save,
-  ChevronsUpDown,
   GripVertical,
-  Paintbrush,
   Link as LinkIcon,
   Instagram,
   Twitter,
@@ -162,7 +159,7 @@ export default function ManpagePage() {
   };
 
   // Handle link changes
-  const handleLinkChange = (id: string, field: string, value: any) => {
+  const handleLinkChange = (id: string, field: string, value: string | boolean) => {
     setProfile({
       ...profile,
       links: profile.links.map(link => 

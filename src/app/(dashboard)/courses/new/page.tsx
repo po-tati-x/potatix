@@ -26,7 +26,6 @@ export default function NewCoursePage() {
     addLesson,
     removeLesson,
     updateLesson,
-    moveLesson,
     handleFileUpload,
     removeFile,
     submitCourse,
