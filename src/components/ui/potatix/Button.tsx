@@ -268,8 +268,8 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
                 ) : _iconLeft ? (
                   <div className={cn(IconContainerVariants({ size, type }))}>{_iconLeft}</div>
                 ) : null),
-              isValidElement(children) && 'props' in children && 'children' in (children.props as any) ? (
-                <span className={'truncate'}>{(children.props as any).children}</span>
+              isValidElement(children) && 'props' in children && 'children' in (children.props as React.PropsWithChildren<object>) ? (
+                <span className={'truncate'}>{(children.props as React.PropsWithChildren<object>).children}</span>
               ) : null,
               iconRight && !loading && (
                 <div className={cn(IconContainerVariants({ size, type }))}>{iconRight}</div>
