@@ -63,7 +63,7 @@ export default function CoursesPage() {
             <div>
               <h3 className="text-sm font-medium text-red-800 mb-1">{error}</h3>
               <p className="text-sm text-red-600 mb-3">
-                We couldn't load your courses. This could be due to a network issue or server problem.
+                We couldn&apos;t load your courses. This could be due to a network issue or server problem.
               </p>
               <Button 
                 type="danger"

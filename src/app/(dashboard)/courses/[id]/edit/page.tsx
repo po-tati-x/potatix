@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import {
   ArrowLeft,
   Save,
@@ -29,8 +30,8 @@ const StatusBadge = ({
   status,
   onChange,
 }: {
-  status: string;
-  onChange: (status: string) => void;
+  status: 'draft' | 'published' | 'archived';
+  onChange: (status: 'draft' | 'published' | 'archived') => void;
 }) => {
   const statusOptions = {
     draft: "bg-amber-50 text-amber-700 border border-amber-200",
@@ -38,8 +39,7 @@ const StatusBadge = ({
     archived: "bg-slate-50 text-slate-600 border border-slate-200",
   };
   
-  const statusStyles = statusOptions[status as keyof typeof statusOptions] || 
-    statusOptions.archived;
+  const statusStyles = statusOptions[status] || statusOptions.archived;
 
   return (
     <DropdownMenu>
@@ -125,7 +125,7 @@ export default function EditCoursePage() {
     handleLessonFileUpload,
     removeLessonFile,
     reorderLessons,
-  } = useCourseEditStore() as any;
+  } = useCourseEditStore();
 
   // Load course data on component mount
   useEffect(() => {
@@ -149,14 +149,19 @@ export default function EditCoursePage() {
     const { name, value } = e.target;
 
     if (name === "price") {
-      setField(name, parseFloat(value) || 0);
+      setField("price", parseFloat(value) || 0);
+    } else if (name === "title") {
+      setField("title", value);
+    } else if (name === "description") {
+      setField("description", value);
     } else {
-      setField(name as any, value);
+      // Fallback for other fields
+      console.warn(`Unhandled field name: ${name}`);
     }
   };
 
   // Handle status change from dropdown
-  const handleStatusChange = (status: string) => {
+  const handleStatusChange = (status: 'draft' | 'published' | 'archived') => {
     setField('status', status);
   };
 
@@ -393,10 +398,12 @@ export default function EditCoursePage() {
                   <div className="space-y-3">
                     <div className="border border-slate-200 rounded-md overflow-hidden">
                       <div className="relative aspect-video bg-slate-100">
-                        <img
-                          src={imagePreview}
+                        <Image
+                          src={imagePreview || ''}
                           alt="Course cover preview"
-                          className="w-full h-full object-cover"
+                          className="object-cover"
+                          fill
+                          sizes="(max-width: 768px) 100vw, 33vw"
                           onError={() => removeImage()}
                         />
                         {imageUploading && (
