@@ -42,9 +42,23 @@ export const useSession = () => {
 
 export const signOut = async () => {
   try {
-    await authSignOut();
-    window.location.href = "/sign-in";
+    // First try the better-auth client's signOut method
+    await authSignOut({
+      fetchOptions: {
+        onSuccess: () => {
+          // Force the browser to redirect to the login page after signing out
+          window.location.href = "/login";
+        },
+        onError: (error) => {
+          console.error("Error with auth client signOut:", error);
+          // Fallback to manual endpoint call if client method fails
+          window.location.href = "/login";
+        }
+      }
+    });
   } catch (error) {
     console.error("Failed to sign out:", error);
+    // Force the browser to redirect to the login page even if signOut fails
+    window.location.href = "/login";
   }
 }; 
