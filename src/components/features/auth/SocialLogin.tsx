@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/potatix/Button';
 import { signIn } from '@/lib/auth/auth-client';
 import { toast } from 'sonner';
 import { useState } from 'react';
-import { Loader2, Github, Mail } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 type SocialProvider = 'github' | 'google';
 
@@ -26,8 +26,9 @@ export default function SocialLogin({ callbackUrl = '/dashboard' }: SocialLoginP
           toast.error(`Failed to sign in with ${provider}: ${ctx.error.message}`);
         }
       });
-    } catch (error: any) {
-      toast.error(`Authentication failed: ${error.message || 'Unknown error'}`);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      toast.error(`Authentication failed: ${errorMessage}`);
     } finally {
       setIsLoading(null);
     }

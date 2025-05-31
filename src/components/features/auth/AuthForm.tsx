@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/shadcn/form';
-import { Button } from '@/components/ui/potatix/Button';
 import { Input } from '@/components/ui/shadcn/input';
 import { EyeIcon, EyeOffIcon, Loader2 } from 'lucide-react';
 import * as z from "zod";
@@ -141,7 +140,7 @@ export default function AuthForm({ isLoginMode = false, callbackUrl = '/dashboar
               logDebug(`signIn onError callback: ${ctx.error.message}`);
               throw new Error(ctx.error.message || "Login failed");
             },
-            onSuccess: (ctx) => {
+            onSuccess: () => {
               logDebug(`signIn onSuccess callback triggered!`);
             }
           });
@@ -167,7 +166,7 @@ export default function AuthForm({ isLoginMode = false, callbackUrl = '/dashboar
           throw err;
         }
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Enhanced error logging
       logDebug(`Auth error caught: ${error instanceof Error ? error.message : String(error)}`);
       console.error("Auth error:", error);
@@ -182,8 +181,11 @@ export default function AuthForm({ isLoginMode = false, callbackUrl = '/dashboar
         try {
           const stringified = JSON.stringify(error, null, 2);
           setDebugError(stringified);
-          errorMessage = error.message || stringified.substring(0, 100);
-        } catch (e) {
+          
+          // Use a type guard for accessing message property
+          const errorObj = error as { message?: string };
+          errorMessage = errorObj.message || stringified.substring(0, 100);
+        } catch {
           errorMessage = "Unknown error format";
         }
       }
