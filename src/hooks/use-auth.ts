@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { signOut as authSignOut } from '@/lib/auth/auth-client';
 
 export type User = {
   id: string;
@@ -41,7 +42,7 @@ export const useSession = () => {
 
 export const signOut = async () => {
   try {
-    await fetch("/api/auth/signout", { method: "POST" });
+    await authSignOut();
     window.location.href = "/sign-in";
   } catch (error) {
     console.error("Failed to sign out:", error);
