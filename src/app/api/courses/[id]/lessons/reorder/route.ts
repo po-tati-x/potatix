@@ -49,9 +49,9 @@ async function checkCourseOwnership(request: NextRequest, courseId: string): Pro
 // PATCH handler to reorder lessons
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const courseId = params.id;
+  const { id: courseId } = await params;
   
   if (!courseId) {
     return NextResponse.json(
