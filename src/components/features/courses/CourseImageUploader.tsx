@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react';
 import { X, Image as ImageIcon } from 'lucide-react';
 import { coursesApi } from '@/lib/utils/api-client';
+import Image from 'next/image';
 
 interface CourseImageUploaderProps {
   initialUrl?: string;
@@ -17,7 +18,6 @@ export function CourseImageUploader({
 }: CourseImageUploaderProps) {
   const [imagePreview, setImagePreview] = useState<string | null>(initialUrl || null);
   const [imageUploading, setImageUploading] = useState(false);
-  const [courseImage, setCourseImage] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Handle image upload
@@ -38,9 +38,6 @@ export function CourseImageUploader({
       return;
     }
     
-    // Update state with the selected file
-    setCourseImage(file);
-    
     // Create preview
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -56,7 +53,6 @@ export function CourseImageUploader({
     } catch (error) {
       console.error('Failed to upload image:', error);
       alert('Failed to upload image. Please try again.');
-      setCourseImage(null);
       setImagePreview(null);
     } finally {
       setImageUploading(false);
@@ -65,7 +61,6 @@ export function CourseImageUploader({
   
   // Remove image
   const removeImage = () => {
-    setCourseImage(null);
     setImagePreview(null);
     onImageRemoved();
     if (fileInputRef.current) {
@@ -105,10 +100,13 @@ export function CourseImageUploader({
       ) : (
         <div className="border border-neutral-200 rounded-lg overflow-hidden">
           <div className="relative aspect-video">
-            <img
+            <Image
               src={imagePreview}
               alt="Course cover preview"
-              className="w-full h-full object-cover"
+              className="object-cover"
+              fill
+              sizes="(max-width: 768px) 100vw, 600px"
+              priority
             />
             {imageUploading && (
               <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
