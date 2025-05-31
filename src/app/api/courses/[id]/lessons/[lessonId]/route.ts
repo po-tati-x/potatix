@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
-import { courseSchema, authSchema } from '@/db';
+import { courseSchema } from '@/db';
 import { auth } from '@/lib/auth/auth';
 import { z } from 'zod';
 import { eq, and } from 'drizzle-orm';
@@ -13,8 +13,23 @@ const lessonUpdateSchema = z.object({
   order: z.number().int().positive('Order must be a positive number').optional()
 });
 
+// Define lesson type for better type safety
+interface Lesson {
+  id: string;
+  courseId: string;
+  title: string;
+  description: string | null;
+  videoId: string | null;
+  order: number;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+  uploadStatus?: string | null;
+  duration?: number | null;
+  [key: string]: unknown; // For any other properties
+}
+
 // Type for the structured API response
-type ApiResponse<T = any> = {
+type ApiResponse<T = Lesson> = {
   lesson?: T;
   error?: string;
   status?: number;
@@ -84,7 +99,7 @@ async function checkLessonOwnership(
 // GET handler to retrieve a single lesson
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string; lessonId: string } }
+  { params }: { params: Promise<{ id: string; lessonId: string }> }
 ) {
   const { id: courseId, lessonId } = await params;
   
@@ -112,7 +127,7 @@ export async function GET(
 // PATCH handler to update a lesson
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string; lessonId: string } }
+  { params }: { params: Promise<{ id: string; lessonId: string }> }
 ) {
   const { id: courseId, lessonId } = await params;
   
@@ -181,7 +196,7 @@ export async function PATCH(
 // DELETE handler to delete a lesson
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string; lessonId: string } }
+  { params }: { params: Promise<{ id: string; lessonId: string }> }
 ) {
   const { id: courseId, lessonId } = await params;
   
