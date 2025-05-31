@@ -20,12 +20,6 @@ const BYPASS_ROUTES = [
   '/favicon.ico',
 ];
 
-// Debug function to inspect cookie contents
-const debugCookies = (request: NextRequest) => {
-  const cookieNames = [...request.cookies.getAll().map(c => ({ name: c.name, value: c.value.substring(0, 10) + '...' }))];
-  console.log('All cookies:', cookieNames);
-};
-
 /**
  * Extract course slug from host header
  * Supports formats:
@@ -84,13 +78,31 @@ export function middleware(request: NextRequest) {
   const courseSlug = extractSubdomain(host);
   
   if (courseSlug) {
-    // Next.js is losing search params during rewrites, so we'll bake it into the path
-    // instead of using search params
-    console.log(`[Middleware] Rewriting to viewer/${courseSlug} route`);
-    
-    // Create the new URL with the viewer path that includes the slug
+    // Create the new URL, preserving any path after the domain
     const url = request.nextUrl.clone();
-    url.pathname = `/viewer/${courseSlug}`;
+    
+    // Handle clean lesson URLs (/lesson/[id])
+    if (pathname.startsWith('/lesson/')) {
+      url.pathname = `/viewer/${courseSlug}${pathname}`;
+      console.log(`[Middleware] Rewriting clean lesson URL ${pathname} to ${url.pathname}`);
+      return NextResponse.rewrite(url);
+    }
+    
+    // Check if this is already a viewer route with the correct slug
+    if (pathname.startsWith(`/viewer/${courseSlug}`)) {
+      console.log(`[Middleware] Already on correct viewer route: ${pathname}`);
+      return NextResponse.next();
+    }
+    
+    // If we're at root path, go to viewer/courseSlug
+    if (pathname === '/' || pathname === '') {
+      url.pathname = `/viewer/${courseSlug}`;
+    } else {
+      // Otherwise, we need to prefix the path with /viewer/courseSlug
+      url.pathname = `/viewer/${courseSlug}${pathname}`;
+    }
+    
+    console.log(`[Middleware] Rewriting ${pathname} to ${url.pathname}`);
     
     // Return as a rewrite (preserves original URL in browser)
     return NextResponse.rewrite(url);
