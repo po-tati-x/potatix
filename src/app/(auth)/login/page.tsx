@@ -5,8 +5,9 @@ import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import AuthForm from '@/components/features/auth/AuthForm';
 import SocialLogin from '@/components/features/auth/SocialLogin';
+import { Suspense } from 'react';
 
-export default function LoginPage() {
+function LoginContent() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
   
@@ -18,7 +19,7 @@ export default function LoginPage() {
       
       <div className="mt-5 pt-5 border-t border-slate-200">
         <div className="text-center text-sm text-slate-600">
-          <span>Don't have an account?</span>
+          <span>Don&apos;t have an account?</span>
           <Link 
             href="/signup" 
             className="ml-1.5 font-medium text-emerald-600 hover:text-emerald-700 inline-flex items-center"
@@ -28,5 +29,13 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="w-full flex items-center justify-center py-8">Loading...</div>}>
+      <LoginContent />
+    </Suspense>
   );
 } 
