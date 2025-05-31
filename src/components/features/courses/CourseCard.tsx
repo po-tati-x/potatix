@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { BookOpen, ExternalLink, BookText, Clock } from 'lucide-react';
 import { Course } from '@/lib/utils/api-client';
 
@@ -33,12 +34,14 @@ export function CourseCard({ course }: CourseCardProps) {
     <Link href={`/courses/${course.id}`} className="block group">
       <div className="relative h-full border border-slate-200 rounded-lg overflow-hidden hover:border-slate-400 hover:shadow-sm transition-all duration-200 bg-white">
         {/* Course image or placeholder */}
-        <div className="h-44 bg-slate-50 overflow-hidden">
+        <div className="h-44 bg-slate-50 overflow-hidden relative">
           {course.imageUrl ? (
-            <img 
+            <Image 
               src={course.imageUrl} 
               alt={course.title} 
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
+              fill
+              sizes="(max-width: 768px) 100vw, 300px"
+              className="object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-slate-50 group-hover:bg-slate-100 transition-colors">
