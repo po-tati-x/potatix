@@ -199,8 +199,13 @@ export const useCourseStore = create<CourseState>()(
         lessons: state.lessons.map(lesson => {
           if (lesson.id === lessonId) {
             // Remove file properties but keep other lesson data
-            const { file, fileName, fileSize, videoId, ...rest } = lesson;
-            return { ...rest, progress: 0 };
+            const { id, title, description } = lesson;
+            return { 
+              id, 
+              title, 
+              description, 
+              progress: 0 
+            };
           }
           return lesson;
         })
