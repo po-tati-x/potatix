@@ -406,8 +406,14 @@ export default function DashboardPage() {
                   size="small"
                   icon={<LogOut className="h-3.5 w-3.5" />}
                   onClick={async () => {
-                    await signOut();
-                    router.push('/');
+                    try {
+                      await signOut();
+                      // router.push('/') will be handled by the signOut function
+                    } catch (error) {
+                      console.error("Dashboard SignOut failed:", error);
+                      // Fallback if signOut throws error
+                      router.push('/login');
+                    }
                   }}
                   className="w-full justify-center text-red-600 hover:text-red-700 hover:bg-red-50"
                 >
