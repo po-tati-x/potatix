@@ -44,7 +44,7 @@ export function LessonList({
               <Plus className="h-10 w-10 mx-auto" />
             </div>
             <p className="text-sm text-neutral-600 mb-4">
-              Your course doesn't have any lessons yet
+              Your course doesn&apos;t have any lessons yet
             </p>
             <button
               type="button"

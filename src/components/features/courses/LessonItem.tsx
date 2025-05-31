@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { Upload, X, ChevronUp, ChevronDown, Trash2 } from "lucide-react";
 import { Lesson } from "@/lib/stores/courseStore";
 
