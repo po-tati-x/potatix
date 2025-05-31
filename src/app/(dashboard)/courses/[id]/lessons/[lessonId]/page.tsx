@@ -1,15 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Edit, File, Loader2, Clock, Calendar } from 'lucide-react';
+import { ArrowLeft, Edit, File, Clock, Calendar } from 'lucide-react';
 import { coursesApi, type Lesson } from '@/lib/utils/api-client';
 import MuxPlayer from '@mux/mux-player-react';
 
 export default function LessonPlayerPage() {
   const params = useParams();
-  const router = useRouter();
   const courseId = Array.isArray(params.id) ? params.id[0] : params.id;
   const lessonId = Array.isArray(params.lessonId) ? params.lessonId[0] : params.lessonId;
   
