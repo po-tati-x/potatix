@@ -1,16 +1,15 @@
 import { NextResponse } from 'next/server';
 import { db, courseSchema } from '@/db';
-import { auth } from '@/lib/auth/auth';
 import { eq, and } from 'drizzle-orm';
 
 // GET /api/courses/slug/[slug]
 // Public endpoint - doesn't require auth
 export async function GET(
   request: Request,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
-  // Await params to fix NextJS warning
-  const { slug } = await Promise.resolve(params);
+  // Get slug from params
+  const { slug } = await params;
   
   if (!slug) {
     return NextResponse.json(

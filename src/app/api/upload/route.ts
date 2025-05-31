@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { nanoid } from 'nanoid';
 import { auth } from '@/lib/auth/auth';
-import { z } from 'zod';
 
 // Configure R2 client
 const s3Client = new S3Client({
