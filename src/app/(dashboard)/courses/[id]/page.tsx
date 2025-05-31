@@ -3,9 +3,10 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { 
   ArrowLeft, Edit, Trash2, BookOpen, Play, Lock, ExternalLink, 
-  Calendar, DollarSign, Clock, FileText, AlertTriangle, X, Loader2, Users
+  Calendar, DollarSign, Clock, FileText, AlertTriangle, Loader2, Users
 } from 'lucide-react';
 import { useCourseDetailStore } from '@/lib/stores/courseDetailStore';
 import Modal from '@/components/ui/potatix/Modal';
@@ -204,12 +205,15 @@ export default function CoursePage() {
           {/* Left column - Main content */}
           <div className="md:col-span-2 space-y-6">
             {/* Cover image */}
-            <div className="aspect-video border border-slate-200 rounded-md overflow-hidden bg-slate-50">
+            <div className="aspect-video border border-slate-200 rounded-md overflow-hidden bg-slate-50 relative">
               {course.imageUrl ? (
-                <img 
+                <Image 
                   src={course.imageUrl} 
                   alt={course.title} 
-                  className="w-full h-full object-cover"
+                  className="object-cover"
+                  fill
+                  sizes="(max-width: 768px) 100vw, 66vw"
+                  priority
                 />
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center">
