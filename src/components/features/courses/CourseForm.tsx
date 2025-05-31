@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { CourseImageUploader } from "./CourseImageUploader";
 
 interface CourseFormProps {
@@ -97,7 +96,7 @@ export function CourseForm({
               required
             />
             <p className="mt-1 text-xs text-neutral-500">
-              You'll receive 95% of the revenue (Potatix fee: 5%)
+              You&apos;ll receive 95% of the revenue (Potatix fee: 5%)
             </p>
           </div>
         </div>

@@ -5,6 +5,7 @@ import {
   Droppable,
   Draggable,
   DropResult,
+  DraggableProvidedDragHandleProps,
 } from "@hello-pangea/dnd";
 import { Lesson } from "@/lib/stores/courseStore";
 import {
@@ -22,6 +23,7 @@ import {
 import { useState } from "react";
 import MuxUploader from "@mux/mux-uploader-react";
 import { Button } from "@/components/ui/potatix/Button";
+import Image from "next/image";
 
 // Type for the core drag and drop functionality only
 interface DraggableLessonListProps {
@@ -30,7 +32,7 @@ interface DraggableLessonListProps {
   renderLesson: (
     lesson: Lesson,
     index: number,
-    dragHandleProps: any,
+    dragHandleProps: DraggableProvidedDragHandleProps | null,
   ) => React.ReactNode;
   emptyState?: React.ReactNode;
 }
@@ -131,7 +133,7 @@ const FormField = ({
 interface LessonEditorProps {
   lesson: Lesson;
   index: number;
-  dragHandleProps: any;
+  dragHandleProps: DraggableProvidedDragHandleProps | null;
   onUpdateLesson: (id: string, field: keyof Lesson, value: string) => void;
   onRemoveLesson: (id: string) => void;
   onFileChange: (
@@ -265,8 +267,9 @@ export function VideoUploader({ lessonId, onFileChange }: VideoUploaderProps) {
     }
   };
 
-  const handleUploadSuccess = (data: any) => {
-    console.log("Upload success:", data);
+  // Define a type for the Mux upload success event
+  const handleUploadSuccess = (evt: CustomEvent) => {
+    console.log("Upload success:", evt.detail);
   };
 
   // Advanced uploader
@@ -418,11 +421,15 @@ export function VideoPreview({ lesson, onFileRemove }: VideoPreviewProps) {
     return (
       <div className="border border-slate-200 rounded-md overflow-hidden">
         <div className="relative aspect-video bg-black group">
-          <img
-            src={`https://image.mux.com/${lesson.videoId}/thumbnail.jpg?width=1920&height=1080&fit_mode=preserve`}
-            alt={`Preview for ${lesson.title}`}
-            className="w-full h-full object-contain"
-          />
+          <div className="relative w-full h-full">
+            <Image
+              src={`https://image.mux.com/${lesson.videoId}/thumbnail.jpg?width=1920&height=1080&fit_mode=preserve`}
+              alt={`Preview for ${lesson.title}`}
+              fill
+              className="object-contain"
+              sizes="(max-width: 768px) 100vw, 600px"
+            />
+          </div>
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="bg-black bg-opacity-60 rounded-full p-3 group-hover:bg-opacity-80 transition-all">
               <PlayCircle className="h-6 w-6 text-white" />
