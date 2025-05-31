@@ -11,12 +11,21 @@ import { authClient } from '@/lib/auth/auth-client';
 
 export const dynamic = "force-static";
 
+// Define session type
+interface SessionData {
+  user?: {
+    email?: string;
+    [key: string]: unknown; // For other potential user properties
+  };
+  [key: string]: unknown; // For other potential session properties
+}
+
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [session, setSession] = useState<any>(null);
+  const [session, setSession] = useState<SessionData | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 

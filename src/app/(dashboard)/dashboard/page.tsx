@@ -3,13 +3,9 @@
 import { authClient, signOut } from '@/lib/auth/auth-client';
 import { 
   ChevronRight, 
-  Clock, 
-  GraduationCap, 
-  BarChart2, 
+  BookOpen, 
   User, 
   LogOut, 
-  BookOpen, 
-  Layers, 
   DollarSign, 
   Users,
   Play,
@@ -23,11 +19,12 @@ import {
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/potatix/Button';
+import Image from 'next/image';
 
 interface UserData {
   name?: string;
   email?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 // Mock data for the dashboard
@@ -255,7 +252,13 @@ export default function DashboardPage() {
                   <div className="flex gap-4">
                     <div className="flex-shrink-0 w-16 h-10 bg-slate-100 rounded overflow-hidden">
                       {course.image ? (
-                        <img src={course.image} alt={course.title} className="w-full h-full object-cover" />
+                        <Image 
+                          src={course.image} 
+                          alt={course.title} 
+                          width={64}
+                          height={40}
+                          className="object-cover"
+                        />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
                           <BookOpen className="h-4 w-4 text-slate-400" />
@@ -445,7 +448,7 @@ export default function DashboardPage() {
                     <h3 className="text-xs font-medium text-slate-900">Student Milestone</h3>
                     <span className="text-xs font-medium text-slate-600">Next week</span>
                   </div>
-                  <p className="text-xs text-slate-600 mt-0.5">You're about to reach 500 students!</p>
+                  <p className="text-xs text-slate-600 mt-0.5">You&apos;re about to reach 500 students!</p>
                 </div>
               </div>
               
