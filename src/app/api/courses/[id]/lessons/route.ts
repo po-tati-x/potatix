@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
-import { courseSchema, authSchema } from '@/db';
+import { courseSchema } from '@/db';
 import { auth } from '@/lib/auth/auth';
 import { z } from 'zod';
 import { eq } from 'drizzle-orm';
@@ -16,7 +16,7 @@ const lessonSchema = z.object({
 });
 
 // Type for the structured API response
-type ApiResponse<T = any> = {
+type ApiResponse<T = Record<string, unknown>> = {
   id?: string;
   lesson?: T;
   error?: string;
@@ -68,9 +68,9 @@ async function checkCourseOwnership(request: NextRequest, courseId: string): Pro
 // POST handler to create a new lesson
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const courseId = params.id;
+  const { id: courseId } = await params;
   
   if (!courseId) {
     return NextResponse.json(
