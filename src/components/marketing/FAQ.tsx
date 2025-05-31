@@ -116,7 +116,7 @@ export default function FAQ() {
           </h2>
           
           <p className="mt-4 text-sm md:text-base text-neutral-600 max-w-2xl">
-            No marketing fluff. Here's what developers actually want to know.
+            No marketing fluff. Here&apos;s what developers actually want to know.
           </p>
         </div>
 

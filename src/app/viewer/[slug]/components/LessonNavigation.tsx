@@ -1,49 +1,55 @@
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { Button } from '@/components/ui/potatix/Button';
 
 interface LessonNavigationProps {
   currentIndex: number;
   totalLessons: number;
   onPrev: () => void;
   onNext: () => void;
+  isCompact?: boolean;
 }
 
 export function LessonNavigation({ 
   currentIndex, 
   totalLessons, 
   onPrev, 
-  onNext 
+  onNext,
+  isCompact = false
 }: LessonNavigationProps) {
+  const isPrevDisabled = currentIndex <= 0;
+  const isNextDisabled = currentIndex >= totalLessons - 1;
+
   if (totalLessons <= 1 || currentIndex < 0) return null;
 
   return (
     <div className="flex items-center gap-2">
-      <button 
+      <Button
+        type="text"
+        size={isCompact ? "tiny" : "small"}
+        icon={<ChevronLeft className="h-4 w-4" />}
         onClick={onPrev}
-        disabled={currentIndex <= 0}
-        className={`p-2 rounded-lg transition-colors ${
-          currentIndex <= 0 
-            ? 'text-neutral-300 cursor-not-allowed' 
-            : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100'
-        }`}
+        disabled={isPrevDisabled}
+        className="text-slate-700"
       >
-        <ArrowLeft className="h-5 w-5" />
-      </button>
+        {!isCompact && <span>Previous</span>}
+      </Button>
       
-      <span className="text-sm text-neutral-500 px-3">
-        {currentIndex + 1} of {totalLessons}
-      </span>
+      <div className="text-sm text-slate-600 flex items-center gap-2">
+        <span className="font-medium">{currentIndex + 1}</span>
+        <span className="text-slate-400">/</span>
+        <span>{totalLessons}</span>
+      </div>
       
-      <button 
+      <Button
+        type="text"
+        size={isCompact ? "tiny" : "small"}
+        iconRight={<ChevronRight className="h-4 w-4" />}
         onClick={onNext}
-        disabled={currentIndex >= totalLessons - 1}
-        className={`p-2 rounded-lg transition-colors ${
-          currentIndex >= totalLessons - 1
-            ? 'text-neutral-300 cursor-not-allowed' 
-            : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100'
-        }`}
+        disabled={isNextDisabled}
+        className="text-slate-700"
       >
-        <ArrowRight className="h-5 w-5" />
-      </button>
+        {!isCompact && <span>Next</span>}
+      </Button>
     </div>
   );
 }

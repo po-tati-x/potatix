@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { DollarSign, Lock, BarChart, Database, Clock, Globe, Palette, Code, ChevronRight } from "lucide-react";
+import { DollarSign, Lock, BarChart, Database, Clock, Globe, Palette, Code } from "lucide-react";
 
 interface FeatureCardProps {
   title: string;

@@ -302,7 +302,7 @@ const ComparisonSection = () => {
             No BS Comparison
           </h2>
           <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-            We don't try to be everything for everyone. We focus on what dev course creators actually need.
+            We don&apos;t try to be everything for everyone. We focus on what dev course creators actually need.
           </p>
         </motion.div>
 
@@ -322,8 +322,8 @@ const ComparisonSection = () => {
             Why Choose Potatix?
           </h3>
           <p className="text-gray-700">
-            "We'll move faster and focus exclusively on creators while bigger platforms try to please everyone.
-            No grand vision. No revolution. Just solving a specific problem better than others for a small group of people who will pay us."
+            &quot;We&apos;ll move faster and focus exclusively on creators while bigger platforms try to please everyone.
+            No grand vision. No revolution. Just solving a specific problem better than others for a small group of people who will pay us.&quot;
           </p>
           <div className="mt-4 text-sm text-gray-500">
             — From our actual business plan

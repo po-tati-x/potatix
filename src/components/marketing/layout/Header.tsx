@@ -41,7 +41,7 @@ export default function Header() {
       try {
         const { data } = await authClient.getSession();
         setIsLoggedIn(!!data);
-      } catch (error) {
+      } catch {
         setIsLoggedIn(false);
       }
     };
@@ -129,7 +129,6 @@ export default function Header() {
                 key={item.title} 
                 item={item} 
                 scrolled={scrolled}
-                isLoginPage={isLoginPage}
                 onNavigate={handleNavigation}
               />
             ))}
@@ -201,12 +200,10 @@ export default function Header() {
 function NavItem({ 
   item, 
   scrolled, 
-  isLoginPage,
   onNavigate 
 }: { 
   item: NavItem; 
   scrolled: boolean;
-  isLoginPage: boolean;
   onNavigate: (href: string) => void;
 }) {
   const [isOpen, setIsOpen] = useState(false);

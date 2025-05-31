@@ -165,7 +165,7 @@ function PricingCard() {
       
       <div className="p-6 sm:p-8 pt-2">
         <h4 className="font-medium text-gray-900 mb-4 text-sm">
-          What's included:
+          What&apos;s included:
         </h4>
         <ul className="space-y-3">
           {BENEFITS.map((benefit, idx) => (
@@ -177,7 +177,7 @@ function PricingCard() {
           <div className="flex items-start gap-3">
             <AlertCircle className="h-5 w-5 text-amber-500 flex-shrink-0" aria-hidden="true" />
             <p className="text-xs text-amber-800">
-              Only payment processing fees (Stripe's standard 2.9% + 30¢) will be added on top of our 10% fee.
+              Only payment processing fees (Stripe&apos;s standard 2.9% + 30¢) will be added on top of our 10% fee.
             </p>
           </div>
         </div>
@@ -251,7 +251,7 @@ export default function Pricing() {
 
         <div className="w-full mt-16 bg-white p-5 rounded-xl text-center border border-gray-200 shadow-sm">
           <blockquote className="text-sm text-gray-700 italic">
-            "We only make money when creators make money = aligned incentives"
+            &quot;We only make money when creators make money = aligned incentives&quot;
           </blockquote>
           <p className="mt-2 text-xs text-gray-500">
             — From our actual business plan

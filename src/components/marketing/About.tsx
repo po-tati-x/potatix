@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/shadcn/tabs";
 import { BookOpen, Palette, Smartphone, Sparkles, CreditCard, Check, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
