@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { Check, Code, DollarSign, Users, Sparkles } from "lucide-react";
 
 // Proper TypeScript interfaces
