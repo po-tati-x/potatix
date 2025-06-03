@@ -1,6 +1,6 @@
 'use client';
 
-import { BookOpen, Calendar, Users, Play, ChevronRight, Lock, Clock, CheckCircle, ArrowRight, Star, Code, BarChart2, GraduationCap } from 'lucide-react';
+import { BookOpen, Calendar, Users, Play, ChevronRight, Lock, Clock, CheckCircle, ArrowRight, Star, Code, BarChart2, GraduationCap, X } from 'lucide-react';
 import Image from 'next/image';
 import { Course, Lesson } from '@/lib/types/api';
 import Link from 'next/link';
@@ -11,13 +11,15 @@ interface CourseOverviewProps {
   unlockedLessonsCount: number;
   totalLessonsCount: number;
   courseSlug: string;
+  enrollmentStatus?: 'active' | 'pending' | 'rejected' | null;
 }
 
 export default function CourseOverview({ 
   course, 
   unlockedLessonsCount, 
   totalLessonsCount, 
-  courseSlug 
+  courseSlug,
+  enrollmentStatus
 }: CourseOverviewProps) {
   // Mock data for additional content sections
   const instructorData = {
@@ -176,29 +178,45 @@ export default function CourseOverview({
       {/* Content */}
       <div className="max-w-5xl mx-auto px-4 py-6">
         {/* Course access info */}
-        <div className="mb-6 border border-emerald-200 rounded-md bg-emerald-50 overflow-hidden">
-          <div className="flex items-start gap-3 p-4">
-            <div className="mt-0.5 h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
-              <CheckCircle className="h-4 w-4 text-emerald-600" />
-            </div>
-            <div>
-              <h2 className="text-base font-medium text-slate-900 mb-1">Demo Access</h2>
-              <p className="text-sm text-slate-600 mb-2">
-                You have access to {unlockedLessonsCount} of {totalLessonsCount} lessons in this course.
-                Subscribe to unlock all content.
-              </p>
-              <Link href="/pricing">
-                <Button
-                  type="link"
-                  size="small"
-                  iconRight={<ChevronRight className="h-3.5 w-3.5" />}
-                >
-                  View pricing
-                </Button>
-              </Link>
+        {enrollmentStatus === 'rejected' ? (
+          <div className="mb-6 border border-red-200 rounded-md bg-red-50 overflow-hidden">
+            <div className="flex items-start gap-3 p-4">
+              <div className="mt-0.5 h-8 w-8 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                <X className="h-4 w-4 text-red-600" />
+              </div>
+              <div>
+                <h2 className="text-base font-medium text-slate-900 mb-1">Enrollment Rejected</h2>
+                <p className="text-sm text-slate-600 mb-2">
+                  Your enrollment request for this course was not approved. Please contact the instructor for more information or try another course.
+                </p>
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          <div className="mb-6 border border-emerald-200 rounded-md bg-emerald-50 overflow-hidden">
+            <div className="flex items-start gap-3 p-4">
+              <div className="mt-0.5 h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                <CheckCircle className="h-4 w-4 text-emerald-600" />
+              </div>
+              <div>
+                <h2 className="text-base font-medium text-slate-900 mb-1">Demo Access</h2>
+                <p className="text-sm text-slate-600 mb-2">
+                  You have access to {unlockedLessonsCount} of {totalLessonsCount} lessons in this course.
+                  Subscribe to unlock all content.
+                </p>
+                <Link href="/pricing">
+                  <Button
+                    type="link"
+                    size="small"
+                    iconRight={<ChevronRight className="h-3.5 w-3.5" />}
+                  >
+                    View pricing
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
         
         {/* Navigation tabs */}
         <div className="border-b border-slate-200 mb-6">
