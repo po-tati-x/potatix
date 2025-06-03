@@ -1,16 +1,18 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
 import Image from 'next/image';
 import { 
-  ArrowLeft, Edit, Trash2, BookOpen, Play, Lock, ExternalLink, 
-  Calendar, DollarSign, Clock, FileText, AlertTriangle, Loader2, Users
+  ArrowLeft, Edit, Trash2, Play, Lock, ExternalLink, 
+  Calendar, DollarSign, Clock, FileText, AlertTriangle, Loader2, Users,
+  ChevronDown, ChevronRight
 } from 'lucide-react';
-import { useCourseDetailStore } from '@/lib/stores/courseDetailStore';
 import Modal from '@/components/ui/potatix/Modal';
 import { Button } from '@/components/ui/potatix/Button';
+import { Module, Lesson } from '@/lib/types/api';
+import { useUIStore } from '@/lib/stores/courses';
+import { useCourse, useDeleteCourse } from '@/lib/api';
 
 // Status badge component
 const StatusBadge = ({ status }: { status: string }) => {
@@ -23,42 +25,131 @@ const StatusBadge = ({ status }: { status: string }) => {
   const statusStyles = statusMap[status] || "bg-slate-50 text-slate-600 border border-slate-200";
   
   return (
-    <span className={`px-2 py-0.5 text-xs font-medium rounded-md ${statusStyles}`}>
-      {status}
-    </span>
+    <div className={`px-3 py-1 text-sm font-medium rounded-md flex items-center ${statusStyles}`}>
+      <span className="capitalize">{status}</span>
+    </div>
   );
 };
 
-export default function CoursePage() {
+// Module component with collapsible content
+const ModuleItem = ({ module, index }: { module: Module; index: number }) => {
+  const { expandedModules, toggleModuleExpanded } = useUIStore();
+  const moduleId = module.id;
+  
+  // Check if module is expanded
+  const isExpanded = expandedModules[moduleId] ?? false;
+  const hasLessons = module.lessons && module.lessons.length > 0;
+  
+  return (
+    <div className="border border-slate-200 rounded-md overflow-hidden bg-white mb-4">
+      <div 
+        className="bg-slate-50 border-b border-slate-200 px-4 py-3 flex items-center justify-between cursor-pointer"
+        onClick={() => toggleModuleExpanded(moduleId)}
+      >
+        <div className="flex items-center gap-2">
+          <div className="p-1 hover:bg-slate-200 rounded-md transition-colors">
+            {isExpanded ? (
+              <ChevronDown className="h-4 w-4 text-slate-500" />
+            ) : (
+              <ChevronRight className="h-4 w-4 text-slate-500" />
+            )}
+          </div>
+          
+          <h3 className="text-sm font-medium text-slate-900">
+            {module.title || `Module ${index + 1}`}
+          </h3>
+        </div>
+        
+        <span className="text-xs text-slate-500">
+          {module.lessons?.length || 0} lessons
+        </span>
+      </div>
+      
+      {isExpanded && hasLessons && (
+        <div className="divide-y divide-slate-100">
+          {module.lessons?.map((lesson: Lesson, idx: number) => (
+            <div key={lesson.id} className="p-4 hover:bg-slate-50 transition-colors">
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 w-6 h-6 bg-slate-100 text-slate-700 rounded-full flex items-center justify-center">
+                  <span className="text-xs font-medium">{idx + 1}</span>
+                </div>
+                
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm font-medium text-slate-900 mb-1">{lesson.title}</h3>
+                  {lesson.description && (
+                    <p className="text-xs text-slate-500">{lesson.description}</p>
+                  )}
+                </div>
+                
+                <div className="flex-shrink-0">
+                  {lesson.videoId ? (
+                    <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded text-xs">
+                      <Play className="h-2.5 w-2.5" />
+                      <span>Video</span>
+                    </div>
+                  ) : (
+                    <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-50 border border-slate-200 text-slate-500 rounded text-xs">
+                      <Lock className="h-2.5 w-2.5" />
+                      <span>No Video</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      
+      {isExpanded && !hasLessons && (
+        <div className="p-4 text-center text-sm text-slate-500">
+          No lessons in this module
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default function CoursePageWrapper() {
   const params = useParams();
-  const router = useRouter();
   const courseId = Array.isArray(params.id) ? params.id[0] : params.id;
+  
+  if (!courseId) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-3 text-slate-500">
+        <div className="bg-red-50 border border-red-200 rounded-md p-4 max-w-lg">
+          <h2 className="text-red-700 text-lg font-medium mb-2">Missing Course ID</h2>
+          <p className="text-red-600 mb-4">No course ID was provided in the URL.</p>
+        </div>
+      </div>
+    );
+  }
+  
+  return (
+      <CoursePage courseId={courseId} />
+  );
+}
+
+function CoursePage({ courseId }: { courseId: string }) {
+  const router = useRouter();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   
-  const {
-    course,
-    loading,
-    error,
-    fetchCourse,
-    deleteCourse,
-  } = useCourseDetailStore();
-  
-  useEffect(() => {
-    if (courseId) {
-      fetchCourse(courseId);
-    }
-  }, [courseId, fetchCourse]);
+  // Use React Query hooks directly
+  const { data: course, isLoading, error } = useCourse(courseId);
+  const { mutate: deleteCourse } = useDeleteCourse();
   
   const handleDeleteCourse = () => {
     setShowDeleteModal(true);
   };
   
-  const confirmDelete = async () => {
-    const success = await deleteCourse();
-    if (success) {
-      router.push('/courses');
-    }
-    setShowDeleteModal(false);
+  const confirmDelete = () => {
+    if (!courseId) return;
+    
+    deleteCourse(courseId, {
+      onSuccess: () => {
+        router.push('/courses');
+        setShowDeleteModal(false);
+      }
+    });
   };
   
   const formatDate = (dateString: string | undefined) => {
@@ -71,41 +162,44 @@ export default function CoursePage() {
   };
 
   // Loading state
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-6 w-6 text-slate-400 animate-spin" />
+      <div className="min-h-screen flex flex-col items-center justify-center gap-3 text-slate-500">
+        <Loader2 className="h-5 w-5 animate-spin" />
+        <p className="text-sm">Loading course data...</p>
       </div>
     );
   }
   
   // Error state
-  if (error || !course) {
+  if (error || !course || !course.id) {
     return (
       <div className="max-w-5xl mx-auto px-4 py-6">
         <div className="flex flex-col items-center text-center py-10">
-          <div className="flex items-center justify-center w-12 h-12 rounded-full border border-slate-200 bg-slate-50 mb-4">
-            <BookOpen className="h-6 w-6 text-slate-400" />
+          <div className="bg-red-50 border border-red-200 rounded-md p-4 max-w-lg">
+            <h2 className="text-red-700 text-lg font-medium mb-2">Course Not Found</h2>
+            <p className="text-red-600 mb-4">
+              {error instanceof Error ? error.message : "The course you're looking for doesn't exist or you don't have access to it."}
+            </p>
+            <div className="flex justify-center">
+              <Button
+                type="outline"
+                size="small"
+                icon={<ArrowLeft className="h-3.5 w-3.5" />}
+                onClick={() => router.push("/courses")}
+              >
+                Back to Courses
+              </Button>
+            </div>
           </div>
-          <h1 className="text-xl font-medium text-slate-900 mb-2">Course Not Found</h1>
-          <p className="text-slate-600 mb-6 max-w-md">
-            {error || "The course you're looking for doesn't exist or you don't have access to it."}
-          </p>
-          <Button
-            type="outline"
-            size="small"
-            icon={<ArrowLeft />}
-            onClick={() => router.push("/courses")}
-          >
-            Back to Courses
-          </Button>
         </div>
       </div>
     );
   }
 
+  const modules = course.modules || [];
   const lessons = course.lessons || [];
-  const hasLessons = lessons.length > 0;
+  const hasModules = modules.length > 0;
 
   return (
     <>
@@ -147,38 +241,34 @@ export default function CoursePage() {
           </div>
         </Modal>
       )}
-      
+
       <div className="max-w-5xl mx-auto px-4 py-6">
-        {/* Back link */}
-        <div className="mb-8">
+        {/* Back Button - separated like in course-header */}
+        <div className="mb-6">
           <Button
             type="text"
             size="tiny"
-            icon={<ArrowLeft className="h-3 w-3" />}
-            className="text-slate-500 hover:text-slate-900"
+            icon={
+              <span className="transition-transform duration-200 group-hover:-translate-x-0.5">
+                <ArrowLeft className="h-3 w-3" />
+              </span>
+            }
+            className="text-slate-500 hover:text-slate-900 group"
             onClick={() => router.push("/courses")}
           >
             Back to courses
           </Button>
         </div>
-        
-        {/* Header */}
-        <header className="mb-8 border-b border-slate-200 pb-6">
-          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-xl font-medium text-slate-900">{course.title}</h1>
-                <StatusBadge status={course.status} />
-              </div>
-              
-              {course.description && (
-                <p className="text-sm text-slate-600 max-w-2xl">
-                  {course.description}
-                </p>
-              )}
+
+        {/* Header with border bottom like in course-header */}
+        <header className="mb-6 border-b border-slate-200 pb-5">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <h1 className="text-xl font-medium text-slate-900">{course.title}</h1>
+              <StatusBadge status={course.status} />
             </div>
             
-            <div className="flex items-center gap-2 flex-shrink-0 mt-2 md:mt-0">
+            <div className="flex items-center gap-3">
               <Button
                 type="outline"
                 size="small"
@@ -187,8 +277,7 @@ export default function CoursePage() {
               >
                 Edit
               </Button>
-              
-              <Button 
+              <Button
                 type="danger"
                 size="small"
                 icon={<Trash2 className="h-3.5 w-3.5" />}
@@ -200,164 +289,138 @@ export default function CoursePage() {
           </div>
         </header>
         
-        {/* Main content */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Left column - Main content */}
-          <div className="md:col-span-2 space-y-6">
-            {/* Cover image */}
-            <div className="aspect-video border border-slate-200 rounded-md overflow-hidden bg-slate-50 relative">
+        {/* Course details */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Main content */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Course image */}
+            <div className="relative aspect-video rounded-md overflow-hidden bg-slate-100 border border-slate-200">
               {course.imageUrl ? (
-                <Image 
-                  src={course.imageUrl} 
-                  alt={course.title} 
-                  className="object-cover"
+                <Image
+                  src={course.imageUrl}
+                  alt={course.title}
                   fill
-                  sizes="(max-width: 768px) 100vw, 66vw"
-                  priority
+                  className="object-cover"
                 />
               ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center">
-                  <BookOpen className="h-10 w-10 text-slate-300 mb-2" />
-                  <span className="text-xs text-slate-400">No cover image</span>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <FileText className="h-12 w-12 text-slate-300" />
                 </div>
               )}
             </div>
             
-            {/* Lessons */}
-            <div className="border border-slate-200 rounded-md overflow-hidden bg-white">
-              <div className="border-b border-slate-200 px-4 py-3 bg-slate-50">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-sm font-medium text-slate-900">Course Content</h2>
-                  <span className="text-xs text-slate-500">{lessons.length} lessons</span>
-                </div>
+            {/* Description */}
+            <div className="bg-white border border-slate-200 rounded-md p-5">
+              <h2 className="text-sm font-medium text-slate-900 mb-3">Description</h2>
+              <div className="prose prose-sm max-w-none text-slate-700">
+                {course.description || (
+                  <p className="text-slate-500 italic">No description provided</p>
+                )}
+              </div>
+            </div>
+            
+            {/* Modules and lessons */}
+            <div className="bg-white border border-slate-200 rounded-md overflow-hidden">
+              <div className="border-b border-slate-200 px-5 py-3 bg-slate-50">
+                <h2 className="text-sm font-medium text-slate-900">Course Content</h2>
               </div>
               
-              {hasLessons ? (
-                <div className="divide-y divide-slate-100">
-                  {lessons.map((lesson, index) => (
-                    <div key={lesson.id} className="p-4 hover:bg-slate-50 transition-colors">
-                      <div className="flex items-start gap-3">
-                        <div className="flex-shrink-0 w-6 h-6 bg-slate-100 text-slate-700 rounded-full flex items-center justify-center">
-                          <span className="text-xs font-medium">{index + 1}</span>
-                        </div>
-                        
-                        <div className="flex-1 min-w-0">
-                          <h3 className="text-sm font-medium text-slate-900 mb-1">{lesson.title}</h3>
-                          {lesson.description && (
-                            <p className="text-xs text-slate-500">{lesson.description}</p>
-                          )}
-                        </div>
-                        
-                        <div className="flex-shrink-0">
-                          {lesson.videoId ? (
-                            <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded text-xs">
-                              <Play className="h-2.5 w-2.5" />
-                              <span>Video</span>
-                            </div>
-                          ) : (
-                            <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-50 border border-slate-200 text-slate-500 rounded text-xs">
-                              <Lock className="h-2.5 w-2.5" />
-                              <span>No Video</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="py-8 px-4 text-center">
-                  <div className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-slate-50 mb-3">
-                    <FileText className="h-5 w-5 text-slate-400" />
+              <div className="p-5">
+                {hasModules ? (
+                  <div className="space-y-4">
+                    {modules.map((module, index) => (
+                      <ModuleItem key={module.id} module={module} index={index} />
+                    ))}
                   </div>
-                  <h3 className="text-sm font-medium text-slate-900 mb-1">No lessons yet</h3>
-                  <p className="text-xs text-slate-500 mb-4">Start building your course by adding lessons.</p>
-                  <Button
-                    type="primary"
-                    size="small"
-                    icon={<Edit className="h-3.5 w-3.5" />}
-                    onClick={() => router.push(`/courses/${courseId}/edit`)}
-                  >
-                    Add Lessons
-                  </Button>
-                </div>
-              )}
+                ) : (
+                  <div className="text-center py-8 text-slate-500">
+                    <p className="mb-2">No modules or lessons yet</p>
+                    <Button
+                      type="primary"
+                      size="small"
+                      onClick={() => router.push(`/courses/${courseId}/edit`)}
+                    >
+                      Add Content
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
           
-          {/* Right column - Sidebar */}
-          <div className="space-y-5">
-            {/* Course details */}
-            <div className="border border-slate-200 rounded-md overflow-hidden bg-white">
-              <div className="border-b border-slate-200 px-4 py-3 bg-slate-50">
-                <h3 className="text-sm font-medium text-slate-900">Course Details</h3>
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Course stats */}
+            <div className="bg-white border border-slate-200 rounded-md overflow-hidden">
+              <div className="border-b border-slate-200 px-5 py-3 bg-slate-50">
+                <h2 className="text-sm font-medium text-slate-900">Course Details</h2>
               </div>
               
-              <div className="p-4 space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-6 h-6 border border-slate-200 rounded-full flex items-center justify-center bg-slate-50">
-                    <DollarSign className="h-3 w-3 text-slate-500" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-500">Price</p>
-                    <p className="text-sm font-medium text-slate-900">${course.price.toFixed(2)}</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-3">
-                  <div className="w-6 h-6 border border-slate-200 rounded-full flex items-center justify-center bg-slate-50">
-                    <Users className="h-3 w-3 text-slate-500" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-500">Lessons</p>
-                    <p className="text-sm font-medium text-slate-900">{lessons.length}</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-3">
-                  <div className="w-6 h-6 border border-slate-200 rounded-full flex items-center justify-center bg-slate-50">
-                    <Calendar className="h-3 w-3 text-slate-500" />
+              <div className="divide-y divide-slate-100">
+                <div className="px-5 py-3 flex items-center gap-3">
+                  <div className="flex-shrink-0 text-slate-400">
+                    <Calendar className="h-4 w-4" />
                   </div>
                   <div>
                     <p className="text-xs text-slate-500">Created</p>
-                    <p className="text-sm font-medium text-slate-900">{formatDate(course.createdAt)}</p>
+                    <p className="text-sm text-slate-900">{formatDate(course.createdAt)}</p>
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-3">
-                  <div className="w-6 h-6 border border-slate-200 rounded-full flex items-center justify-center bg-slate-50">
-                    <Clock className="h-3 w-3 text-slate-500" />
+                <div className="px-5 py-3 flex items-center gap-3">
+                  <div className="flex-shrink-0 text-slate-400">
+                    <DollarSign className="h-4 w-4" />
                   </div>
                   <div>
-                    <p className="text-xs text-slate-500">Updated</p>
-                    <p className="text-sm font-medium text-slate-900">{formatDate(course.updatedAt)}</p>
+                    <p className="text-xs text-slate-500">Price</p>
+                    <p className="text-sm text-slate-900">
+                      {course.price ? `$${course.price.toFixed(2)}` : 'Free'}
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="px-5 py-3 flex items-center gap-3">
+                  <div className="flex-shrink-0 text-slate-400">
+                    <Clock className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500">Content</p>
+                    <p className="text-sm text-slate-900">
+                      {modules.length} modules, {lessons.length} lessons
+                    </p>
                   </div>
                 </div>
               </div>
             </div>
             
-            {/* Public URL */}
-            {course.status === 'published' && course.slug && (
-              <div className="border border-slate-200 rounded-md overflow-hidden bg-white">
-                <div className="border-b border-slate-200 px-4 py-3 bg-slate-50">
-                  <h3 className="text-sm font-medium text-slate-900">Public URL</h3>
-                </div>
-                
-                <div className="p-4">
-                  <Link 
-                    href={`/viewer/${course.slug}`}
-                    target="_blank"
-                    className="group flex items-center gap-2 p-2.5 border border-slate-200 rounded-md hover:border-slate-300 transition-colors"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-slate-900 truncate">/viewer/{course.slug}</p>
-                      <p className="text-[11px] text-slate-500 mt-0.5">Public course link</p>
-                    </div>
-                    <ExternalLink className="h-3.5 w-3.5 text-slate-400 group-hover:text-slate-700 transition-colors" />
-                  </Link>
-                </div>
+            {/* Actions */}
+            <div className="bg-white border border-slate-200 rounded-md overflow-hidden">
+              <div className="border-b border-slate-200 px-5 py-3 bg-slate-50">
+                <h2 className="text-sm font-medium text-slate-900">Actions</h2>
               </div>
-            )}
+              
+              <div className="p-5 space-y-3">
+                <Button
+                  type="primary"
+                  size="small"
+                  icon={<ExternalLink className="h-4 w-4" />}
+                  className="w-full"
+                  onClick={() => router.push(`/courses/${courseId}/preview`)}
+                >
+                  Preview Course
+                </Button>
+                
+                <Button
+                  type="outline"
+                  size="small"
+                  icon={<Users className="h-4 w-4" />}
+                  className="w-full"
+                  onClick={() => router.push(`/courses/${courseId}/students`)}
+                >
+                  Manage Students
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       </div>

@@ -1,26 +1,74 @@
 'use client';
 
-import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { PlusCircle, Loader2, BookOpen, RefreshCcw } from 'lucide-react';
-import { useCoursesListStore } from '@/lib/stores/coursesListStore';
-import { CourseCard } from '@/components/features/courses/CourseCard';
+import { useAllCourses, useCreateCourse } from '@/lib/api';
+import { CourseCard } from '@/components/features/courses/course-card';
 import { Button } from '@/components/ui/potatix/Button';
+import type { Course, CreateCourseData } from '@/lib/types/api';
+import { useState } from 'react';
+import { uniqueNamesGenerator, colors, animals } from 'unique-names-generator';
+
+// Define the response type based on our API structure
+interface CourseResponse {
+  course: Course;
+}
 
 export default function CoursesPage() {
   const router = useRouter();
-  // Get state and actions from store
+  const [isCreating, setIsCreating] = useState(false);
+  
+  // Use React Query hook directly instead of store
   const {
-    courses,
-    loading,
+    data: courses = [],
+    isLoading,
     error,
-    fetchCourses
-  } = useCoursesListStore();
-
-  // Load courses on component mount
-  useEffect(() => {
-    fetchCourses();
-  }, [fetchCourses]);
+    refetch
+  } = useAllCourses();
+  
+  // Course creation mutation
+  const { mutate: createCourse, isPending: isCreatingCourse } = useCreateCourse();
+  
+  // Handle creating a new course directly
+  const handleCreateCourse = () => {
+    if (isCreating || isCreatingCourse) return;
+    
+    setIsCreating(true);
+    
+    // Generate a random name with unique-names-generator
+    const randomName = uniqueNamesGenerator({
+      dictionaries: [colors, animals],
+      style: 'capital',
+      separator: ' '
+    });
+    
+    // Create course data with default values
+    const courseData: CreateCourseData = {
+      title: `${randomName} Course`,
+      description: "Click to edit course details",
+      price: 0,
+      status: 'draft'
+    };
+    
+    // Create the course and then navigate to its edit page
+    createCourse(courseData, {
+      onSuccess: (data: unknown) => {
+        const response = data as CourseResponse;
+        // The response from createCourse should contain the new course ID
+        if (response && response.course && response.course.id) {
+          router.push(`/courses/${response.course.id}/edit`);
+        } else {
+          console.error('Course created but no ID returned');
+          setIsCreating(false);
+        }
+      },
+      onError: (error) => {
+        console.error('Failed to create course:', error);
+        setIsCreating(false);
+        alert('Failed to create course. Please try again.');
+      }
+    });
+  };
   
   return (
     <div className="max-w-5xl mx-auto px-4 py-6">
@@ -40,15 +88,16 @@ export default function CoursesPage() {
             type="primary"
             size="small"
             icon={<PlusCircle className="h-3.5 w-3.5" />}
-            onClick={() => router.push('/courses/new')}
+            onClick={handleCreateCourse}
+            disabled={isCreating || isCreatingCourse}
           >
-            New Course
+            {isCreating || isCreatingCourse ? 'Creating...' : 'New Course'}
           </Button>
         </div>
       </header>
 
       {/* Loading State */}
-      {loading && (
+      {isLoading && (
         <div className="flex flex-col items-center justify-center py-16">
           <Loader2 className="h-5 w-5 animate-spin text-slate-400 mb-3" />
           <p className="text-sm text-slate-500">Loading courses...</p>
@@ -56,19 +105,19 @@ export default function CoursesPage() {
       )}
 
       {/* Error State */}
-      {!loading && error && (
+      {!isLoading && error && (
         <div className="border border-red-200 bg-red-50 rounded-md p-4 my-6">
           <div className="flex gap-3">
             <RefreshCcw className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
             <div>
-              <h3 className="text-sm font-medium text-red-800 mb-1">{error}</h3>
+              <h3 className="text-sm font-medium text-red-800 mb-1">Failed to load courses</h3>
               <p className="text-sm text-red-600 mb-3">
                 We couldn&apos;t load your courses. This could be due to a network issue or server problem.
               </p>
               <Button 
                 type="danger"
                 size="small"
-                onClick={fetchCourses}
+                onClick={() => refetch()}
               >
                 Try Again
               </Button>
@@ -78,7 +127,7 @@ export default function CoursesPage() {
       )}
 
       {/* Empty State */}
-      {!loading && !error && courses.length === 0 && (
+      {!isLoading && !error && courses.length === 0 && (
         <div className="border border-dashed border-slate-200 rounded-md p-8 bg-slate-50 my-6">
           <div className="max-w-md mx-auto text-center">
             <div className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 mb-4">
@@ -95,33 +144,40 @@ export default function CoursesPage() {
               type="primary"
               size="small"
               icon={<PlusCircle className="h-3.5 w-3.5" />}
-              onClick={() => router.push('/courses/new')}
+              onClick={handleCreateCourse}
+              disabled={isCreating || isCreatingCourse}
             >
-              Create Your First Course
+              {isCreating || isCreatingCourse ? 'Creating...' : 'Create Your First Course'}
             </Button>
           </div>
         </div>
       )}
 
       {/* Course Grid */}
-      {!loading && !error && courses.length > 0 && (
+      {!isLoading && !error && courses.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {courses.map(course => (
+          {courses.map((course: Course) => (
             <CourseCard key={course.id} course={course} />
           ))}
           
           {/* "Create New" Card */}
           <div 
-            onClick={() => router.push('/courses/new')}
-            className="cursor-pointer group flex flex-col items-center justify-center p-6 border border-dashed border-slate-200 rounded-md bg-slate-50 hover:bg-slate-100 hover:border-slate-300 transition-all min-h-[220px]"
+            onClick={isCreating || isCreatingCourse ? undefined : handleCreateCourse}
+            className={`cursor-pointer group flex flex-col items-center justify-center p-6 border border-dashed border-slate-200 rounded-md bg-slate-50 hover:bg-slate-100 hover:border-slate-300 transition-all min-h-[220px] ${(isCreating || isCreatingCourse) ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             <div className="flex flex-col items-center text-center">
               <div className="h-10 w-10 bg-emerald-600 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                <PlusCircle className="h-5 w-5 text-white" />
+                {isCreating || isCreatingCourse ? (
+                  <Loader2 className="h-5 w-5 text-white animate-spin" />
+                ) : (
+                  <PlusCircle className="h-5 w-5 text-white" />
+                )}
               </div>
-              <h3 className="text-sm font-medium text-slate-900 mb-1">Create a new course</h3>
+              <h3 className="text-sm font-medium text-slate-900 mb-1">
+                {isCreating || isCreatingCourse ? 'Creating course...' : 'Create a new course'}
+              </h3>
               <p className="text-xs text-slate-500">
-                Add another course to your catalog
+                {isCreating || isCreatingCourse ? 'Please wait' : 'Add another course to your catalog'}
               </p>
             </div>
           </div>
