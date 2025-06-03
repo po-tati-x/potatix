@@ -1,24 +1,5 @@
 import type { NextConfig } from "next";
 
-// Get the explicit list of all known origins we need to allow
-const getAllowedOrigins = () => {
-  if (process.env.NODE_ENV === 'development') {
-    return [
-      'http://potatix.com:3000',
-      'http://danchess.potatix.com:3000',
-      'http://www.potatix.com:3000',
-      // Add any other subdomains you need here
-    ];
-  }
-  
-  return [
-    'https://potatix.com',
-    'https://danchess.potatix.com',
-    'https://www.potatix.com',
-    // Add any other production subdomains here
-  ];
-};
-
 const nextConfig: NextConfig = {
   /* config options here */
   images: {
@@ -48,11 +29,9 @@ const nextConfig: NextConfig = {
         source: '/api/:path*',
         headers: [
           {
-            // This header will be overridden by the middleware for specific origins
+            // Note: This header will be dynamically overridden by the middleware
             key: 'Access-Control-Allow-Origin',
-            value: process.env.NODE_ENV === 'development' 
-              ? 'http://potatix.com:3000' 
-              : 'https://potatix.com',
+            value: '*',
           },
           {
             key: 'Access-Control-Allow-Methods',
