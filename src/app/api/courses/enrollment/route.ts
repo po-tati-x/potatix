@@ -102,6 +102,7 @@ export async function POST(request: NextRequest) {
     
     // Get the course ID if only slug was provided
     let targetCourseId = courseId;
+    let courseDetails = null;
     
     if (!targetCourseId && courseSlug) {
       const courses = await db
@@ -116,10 +117,26 @@ export async function POST(request: NextRequest) {
         );
       }
       
-      targetCourseId = courses[0].id;
+      courseDetails = courses[0];
+      targetCourseId = courseDetails.id;
+    } else if (targetCourseId) {
+      // If we only have courseId, fetch the course details
+      const courses = await db
+        .select()
+        .from(courseSchema.course)
+        .where(eq(courseSchema.course.id, targetCourseId));
+        
+      if (courses.length === 0) {
+        return NextResponse.json(
+          { error: 'Course not found' },
+          { status: 404 }
+        );
+      }
+      
+      courseDetails = courses[0];
     }
     
-    if (!targetCourseId) {
+    if (!targetCourseId || !courseDetails) {
       return NextResponse.json(
         { error: 'Course ID or slug is required' },
         { status: 400 }
@@ -144,12 +161,17 @@ export async function POST(request: NextRequest) {
       });
     }
     
+    // Determine enrollment status based on course price
+    // If course is free (price = 0), set status to 'active'
+    // Otherwise, set status to 'pending' for instructor approval
+    const enrollmentStatus = courseDetails.price === 0 ? 'active' : 'pending';
+    
     // Create a new enrollment
     const newEnrollment = {
       id: uuidv4(),
       userId: userId,
       courseId: targetCourseId,
-      status: 'active',
+      status: enrollmentStatus,
     };
     
     const result = await db
@@ -158,7 +180,7 @@ export async function POST(request: NextRequest) {
       .returning();
     
     return NextResponse.json({ 
-      message: 'Successfully enrolled',
+      message: enrollmentStatus === 'active' ? 'Successfully enrolled' : 'Enrollment request submitted',
       enrollment: result[0]
     }, { status: 201 });
   } catch (error) {
