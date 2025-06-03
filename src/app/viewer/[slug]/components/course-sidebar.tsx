@@ -16,6 +16,7 @@ interface CourseSidebarProps {
   isAuthenticated?: boolean;
   isEnrolled?: boolean;
   isEnrolling?: boolean;
+  enrollmentStatus?: 'active' | 'pending' | 'rejected' | null;
   onEnroll?: () => Promise<void>;
 }
 
@@ -31,6 +32,7 @@ export default function CourseSidebar({
   isAuthenticated = false,
   isEnrolled = false,
   isEnrolling = false,
+  enrollmentStatus = null,
   onEnroll
 }: CourseSidebarProps) {
   
@@ -55,7 +57,7 @@ export default function CourseSidebar({
     if (onEnroll) {
       try {
         await onEnroll();
-        toast.success('Successfully enrolled in this course!');
+        // Don't assume immediate success, will be updated on page reload
       } catch (error) {
         console.error('Failed to enroll in course:', error);
         toast.error('Failed to enroll in course. Please try again.');
@@ -67,11 +69,17 @@ export default function CourseSidebar({
     setIsLoading(true);
     
     try {
-      await axios.post('/api/courses/enrollment', {
+      const response = await axios.post('/api/courses/enrollment', {
         courseSlug
       });
       
-      toast.success('Successfully enrolled in this course!');
+      // Check enrollment status
+      if (response.data.enrollment.status === 'pending') {
+        toast.success('Enrollment request submitted. Waiting for instructor approval.');
+      } else {
+        toast.success('Successfully enrolled in this course!');
+      }
+      
       // Refresh the page to update enrollment status
       window.location.reload();
     } catch (error) {
@@ -110,8 +118,8 @@ export default function CourseSidebar({
         }] 
       : [] as UIModule[];
   
-  // Determine if the sidebar should be locked (not enrolled)
-  const isLocked = !isEnrolled;
+  // Determine if the sidebar should be locked (not enrolled or pending approval)
+  const isLocked = !isEnrolled || (enrollmentStatus === 'pending') || (enrollmentStatus === 'rejected');
   
   return (
     <div className="h-full flex flex-col bg-white border-r border-slate-200">
@@ -151,7 +159,29 @@ export default function CourseSidebar({
             <div className="h-4 w-4 border-2 border-slate-300 border-t-emerald-500 rounded-full animate-spin" />
             <span className="ml-2 text-xs text-slate-500">Checking status...</span>
           </div>
-        ) : isEnrolled ? (
+        ) : isEnrolled && enrollmentStatus === 'pending' ? (
+          <div className="text-center py-2">
+            <div className="bg-amber-50 border border-amber-100 rounded-md p-2 mb-2">
+              <p className="text-xs text-amber-800">
+                Your enrollment is pending approval from the instructor
+              </p>
+            </div>
+          </div>
+        ) : isEnrolled && enrollmentStatus === 'rejected' ? (
+          <div className="text-center py-2">
+            <div className="bg-red-50 border border-red-100 rounded-md p-2">
+              <div className="flex items-center justify-center mb-1">
+                <X className="h-3.5 w-3.5 text-red-500 mr-1" />
+                <p className="text-xs font-medium text-red-800">
+                  Enrollment Rejected
+                </p>
+              </div>
+              <p className="text-xs text-red-700">
+                Your enrollment request was not approved. Please contact the instructor for more information.
+              </p>
+            </div>
+          </div>
+        ) : isEnrolled && enrollmentStatus === 'active' ? (
           <>
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-xs font-medium text-slate-700">Your progress</span>
@@ -165,7 +195,9 @@ export default function CourseSidebar({
           <div className="text-center">
             <p className="text-xs text-slate-700 mb-2">
               {isAuthenticated 
-                ? "You need to enroll to access this course" 
+                ? course.price > 0
+                  ? `Enrollment requires approval (${course.price > 0 ? `${course.price}$` : 'Free'})`
+                  : "You need to enroll to access this course"
                 : "Sign in to access this course"}
             </p>
             <Button
@@ -178,7 +210,7 @@ export default function CourseSidebar({
               {isEnrolling 
                 ? 'Enrolling...' 
                 : isAuthenticated 
-                  ? 'Enroll Now (Free)' 
+                  ? course.price > 0 ? 'Request Enrollment' : 'Enroll Now (Free)' 
                   : 'Sign in to continue'}
             </Button>
           </div>
