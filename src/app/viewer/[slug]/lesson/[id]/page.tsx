@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Course, Lesson } from '@/lib/utils/api-client';
-import LoadingState from '../../components/LoadingState';
-import ErrorState from '../../components/ErrorState';
-import LessonContent from '../../components/LessonContent';
+import { Course, Lesson } from '@/lib/types/api';
+import LoadingState from '../../components/loading-state';
+import ErrorState from '../../components/error-state';
+import LessonContent from '../../components/lesson-content';
 import { use } from 'react';
 
 interface LessonViewerProps {

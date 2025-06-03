@@ -53,7 +53,10 @@ export async function PATCH(
 ) {
   const { id: courseId } = await params;
   
+  console.log(`[DEBUG] PATCH /api/courses/${courseId}/lessons/reorder - Starting...`);
+  
   if (!courseId) {
+    console.log('[DEBUG] Course ID is missing');
     return NextResponse.json(
       { error: 'Course ID is required' },
       { status: 400 }
@@ -62,7 +65,10 @@ export async function PATCH(
   
   // Check ownership
   const isOwner = await checkCourseOwnership(request, courseId);
+  console.log(`[DEBUG] Course ownership check result: ${isOwner}`);
+  
   if (!isOwner) {
+    console.log('[DEBUG] Authentication failed');
     return NextResponse.json(
       { error: 'Authentication required or access denied' },
       { status: 401 }
@@ -72,11 +78,13 @@ export async function PATCH(
   try {
     // Parse request body
     const body = await request.json();
+    console.log(`[DEBUG] Request body:`, body);
     
     // Validate the data
     const validationResult = reorderSchema.safeParse(body);
     if (!validationResult.success) {
       const errors = validationResult.error.format();
+      console.error('[DEBUG] Validation failed:', errors);
       return NextResponse.json(
         { error: 'Invalid lesson order data', details: errors },
         { status: 400 }
@@ -84,11 +92,29 @@ export async function PATCH(
     }
     
     const { lessons } = validationResult.data;
+    console.log(`[DEBUG] Processing ${lessons.length} lessons for reordering:`, lessons);
+    
+    // Verify lessons exist in database
+    const existingLessons = await db.select({
+      id: courseSchema.lesson.id,
+      oldOrder: courseSchema.lesson.order,
+    })
+    .from(courseSchema.lesson)
+    .where(
+      and(
+        eq(courseSchema.lesson.courseId, courseId),
+        // TODO: Fix this, in doesn't work directly with eq
+        // in_(courseSchema.lesson.id, lessonIds)
+      )
+    );
+    
+    console.log(`[DEBUG] Found ${existingLessons.length} lessons in database:`, existingLessons);
     
     // Update each lesson's order in a transaction
     await db.transaction(async (tx) => {
       for (const lesson of lessons) {
-        await tx.update(courseSchema.lesson)
+        console.log(`[DEBUG] Updating lesson ${lesson.id} to order ${lesson.order}`);
+        const result = await tx.update(courseSchema.lesson)
           .set({ 
             order: lesson.order,
             updatedAt: new Date()
@@ -99,20 +125,25 @@ export async function PATCH(
               eq(courseSchema.lesson.courseId, courseId)
             )
           );
+        console.log(`[DEBUG] Update result:`, result);
       }
       
       // Update course updatedAt time
-      await tx.update(courseSchema.course)
+      const courseResult = await tx.update(courseSchema.course)
         .set({ updatedAt: new Date() })
         .where(eq(courseSchema.course.id, courseId));
+      
+      console.log(`[DEBUG] Course update result:`, courseResult);
     });
+    
+    console.log('[DEBUG] Reordering completed successfully');
     
     return NextResponse.json({
       success: true,
       message: 'Lessons reordered successfully'
     });
   } catch (error) {
-    console.error('Failed to reorder lessons:', error);
+    console.error('[DEBUG] Failed to reorder lessons:', error);
     const message = error instanceof Error ? error.message : 'Failed to reorder lessons';
     return NextResponse.json(
       { error: message },

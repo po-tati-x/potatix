@@ -2,12 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { coursesApi, Course } from '@/lib/utils/api-client';
-import LoadingState from './components/LoadingState';
-import ErrorState from './components/ErrorState';
-import CourseSidebar from './components/CourseSidebar';
+import { useCourseBySlug } from '@/lib/api';
+import type { Course } from '@/lib/types/api';
+import LoadingState from './components/loading-state';
+import ErrorState from './components/error-state';
+import CourseSidebar from './components/course-sidebar';
 import { Menu, X } from 'lucide-react';
 import { use } from 'react';
+import { authClient } from '@/lib/auth/auth-client';
+import axios from 'axios';
 
 // Type declaration for window with course data
 declare global {
@@ -28,51 +31,102 @@ export default function CourseLayout({ children, params }: CourseLayoutProps) {
   const pathname = usePathname();
   const { slug: courseSlug } = use(params);
   
-  const [course, setCourse] = useState<Course | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: course, isLoading: courseLoading, error: courseError } = useCourseBySlug(courseSlug);
+  
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isEnrolled, setIsEnrolled] = useState(false);
+  const [isEnrollmentLoading, setIsEnrollmentLoading] = useState(true);
+  const [isEnrolling, setIsEnrolling] = useState(false);
   
   // Determine if we're on a lesson page
   const isLessonPage = pathname.includes('/lesson/');
+  const isAuthPage = pathname.includes('/auth');
   
   // Get the current lesson ID from the URL if we're on a lesson page
   const currentLessonId = isLessonPage 
     ? pathname.split('/lesson/')[1] 
     : '';
   
-  // Load course data
+  // Check authentication status
   useEffect(() => {
-    async function loadCourse() {
-      if (!courseSlug) {
-        setError('No course specified');
-        setLoading(false);
-        return;
-      }
-
+    async function checkAuth() {
       try {
-        setLoading(true);
-        const courseData = await coursesApi.getBySlug(courseSlug);
-        setCourse(courseData);
-        
-        // Share course data with children through window object
-        window.__COURSE_DATA__ = courseData;
-        
-        setLoading(false);
+        const { data: session } = await authClient.getSession();
+        setIsAuthenticated(!!session?.user);
       } catch (error) {
-        console.error('Failed to load course:', error);
-        setError('Course not found or unavailable');
-        setLoading(false);
+        console.error('Failed to check authentication status:', error);
+        setIsAuthenticated(false);
       }
     }
-
-    loadCourse();
+    
+    checkAuth();
+  }, []);
+  
+  // Check enrollment status when authenticated
+  useEffect(() => {
+    async function checkEnrollment() {
+      if (!isAuthenticated || !courseSlug) {
+        setIsEnrolled(false);
+        setIsEnrollmentLoading(false);
+        return;
+      }
+      
+      try {
+        setIsEnrollmentLoading(true);
+        const response = await axios.get(`/api/courses/enrollment?slug=${courseSlug}`);
+        setIsEnrolled(response.data.isEnrolled);
+      } catch (error) {
+        console.error('Failed to check enrollment status:', error);
+        setIsEnrolled(false);
+      } finally {
+        setIsEnrollmentLoading(false);
+      }
+    }
+    
+    checkEnrollment();
+  }, [isAuthenticated, courseSlug]);
+  
+  // Enroll in the course
+  const handleEnroll = async () => {
+    if (isEnrolling) return;
+    
+    if (!isAuthenticated) {
+      router.push(`/viewer/${courseSlug}/auth`);
+      return;
+    }
+    
+    try {
+      setIsEnrolling(true);
+      await axios.post('/api/courses/enrollment', { courseSlug });
+      setIsEnrolled(true);
+    } catch (error) {
+      console.error('Failed to enroll in course:', error);
+    } finally {
+      setIsEnrolling(false);
+    }
+  };
+  
+  // Share course data with children through window object
+  useEffect(() => {
+    if (course) {
+      window.__COURSE_DATA__ = course;
+    }
     
     // Cleanup function to remove the course data when the component unmounts
     return () => {
       delete window.__COURSE_DATA__;
     };
-  }, [courseSlug]);
+  }, [course]);
+  
+  // If user is not enrolled and trying to access a restricted page (like a lesson),
+  // redirect to the course overview page - THIS HOOK MUST BE BEFORE ANY CONDITIONAL RETURNS
+  useEffect(() => {
+    if (!isEnrolled && !isAuthPage && isLessonPage && !courseLoading && !isEnrollmentLoading) {
+      // Redirect to the ROOT URL of the subdomain, not the internal viewer path
+      window.location.href = '/';
+    }
+  }, [isEnrolled, isAuthPage, isLessonPage, courseLoading, isEnrollmentLoading]);
   
   // Toggle mobile sidebar
   const toggleMobileSidebar = () => {
@@ -80,16 +134,16 @@ export default function CourseLayout({ children, params }: CourseLayoutProps) {
   };
 
   // Loading state
-  if (loading) {
+  if (courseLoading || isEnrollmentLoading) {
     return <LoadingState message="Loading course..." />;
   }
 
   // Error state
-  if (error || !course) {
+  if (courseError || !course) {
     return (
       <ErrorState 
         title="Course Not Found"
-        message={error || 'This course does not exist or is currently unavailable.'}
+        message="This course does not exist or is currently unavailable."
         buttonText="Back to Homepage"
         buttonAction={() => router.push('/')}
       />
@@ -127,6 +181,10 @@ export default function CourseLayout({ children, params }: CourseLayoutProps) {
           course={course}
           currentLessonId={currentLessonId}
           courseSlug={courseSlug}
+          isAuthenticated={isAuthenticated}
+          isEnrolled={isEnrolled}
+          onEnroll={handleEnroll}
+          isEnrolling={isEnrolling}
         />
       </div>
       

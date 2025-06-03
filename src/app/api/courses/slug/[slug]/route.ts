@@ -42,21 +42,39 @@ export async function GET(
       );
     }
     
-    // Fetch associated lessons
+    // Fetch modules for this course
+    const modules = await db
+      .select()
+      .from(courseSchema.courseModule)
+      .where(eq(courseSchema.courseModule.courseId, course.id))
+      .orderBy(courseSchema.courseModule.order);
+
+    // Fetch lessons for this course
     const lessons = await db
       .select()
       .from(courseSchema.lesson)
       .where(eq(courseSchema.lesson.courseId, course.id))
       .orderBy(courseSchema.lesson.order);
     
-    // Combine course with lessons
-    const courseWithLessons = {
+    // Group lessons by moduleId
+    const moduleWithLessons = modules.map(module => {
+      const moduleLessons = lessons.filter(lesson => lesson.moduleId === module.id);
+      return {
+        ...module,
+        lessons: moduleLessons.sort((a, b) => a.order - b.order)
+      };
+    });
+    
+    // Combine course with modules and all lessons
+    const courseWithModules = {
       ...course,
+      modules: moduleWithLessons,
+      // Keep flat lessons array for backwards compatibility
       lessons
     };
     
-    console.log(`[API] Found course: ${course.title}`);
-    return NextResponse.json({ course: courseWithLessons });
+    console.log(`[API] Found course: ${course.title} with ${modules.length} modules`);
+    return NextResponse.json({ course: courseWithModules });
   } catch (error) {
     console.error('Error fetching course by slug:', error);
     return NextResponse.json(

@@ -1,4 +1,4 @@
-import { Lesson } from '@/lib/utils/api-client';
+import { Lesson } from '@/lib/types/api';
 import { Play, Lock, FileText } from 'lucide-react';
 
 interface LessonListProps {
