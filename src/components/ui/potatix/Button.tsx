@@ -4,7 +4,7 @@ import { Slot } from '@radix-ui/react-slot'
 import { VariantProps, cva } from 'class-variance-authority'
 import { Loader2 } from 'lucide-react'
 import { cloneElement, forwardRef, isValidElement } from 'react'
-import { cn } from '@/lib/utils'
+import { cn } from '@/lib/utils/cn'
 
 export type ButtonVariantProps = VariantProps<typeof buttonVariants>
 

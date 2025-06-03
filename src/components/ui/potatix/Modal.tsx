@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react'
 import { X } from 'lucide-react'
 import { createPortal } from 'react-dom'
-import { cn } from '@/lib/utils'
+import { cn } from '@/lib/utils/cn'
 import { Button } from './Button'
 
 interface ModalProps {
