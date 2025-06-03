@@ -1,5 +1,5 @@
-import Header from '@/components/marketing/layout/Header';
-import Footer from '@/components/marketing/layout/Footer';
+import Header from '@/app/(marketing)/marketing/layout/Header';
+import Footer from '@/app/(marketing)/marketing/layout/Footer';
 
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   return (
