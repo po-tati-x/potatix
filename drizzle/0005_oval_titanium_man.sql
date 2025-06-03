@@ -1,0 +1,1 @@
+ALTER TABLE "lesson" ALTER COLUMN "moduleId" DROP NOT NULL;
