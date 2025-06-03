@@ -1,4 +1,4 @@
-import { FormField } from "@/components/common/FormField";
+import { FormField } from "@/components/ui/potatix/form-field";
 
 interface CourseInfoSectionProps {
   title: string;
