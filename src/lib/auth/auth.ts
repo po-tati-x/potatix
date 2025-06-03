@@ -2,15 +2,9 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db, authSchema } from "@/db";
 
-// Get the base domain from environment or default to localhost
+// Extract domain from APP_URL, removing the protocol
 const getBaseDomain = () => {
-  // Use the explicit base domain if available
-  if (process.env.NEXT_PUBLIC_BASE_DOMAIN) {
-    return process.env.NEXT_PUBLIC_BASE_DOMAIN;
-  }
-  
-  // Fallback to parsing from APP_URL
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || '';
   
   try {
     const url = new URL(appUrl);
@@ -21,75 +15,55 @@ const getBaseDomain = () => {
   }
 };
 
-// Determine trusted origins for auth system
+// Get trusted origins - simplified to just use wildcards
 const getTrustedOrigins = () => {
-  const baseDomain = getBaseDomain();
-  const isDevelopment = process.env.NODE_ENV === 'development';
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL;
+  if (!baseUrl) return ['https://*.localhost'];
   
-  // Extract protocol from base URL
-  let protocol = 'http:';
   try {
-    protocol = new URL(baseUrl).protocol;
-  } catch {
-    console.warn('Failed to parse protocol from NEXT_PUBLIC_APP_URL');
-  }
-  
-  // Development mode needs explicit origins including localhost and port
-  if (isDevelopment) {
+    const url = new URL(baseUrl);
+    const domain = url.hostname;
+    
+    // If we're on localhost, just return the exact URL
+    if (domain === 'localhost') return [baseUrl];
+    
+    // Get the root domain (e.g. example.com from sub.example.com)
+    const parts = domain.split('.');
+    const rootDomain = parts.length > 1 
+      ? parts.slice(parts.length - 2).join('.') 
+      : domain;
+      
     return [
-      // Base origins
-      baseUrl, // The main URL (e.g., http://localhost:3000)
-      `${protocol}//${baseDomain}:3000`, // Base domain with port
-      
-      // Wildcards in both formats
-      `${protocol}//*.${baseDomain}:3000`, // Protocol-specific wildcard with port
-      `*.${baseDomain}:3000`, // Protocol-agnostic wildcard with port
-      
-      // Common subdomains
-      `${protocol}//www.${baseDomain}:3000`,
-      `${protocol}//app.${baseDomain}:3000`,
-      `${protocol}//api.${baseDomain}:3000`,
-      
-      // Known course subdomains
-      `${protocol}//danchess.${baseDomain}:3000`, // Explicitly add danchess subdomain
+      // The main URL
+      baseUrl,
+      // Wildcard for all subdomains
+      `https://*.${rootDomain}`,
     ];
+  } catch (error) {
+    console.warn('Failed to parse trusted origins:', error);
+    return [baseUrl || 'https://localhost:3000'];
   }
-  
-  // Production origins
-  return [
-    // Base domains
-    `${protocol}//${baseDomain}`, // Base domain
-    `${protocol}//www.${baseDomain}`, // www subdomain
-    
-    // Wildcards in both formats
-    `${protocol}//*.${baseDomain}`, // Protocol-specific wildcard
-    `*.${baseDomain}`, // Protocol-agnostic wildcard
-    
-    // Common subdomains without port
-    `${protocol}//app.${baseDomain}`,
-    `${protocol}//api.${baseDomain}`,
-    
-    // Known course subdomains
-    `${protocol}//danchess.${baseDomain}`, // Explicitly add danchess subdomain
-  ];
 };
 
-// Get cookie domain that works for the main domain and all subdomains
+// Get cookie domain without all the bullshit
 const getCookieDomain = () => {
-  const baseDomain = getBaseDomain();
+  const domain = getBaseDomain();
   
-  // If it's localhost or an IP, don't set a cookie domain (browser default behavior works)
-  if (baseDomain === 'localhost' || /^(\d{1,3}\.){3}\d{1,3}$/.test(baseDomain)) {
+  // If it's localhost or IP, don't set a domain (browser default)
+  if (domain === 'localhost' || /^(\d{1,3}\.){3}\d{1,3}$/.test(domain)) {
     return undefined;
   }
+
+  // Get the root domain for cookies (e.g., example.com from sub.example.com)
+  const parts = domain.split('.');
+  if (parts.length <= 2) return domain; // Already a root domain
   
-  // For a real domain, prefix with a dot to include all subdomains
-  return `.${baseDomain}`;
+  // Return with dot prefix for all subdomains
+  return `.${parts.slice(parts.length - 2).join('.')}`;
 };
 
 export const auth = betterAuth({
-  // Database adapter configuration
+  // Database adapter
   database: drizzleAdapter(db, {
     provider: "pg",
     schema: {
@@ -114,10 +88,10 @@ export const auth = betterAuth({
     }
   },
   
-  // CORS configuration
+  // Trusted origins - simple and effective
   trustedOrigins: getTrustedOrigins(),
   
-  // PROPERLY CONFIGURED CROSS-SUBDOMAIN COOKIES - THIS IS THE FIXED PART
+  // Cross-subdomain cookies
   advanced: {
     crossSubDomainCookies: {
       enabled: true,
@@ -125,7 +99,7 @@ export const auth = betterAuth({
     },
     defaultCookieAttributes: {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: true, // Always use secure for cookies
       sameSite: "lax",
       path: "/",
       maxAge: 7 * 24 * 60 * 60 // 7 days
