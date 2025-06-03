@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Save, User, Shield, Bell, CreditCard, LogOut, Loader2, AlertTriangle, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/potatix/Button';
+import { authClient } from '@/lib/auth/auth-client';
 
 // Form field component
 const FormField = ({ 
@@ -265,7 +266,20 @@ export default function SettingsPage() {
                   type="outline"
                   size="small"
                   icon={<LogOut className="h-3.5 w-3.5" />}
-                  onClick={() => router.push('/auth/sign-in')}
+                  onClick={async () => {
+                    try {
+                      await authClient.signOut({
+                        fetchOptions: {
+                          onSuccess: () => {
+                            router.push('/login');
+                          }
+                        }
+                      });
+                    } catch (error) {
+                      console.error("Settings SignOut failed:", error);
+                      router.push('/login');
+                    }
+                  }}
                   className="w-full"
                 >
                   Sign Out
