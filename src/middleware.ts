@@ -20,6 +20,28 @@ const BYPASS_ROUTES = [
   '/favicon.ico',
 ];
 
+// Get the explicit list of all known origins we need to allow
+const getAllowedOrigins = () => {
+  if (process.env.NODE_ENV === 'development') {
+    return [
+      'http://potatix.com:3000',
+      'http://danchess.potatix.com:3000',
+      'http://www.potatix.com:3000',
+      // Add any other subdomains you need here
+    ];
+  }
+  
+  return [
+    'https://potatix.com',
+    'https://danchess.potatix.com',
+    'https://www.potatix.com',
+    // Add any other production subdomains here
+  ];
+};
+
+// List of allowed origins
+const ALLOWED_ORIGINS = getAllowedOrigins();
+
 /**
  * Extract course slug from host header
  * Supports formats:
@@ -64,27 +86,127 @@ function extractSubdomain(host: string): string | null {
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const host = request.headers.get('host') || '';
+  const origin = request.headers.get('origin') || '';
   
   console.log(`[Middleware] Processing request: ${host}${pathname}`);
+  console.log(`[Middleware] Request origin: ${origin}`);
+  
+  // Try to extract course slug from host
+  const courseSlug = extractSubdomain(host);
+  
+  // CRITICAL FIX: Intercept redirects to /dashboard when on a course subdomain
+  // This happens after successful authentication
+  if (courseSlug && pathname === '/dashboard') {
+    console.log(`[Middleware] Intercepting dashboard redirect for course: ${courseSlug}`);
+    
+    // For subdomain access, just redirect to the root URL of the subdomain
+    // The middleware will handle converting this to the internal path format
+    const url = new URL('/', request.url);
+    console.log(`[Middleware] Redirecting from dashboard to root URL: ${url.href}`);
+    return NextResponse.redirect(url);
+  }
+  
+  // Handle CORS preflight requests
+  if (request.method === 'OPTIONS') {
+    console.log(`[Middleware] Handling CORS preflight for ${pathname}`);
+    
+    const response = new NextResponse(null, { status: 204 });
+    
+    // Allow specific origin if it's in our allowed list
+    if (ALLOWED_ORIGINS.includes(origin)) {
+      response.headers.set('Access-Control-Allow-Origin', origin);
+    } else {
+      // Default fallback - this should be the main domain
+      response.headers.set('Access-Control-Allow-Origin', 
+        process.env.NODE_ENV === 'development'
+          ? 'http://potatix.com:3000'
+          : 'https://potatix.com'
+      );
+    }
+    
+    // Set other CORS headers
+    response.headers.set('Access-Control-Allow-Credentials', 'true');
+    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+    response.headers.set('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, Authorization');
+    response.headers.set('Access-Control-Max-Age', '86400'); // 24 hours
+    
+    return response;
+  }
   
   // Skip API routes and static assets early - these should never be rewritten
   if (pathname.startsWith('/api/') || 
       BYPASS_ROUTES.some(route => pathname.startsWith(route))) {
     console.log(`[Middleware] Skipping rewrite for API/static path: ${pathname}`);
+    
+    // For API routes, we need to handle CORS headers for cross-subdomain requests
+    if (pathname.startsWith('/api/')) {
+      const response = NextResponse.next();
+      
+      // Set CORS headers for the specific origin if it's allowed
+      if (ALLOWED_ORIGINS.includes(origin)) {
+        response.headers.set('Access-Control-Allow-Origin', origin);
+        response.headers.set('Access-Control-Allow-Credentials', 'true');
+        response.headers.set('Vary', 'Origin');
+      }
+      
+      return response;
+    }
+    
     return NextResponse.next();
   }
   
-  // Try to extract course slug from host
-  const courseSlug = extractSubdomain(host);
-  
   if (courseSlug) {
+    // Check for authentication when accessing course subdomains
+    const sessionToken = getSessionCookie(request);
+    const isAuthenticated = !!sessionToken;
+    
+    console.log(`[Middleware] Course subdomain access: ${courseSlug}, Auth: ${isAuthenticated}`);
+    
     // Create the new URL, preserving any path after the domain
     const url = request.nextUrl.clone();
     
-    // Handle clean lesson URLs (/lesson/[id])
+    // If user is not authenticated and trying to access a course, 
+    // route to auth page for the course, unless they're already on it
+    if (!isAuthenticated && !pathname.startsWith(`/viewer/${courseSlug}/auth`)) {
+      // Map the requested path to the internal path structure for redirect
+      let redirectPath;
+      
+      // Handle clean paths based on the user's current location
+      if (pathname === '/') {
+        // Root path maps to course overview
+        redirectPath = `/viewer/${courseSlug}`;
+      } else if (pathname.startsWith('/lesson/')) {
+        // Clean lesson URLs
+        const lessonId = pathname.replace('/lesson/', '');
+        redirectPath = `/viewer/${courseSlug}/lesson/${lessonId}`;
+      } else {
+        // Any other path
+        redirectPath = pathname.startsWith('/viewer/') 
+          ? pathname 
+          : `/viewer/${courseSlug}${pathname}`;
+      }
+      
+      // Set the auth page and store the redirect path
+      url.pathname = `/viewer/${courseSlug}/auth`;
+      url.searchParams.set('redirectTo', redirectPath);
+      console.log(`[Middleware] Redirecting to auth with redirect: ${redirectPath}`);
+      return NextResponse.rewrite(url);
+    }
+    
+    // For authenticated users, rewrite the clean URLs to internal paths
+    
+    // Root path -> course overview
+    if (pathname === '/' || pathname === '') {
+      url.pathname = `/viewer/${courseSlug}`;
+      console.log(`[Middleware] Rewriting root to course overview: ${url.pathname}`);
+      return NextResponse.rewrite(url);
+    }
+    
+    // Lesson path -> internal lesson path
     if (pathname.startsWith('/lesson/')) {
-      url.pathname = `/viewer/${courseSlug}${pathname}`;
-      console.log(`[Middleware] Rewriting clean lesson URL ${pathname} to ${url.pathname}`);
+      const lessonId = pathname.replace('/lesson/', '');
+      url.pathname = `/viewer/${courseSlug}/lesson/${lessonId}`;
+      console.log(`[Middleware] Rewriting lesson URL ${pathname} to ${url.pathname}`);
       return NextResponse.rewrite(url);
     }
     
@@ -94,17 +216,9 @@ export function middleware(request: NextRequest) {
       return NextResponse.next();
     }
     
-    // If we're at root path, go to viewer/courseSlug
-    if (pathname === '/' || pathname === '') {
-      url.pathname = `/viewer/${courseSlug}`;
-    } else {
-      // Otherwise, we need to prefix the path with /viewer/courseSlug
-      url.pathname = `/viewer/${courseSlug}${pathname}`;
-    }
-    
+    // Other paths get prefixed with viewer/courseSlug
+    url.pathname = `/viewer/${courseSlug}${pathname}`;
     console.log(`[Middleware] Rewriting ${pathname} to ${url.pathname}`);
-    
-    // Return as a rewrite (preserves original URL in browser)
     return NextResponse.rewrite(url);
   }
   
@@ -131,7 +245,17 @@ export function middleware(request: NextRequest) {
     console.log(`[Auth] Session exists for protected route: ${pathname}`);
   }
   
-  return NextResponse.next();
+  // For everything else, add the CORS headers and continue
+  const response = NextResponse.next();
+  
+  // Set CORS headers for the specific origin if it's allowed
+  if (ALLOWED_ORIGINS.includes(origin)) {
+    response.headers.set('Access-Control-Allow-Origin', origin);
+    response.headers.set('Access-Control-Allow-Credentials', 'true');
+    response.headers.set('Vary', 'Origin');
+  }
+  
+  return response;
 }
 
 // Configure which paths this middleware will run on
