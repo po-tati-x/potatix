@@ -1,74 +1,20 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { AppSidebarNav } from '@/components/ui/layout/app-sidebar-nav';
-import { MainNav } from '@/components/ui/layout/main-nav';
-import { HelpButton } from '@/components/ui/layout/help-button';
-import { ReferButton } from '@/components/ui/layout/refer-button';
-import { NewsComponent } from '@/components/ui/layout/news-component';
-import { authClient } from '@/lib/auth/auth-client';
+import { AppSidebarNav } from '@/components/layout/sidebar/app-sidebar-nav';
+import { MainNav } from '@/components/layout/sidebar/main-nav';
+import { HelpButton } from '@/components/layout/sidebar/help-button';
+import { ReferButton } from '@/components/layout/sidebar/refer-button';
+import { NewsComponent } from '@/components/layout/sidebar/news-component';
 
 export const dynamic = "force-static";
-
-// Define session type
-interface SessionData {
-  user?: {
-    email?: string;
-    [key: string]: unknown; // For other potential user properties
-  };
-  [key: string]: unknown; // For other potential session properties
-}
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [session, setSession] = useState<SessionData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const router = useRouter();
-
-  useEffect(() => {
-    const fetchSession = async () => {
-      try {
-        console.log('Fetching session in dashboard layout...');
-        const { data, error } = await authClient.getSession();
-        
-        if (error || !data) {
-          console.error('Session error:', error);
-          router.push('/login');
-          return;
-        }
-        
-        console.log('Session loaded, user:', data.user?.email);
-        setSession(data);
-      } catch (error) {
-        console.error('Failed to fetch session:', error);
-        router.push('/login');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchSession();
-  }, [router]);
-
-  // While loading, show nothing to prevent flicker
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500"></div>
-      </div>
-    );
-  }
-
-  // If no session and not loading, redirect to login
-  if (!session && !loading) {
-    router.push('/login');
-    return null;
-  }
-
+  // No session fetching or checks - middleware already handles this
+  
   return (
     <>
       <div className="min-h-screen w-full bg-white">
