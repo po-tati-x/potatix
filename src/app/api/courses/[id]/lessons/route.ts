@@ -12,7 +12,8 @@ const lessonSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().optional().nullable(),
   videoId: z.string().optional().nullable(),
-  order: z.number().int().positive('Order must be a positive number')
+  order: z.number().int().min(0, 'Order must be a non-negative number'),
+  moduleId: z.string().min(1, 'Module ID is required')
 });
 
 // Type for the structured API response
@@ -65,6 +66,22 @@ async function checkCourseOwnership(request: NextRequest, courseId: string): Pro
   }
 }
 
+// Verify if moduleId exists in the database
+async function verifyModuleExists(courseId: string, moduleId: string): Promise<boolean> {
+  try {
+    const modules = await db.select({ id: courseSchema.courseModule.id })
+      .from(courseSchema.courseModule)
+      .where(eq(courseSchema.courseModule.id, moduleId))
+      .limit(1);
+    
+    console.log(`[DEBUG] Module verification: Searched for module ${moduleId} in course ${courseId}. Found: ${modules.length > 0}`);
+    return modules.length > 0;
+  } catch (error) {
+    console.error(`[DEBUG] Module verification error:`, error);
+    return false;
+  }
+}
+
 // POST handler to create a new lesson
 export async function POST(
   request: NextRequest,
@@ -72,7 +89,10 @@ export async function POST(
 ) {
   const { id: courseId } = await params;
   
+  console.log(`[DEBUG] POST /api/courses/${courseId}/lessons - Starting...`);
+  
   if (!courseId) {
+    console.log('[DEBUG] Course ID is missing');
     return NextResponse.json(
       { error: 'Course ID is required' },
       { status: 400 }
@@ -83,6 +103,7 @@ export async function POST(
   const ownershipCheck = await checkCourseOwnership(request, courseId);
   
   if (ownershipCheck.error) {
+    console.log(`[DEBUG] Course ownership check failed: ${ownershipCheck.error}`);
     return NextResponse.json(
       { error: ownershipCheck.error },
       { status: ownershipCheck.status || 500 }
@@ -92,12 +113,14 @@ export async function POST(
   try {
     // Parse request body
     const body = await request.json();
+    console.log('[DEBUG] Request body:', body);
     
     // Validate lesson data
     const validationResult = lessonSchema.safeParse(body);
     
     if (!validationResult.success) {
       const errors = validationResult.error.format();
+      console.error('[DEBUG] Validation failed:', errors);
       return NextResponse.json(
         { error: 'Invalid lesson data', details: errors },
         { status: 400 }
@@ -106,8 +129,20 @@ export async function POST(
     
     const lessonData = validationResult.data;
     
+    // Verify if the module exists
+    const moduleExists = await verifyModuleExists(courseId, lessonData.moduleId);
+    if (!moduleExists) {
+      console.error(`[DEBUG] Module ${lessonData.moduleId} not found in course ${courseId}`);
+      return NextResponse.json(
+        { error: `Module ${lessonData.moduleId} not found in course ${courseId}` },
+        { status: 404 }
+      );
+    }
+    
     // Generate a unique ID for the lesson
     const lessonId = nanoid();
+    
+    console.log(`[DEBUG] Creating new lesson with ID: ${lessonId} for module: ${lessonData.moduleId}`);
     
     // Insert the lesson
     const newLesson = await db.insert(courseSchema.lesson)
@@ -117,11 +152,14 @@ export async function POST(
         description: lessonData.description,
         videoId: lessonData.videoId,
         order: lessonData.order,
+        moduleId: lessonData.moduleId,
         courseId: courseId,
         createdAt: new Date(),
         updatedAt: new Date()
       })
       .returning();
+    
+    console.log(`[DEBUG] Lesson created:`, newLesson[0]);
     
     // Update lesson count in course using a separate query
     await db.execute(sql`
@@ -135,7 +173,7 @@ export async function POST(
       message: 'Lesson created successfully'
     });
   } catch (error) {
-    console.error('Failed to create lesson:', error);
+    console.error('[DEBUG] Failed to create lesson:', error);
     const message = error instanceof Error ? error.message : 'Failed to create lesson';
     return NextResponse.json(
       { error: message },

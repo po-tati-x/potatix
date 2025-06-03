@@ -2,8 +2,8 @@
 
 import { useMemo } from 'react';
 import { use } from 'react';
-import { Course } from '@/lib/utils/api-client';
-import CourseOverview from './components/CourseOverview';
+import { Course } from '@/lib/types/api';
+import CourseOverview from './components/course-overview';
 
 // Extend Window interface to include our course data
 declare global {

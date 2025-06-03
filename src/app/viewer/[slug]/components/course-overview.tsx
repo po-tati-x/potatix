@@ -2,7 +2,7 @@
 
 import { BookOpen, Calendar, Users, Play, ChevronRight, Lock, Clock, CheckCircle, ArrowRight, Star, Code, BarChart2, GraduationCap } from 'lucide-react';
 import Image from 'next/image';
-import { Course } from '@/lib/utils/api-client';
+import { Course, Lesson } from '@/lib/types/api';
 import Link from 'next/link';
 import { Button } from '@/components/ui/potatix/Button';
 
@@ -246,7 +246,7 @@ export default function CourseOverview({
               </div>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {course.lessons?.slice(0, 2).map(lesson => (
+                {course.lessons?.slice(0, 2).map((lesson: Lesson) => (
                   <Link 
                     key={lesson.id}
                     href={`/viewer/${courseSlug}/lesson/${lesson.id}`}
