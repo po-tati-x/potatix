@@ -1,6 +1,6 @@
 'use client';
 
-import { authClient, signOut } from '@/lib/auth/auth-client';
+import { authClient } from '@/lib/auth/auth-client';
 import { 
   ChevronRight, 
   BookOpen, 
@@ -17,15 +17,8 @@ import {
   CheckCircle2
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/potatix/Button';
 import Image from 'next/image';
-
-interface UserData {
-  name?: string;
-  email?: string;
-  [key: string]: unknown;
-}
 
 // Mock data for the dashboard
 const mockCourses = [
@@ -104,59 +97,11 @@ const mockStats = {
 
 export default function DashboardPage() {
   const router = useRouter();
-  // State to store session data
-  const [session, setSession] = useState<{ user: UserData } | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  // Fetch session data on component mount
-  useEffect(() => {
-    const fetchSession = async () => {
-      try {
-        const { data } = await authClient.getSession();
-        setSession(data);
-      } catch (error) {
-        console.error('Failed to fetch session:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchSession();
-  }, []);
-
-  // Show loading state
-  if (loading) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-3 text-slate-500">
-        <div className="h-5 w-5 border-2 border-slate-300 border-t-emerald-500 rounded-full animate-spin" />
-        <p className="text-sm">Loading dashboard...</p>
-      </div>
-    );
-  }
-
-  // Handle not authenticated state
-  if (!session) {
-    return (
-      <div className="max-w-5xl mx-auto px-4 py-6">
-        <div className="text-center py-16 space-y-4">
-          <h2 className="text-xl font-medium text-slate-900">Not Authenticated</h2>
-          <p className="text-slate-500">Please sign in to access your dashboard.</p>
-          <Button 
-            type="primary"
-            size="small"
-            onClick={() => router.push('/auth/sign-in')}
-          >
-            Sign In
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  // Extract user info safely with proper type checks
-  const userInfo: UserData = session?.user || {}; 
-  const userName = typeof userInfo.name === 'string' ? userInfo.name : 'User';
-  const userEmail = typeof userInfo.email === 'string' ? userInfo.email : '';
+  
+  // No session checking needed since it's handled by middleware
+  // Just assume we have a user and set default values if fields are missing
+  const userName = 'User';
+  const userEmail = '';
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-6">
@@ -407,11 +352,15 @@ export default function DashboardPage() {
                   icon={<LogOut className="h-3.5 w-3.5" />}
                   onClick={async () => {
                     try {
-                      await signOut();
-                      // router.push('/') will be handled by the signOut function
+                      await authClient.signOut({
+                        fetchOptions: {
+                          onSuccess: () => {
+                            router.push('/login');
+                          }
+                        }
+                      });
                     } catch (error) {
                       console.error("Dashboard SignOut failed:", error);
-                      // Fallback if signOut throws error
                       router.push('/login');
                     }
                   }}
