@@ -30,4 +30,8 @@ export const db = drizzle(pool, { schema });
 
 // Re-export schemas for convenience with clear namespacing
 export { authSchema };
-export { courseSchema }; 
+export { courseSchema };
+
+// Export specific tables for direct access
+export const { course, courseModule, lesson, courseEnrollment, lessonProgress } = courseSchema;
+export const { user, session, account, verification } = authSchema;
