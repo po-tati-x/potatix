@@ -16,6 +16,7 @@ import axios from 'axios';
 declare global {
   interface Window {
     __COURSE_DATA__?: Course;
+    __ENROLLMENT_STATUS__?: 'active' | 'pending' | 'rejected' | null;
   }
 }
 
@@ -36,6 +37,7 @@ export default function CourseLayout({ children, params }: CourseLayoutProps) {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isEnrolled, setIsEnrolled] = useState(false);
+  const [enrollmentStatus, setEnrollmentStatus] = useState<'active' | 'pending' | 'rejected' | null>(null);
   const [isEnrollmentLoading, setIsEnrollmentLoading] = useState(true);
   const [isEnrolling, setIsEnrolling] = useState(false);
   
@@ -68,6 +70,7 @@ export default function CourseLayout({ children, params }: CourseLayoutProps) {
     async function checkEnrollment() {
       if (!isAuthenticated || !courseSlug) {
         setIsEnrolled(false);
+        setEnrollmentStatus(null);
         setIsEnrollmentLoading(false);
         return;
       }
@@ -75,10 +78,19 @@ export default function CourseLayout({ children, params }: CourseLayoutProps) {
       try {
         setIsEnrollmentLoading(true);
         const response = await axios.get(`/api/courses/enrollment?slug=${courseSlug}`);
-        setIsEnrolled(response.data.isEnrolled);
+        const isUserEnrolled = response.data.isEnrolled;
+        setIsEnrolled(isUserEnrolled);
+        
+        // Also get enrollment status if enrolled
+        if (isUserEnrolled && response.data.enrollment) {
+          setEnrollmentStatus(response.data.enrollment.status);
+        } else {
+          setEnrollmentStatus(null);
+        }
       } catch (error) {
         console.error('Failed to check enrollment status:', error);
         setIsEnrolled(false);
+        setEnrollmentStatus(null);
       } finally {
         setIsEnrollmentLoading(false);
       }
@@ -98,8 +110,13 @@ export default function CourseLayout({ children, params }: CourseLayoutProps) {
     
     try {
       setIsEnrolling(true);
-      await axios.post('/api/courses/enrollment', { courseSlug });
+      const response = await axios.post('/api/courses/enrollment', { courseSlug });
       setIsEnrolled(true);
+      
+      // Set the enrollment status from the response
+      if (response.data.enrollment) {
+        setEnrollmentStatus(response.data.enrollment.status);
+      }
     } catch (error) {
       console.error('Failed to enroll in course:', error);
     } finally {
@@ -111,22 +128,33 @@ export default function CourseLayout({ children, params }: CourseLayoutProps) {
   useEffect(() => {
     if (course) {
       window.__COURSE_DATA__ = course;
+      window.__ENROLLMENT_STATUS__ = enrollmentStatus;
     }
     
     // Cleanup function to remove the course data when the component unmounts
     return () => {
       delete window.__COURSE_DATA__;
+      delete window.__ENROLLMENT_STATUS__;
     };
-  }, [course]);
+  }, [course, enrollmentStatus]);
   
   // If user is not enrolled and trying to access a restricted page (like a lesson),
   // redirect to the course overview page - THIS HOOK MUST BE BEFORE ANY CONDITIONAL RETURNS
   useEffect(() => {
-    if (!isEnrolled && !isAuthPage && isLessonPage && !courseLoading && !isEnrollmentLoading) {
+    // Redirect only if:
+    // 1. User is not enrolled OR enrollment status is pending/rejected
+    // 2. Not on auth page
+    // 3. Trying to access a lesson page
+    // 4. Course data has loaded and enrollment status has been checked
+    if (((!isEnrolled || enrollmentStatus === 'pending' || enrollmentStatus === 'rejected') && 
+        !isAuthPage && 
+        isLessonPage && 
+        !courseLoading && 
+        !isEnrollmentLoading)) {
       // Redirect to the ROOT URL of the subdomain, not the internal viewer path
       window.location.href = '/';
     }
-  }, [isEnrolled, isAuthPage, isLessonPage, courseLoading, isEnrollmentLoading]);
+  }, [isEnrolled, enrollmentStatus, isAuthPage, isLessonPage, courseLoading, isEnrollmentLoading]);
   
   // Toggle mobile sidebar
   const toggleMobileSidebar = () => {
@@ -185,6 +213,7 @@ export default function CourseLayout({ children, params }: CourseLayoutProps) {
           isEnrolled={isEnrolled}
           onEnroll={handleEnroll}
           isEnrolling={isEnrolling}
+          enrollmentStatus={enrollmentStatus}
         />
       </div>
       

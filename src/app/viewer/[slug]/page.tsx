@@ -9,6 +9,7 @@ import CourseOverview from './components/course-overview';
 declare global {
   interface Window {
     __COURSE_DATA__?: Course;
+    __ENROLLMENT_STATUS__?: 'active' | 'pending' | 'rejected' | null;
   }
 }
 
@@ -25,6 +26,14 @@ export default function CourseViewerPage({ params }: CourseViewerProps) {
   const course = useMemo(() => {
     if (typeof window !== 'undefined') {
       return window.__COURSE_DATA__;
+    }
+    return null;
+  }, []);
+  
+  // Get enrollment status from window object
+  const enrollmentStatus = useMemo(() => {
+    if (typeof window !== 'undefined') {
+      return window.__ENROLLMENT_STATUS__;
     }
     return null;
   }, []);
@@ -54,6 +63,7 @@ export default function CourseViewerPage({ params }: CourseViewerProps) {
       unlockedLessonsCount={unlockedLessonsCount}
       totalLessonsCount={lessonsCount}
       courseSlug={courseSlug}
+      enrollmentStatus={enrollmentStatus}
     />
   );
 }
