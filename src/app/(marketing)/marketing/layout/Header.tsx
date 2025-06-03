@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Menu, X, ChevronDown, Sparkles, LayoutDashboard } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/potatix/Button";
 import { authClient } from "@/lib/auth/auth-client";
@@ -113,7 +113,7 @@ export default function Header() {
             aria-label="Potatix homepage"
           >
             <Image 
-              src="/potatix-logo.svg" 
+              src="https://www.potatix.com/potatix-logo.svg" 
               alt="Potatix Logo" 
               width={120} 
               height={32} 
