@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import { BookOpen, Palette, Smartphone, Sparkles, CreditCard, Check, ChevronDown } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/cn";
 
 type Feature = {
   id: string;
