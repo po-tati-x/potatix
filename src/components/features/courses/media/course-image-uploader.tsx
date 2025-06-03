@@ -2,8 +2,8 @@
 
 import { useState, useRef } from 'react';
 import { X, Image as ImageIcon } from 'lucide-react';
-import { coursesApi } from '@/lib/utils/api-client';
 import Image from 'next/image';
+import { useUploadCourseImage } from '@/lib/api';
 
 interface CourseImageUploaderProps {
   initialUrl?: string;
@@ -17,8 +17,10 @@ export function CourseImageUploader({
   onImageRemoved,
 }: CourseImageUploaderProps) {
   const [imagePreview, setImagePreview] = useState<string | null>(initialUrl || null);
-  const [imageUploading, setImageUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Use React Query for image uploads
+  const { mutate: uploadImage, isPending: imageUploading } = useUploadCourseImage();
 
   // Handle image upload
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -45,18 +47,17 @@ export function CourseImageUploader({
     };
     reader.readAsDataURL(file);
     
-    // Upload to R2
-    try {
-      setImageUploading(true);
-      const result = await coursesApi.uploadImage(file);
-      onImageUploaded(result.fileUrl);
-    } catch (error) {
-      console.error('Failed to upload image:', error);
-      alert('Failed to upload image. Please try again.');
-      setImagePreview(null);
-    } finally {
-      setImageUploading(false);
-    }
+    // Upload image using React Query mutation
+    uploadImage(file, {
+      onSuccess: (result) => {
+        onImageUploaded(result.fileUrl);
+      },
+      onError: (error) => {
+        console.error('Failed to upload image:', error);
+        alert('Failed to upload image. Please try again.');
+        setImagePreview(null);
+      }
+    });
   };
   
   // Remove image
