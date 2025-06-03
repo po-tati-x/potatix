@@ -20,27 +20,22 @@ const BYPASS_ROUTES = [
   '/favicon.ico',
 ];
 
-// Get the explicit list of all known origins we need to allow
-const getAllowedOrigins = () => {
-  if (process.env.NODE_ENV === 'development') {
-    return [
-      'http://potatix.com:3000',
-      'http://danchess.potatix.com:3000',
-      'http://www.potatix.com:3000',
-      // Add any other subdomains you need here
-    ];
+// Get main app URL for fallback when no origin is provided
+const getMainAppUrl = () => {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+  
+  if (appUrl) {
+    return appUrl;
   }
   
-  return [
-    'https://potatix.com',
-    'https://danchess.potatix.com',
-    'https://www.potatix.com',
-    // Add any other production subdomains here
-  ];
+  // Fallback based on environment
+  return process.env.NODE_ENV === 'development'
+    ? 'http://localhost:3000'
+    : 'https://potatix.com';
 };
 
-// List of allowed origins
-const ALLOWED_ORIGINS = getAllowedOrigins();
+// Main app URL
+const MAIN_APP_URL = getMainAppUrl();
 
 /**
  * Extract course slug from host header
@@ -112,16 +107,11 @@ export function middleware(request: NextRequest) {
     
     const response = new NextResponse(null, { status: 204 });
     
-    // Allow specific origin if it's in our allowed list
-    if (ALLOWED_ORIGINS.includes(origin)) {
+    // Allow ANY origin - set the actual origin from the request
+    if (origin) {
       response.headers.set('Access-Control-Allow-Origin', origin);
     } else {
-      // Default fallback - this should be the main domain
-      response.headers.set('Access-Control-Allow-Origin', 
-        process.env.NODE_ENV === 'development'
-          ? 'http://potatix.com:3000'
-          : 'https://potatix.com'
-      );
+      response.headers.set('Access-Control-Allow-Origin', MAIN_APP_URL);
     }
     
     // Set other CORS headers
@@ -129,6 +119,7 @@ export function middleware(request: NextRequest) {
     response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
     response.headers.set('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, Authorization');
     response.headers.set('Access-Control-Max-Age', '86400'); // 24 hours
+    response.headers.set('Vary', 'Origin'); // Important when origin changes
     
     return response;
   }
@@ -142,8 +133,8 @@ export function middleware(request: NextRequest) {
     if (pathname.startsWith('/api/')) {
       const response = NextResponse.next();
       
-      // Set CORS headers for the specific origin if it's allowed
-      if (ALLOWED_ORIGINS.includes(origin)) {
+      // Set CORS headers for ANY origin
+      if (origin) {
         response.headers.set('Access-Control-Allow-Origin', origin);
         response.headers.set('Access-Control-Allow-Credentials', 'true');
         response.headers.set('Vary', 'Origin');
@@ -248,8 +239,8 @@ export function middleware(request: NextRequest) {
   // For everything else, add the CORS headers and continue
   const response = NextResponse.next();
   
-  // Set CORS headers for the specific origin if it's allowed
-  if (ALLOWED_ORIGINS.includes(origin)) {
+  // Allow ANY origin - set the actual origin from the request
+  if (origin) {
     response.headers.set('Access-Control-Allow-Origin', origin);
     response.headers.set('Access-Control-Allow-Credentials', 'true');
     response.headers.set('Vary', 'Origin');
