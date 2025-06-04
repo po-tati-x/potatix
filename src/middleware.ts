@@ -24,14 +24,8 @@ const BYPASS_ROUTES = [
 const getMainAppUrl = () => {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL;
   
-  if (appUrl) {
-    return appUrl;
-  }
+  return appUrl;
   
-  // Fallback based on environment
-  return process.env.NODE_ENV === 'development'
-    ? 'http://localhost:3000'
-    : 'https://potatix.com';
 };
 
 // Main app URL

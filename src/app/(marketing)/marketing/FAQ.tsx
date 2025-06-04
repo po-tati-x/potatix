@@ -15,6 +15,10 @@ interface FAQItem {
 
 const FAQ_ITEMS: FAQItem[] = [
   {
+    question: "Is it any good?",
+    answer: "yes"
+  },
+  {
     question: "What exactly does Potatix do?",
     answer: "Potatix is a minimalist platform built specifically for software developers who want to sell technical courses. We handle payment processing, video hosting, and basic user auth - that's it. No bloat, no BS, just the core features you actually need."
   },
