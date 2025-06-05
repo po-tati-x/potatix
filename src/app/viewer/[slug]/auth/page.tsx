@@ -8,13 +8,11 @@ import SocialLogin from '@/components/features/auth/social-login';
 import { authClient } from '@/lib/auth/auth-client';
 
 export default function CourseAuthPage() {
-  const params = useParams();
+  const { slug: courseSlug } = useParams() as { slug: string };
   const router = useRouter();
-  const courseSlug = params.slug as string;
   const [isEnrolling, setIsEnrolling] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Move handleEnrollment to useCallback to properly use it in dependencies
   const handleEnrollment = useCallback(async () => {
     if (isEnrolling) return;
     
@@ -22,28 +20,24 @@ export default function CourseAuthPage() {
       setIsEnrolling(true);
       await axios.post('/api/courses/enrollment', { courseSlug });
       router.push(`/viewer/${courseSlug}`);
-    } catch (err) {
-      console.error('Enrollment failed:', err);
+    } catch (error) {
+      console.error(`Enrollment failed for course "${courseSlug}":`, error);
       setError('Failed to enroll in course. Please try again.');
       router.push(`/viewer/${courseSlug}`);
     } finally {
       setIsEnrolling(false);
     }
-  }, [courseSlug, isEnrolling, router, setError, setIsEnrolling]);
+  }, [courseSlug, isEnrolling, router]);
 
   useEffect(() => {
-    // Check if already authenticated
     async function checkAuthAndEnroll() {
       try {
         const { data: session } = await authClient.getSession();
-        
-        // If authenticated, try to enroll and redirect
         if (session?.user) {
           await handleEnrollment();
         }
-      } catch (err) {
-        // Silent fail - will just show the auth form
-        console.error('Auth check failed:', err);
+      } catch (error) {
+        console.error('Auth check failed:', error);
       }
     }
     
@@ -51,7 +45,6 @@ export default function CourseAuthPage() {
   }, [handleEnrollment]);
 
   useEffect(() => {
-    // Listen for auth completion events
     const handleAuthComplete = async () => {
       await handleEnrollment();
     };
