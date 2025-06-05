@@ -1,8 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { Check, BookOpen, Gift, Users, Sparkles } from "lucide-react";
+import { Check, BookOpen, Gift, Users, Sparkles, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/potatix/Button";
+import { useEffect, useState } from 'react';
+import { authClient } from '@/lib/auth/auth-client';
+import { useRouter } from 'next/navigation';
 
 // Proper TypeScript interfaces
 interface StatProps {
@@ -143,6 +146,23 @@ const DashboardMockup = () => (
 );
 
 export default function Hero() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const router = useRouter();
+  
+  // Check auth status
+  useEffect(() => {
+    const checkAuthStatus = async () => {
+      try {
+        const { data } = await authClient.getSession();
+        setIsLoggedIn(!!data);
+      } catch {
+        setIsLoggedIn(false);
+      }
+    };
+    
+    checkAuthStatus();
+  }, []);
+  
   const benefits = [
     "Completely free platform - no revenue share, no fees",
     "Built for creators, by creators - no marketing BS",
@@ -194,17 +214,30 @@ export default function Hero() {
             </div>
             
             <div className="grid grid-cols-2 sm:flex sm:flex-row gap-2 sm:gap-4">
-              <Link href="/login" className="col-span-1">
+              {isLoggedIn ? (
                 <Button 
                   type="primary"
                   size="small"
-                  iconRight={<Sparkles className="h-3.5 w-3.5" />}
-                  className="w-full"
-                  aria-label="Login to your account"
+                  iconLeft={<LayoutDashboard className="h-3.5 w-3.5" />}
+                  className="w-full col-span-1"
+                  onClick={() => router.push('/dashboard')}
+                  aria-label="Go to your dashboard"
                 >
-                  Login
+                  Dashboard
                 </Button>
-              </Link>
+              ) : (
+                <Link href="/login" className="col-span-1">
+                  <Button 
+                    type="primary"
+                    size="small"
+                    iconRight={<Sparkles className="h-3.5 w-3.5" />}
+                    className="w-full"
+                    aria-label="Login to your account"
+                  >
+                    Login
+                  </Button>
+                </Link>
+              )}
               <Link href="#features" className="col-span-1">
                 <Button 
                   type="outline"

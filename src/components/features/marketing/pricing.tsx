@@ -1,8 +1,11 @@
 "use client";
 
-import { Check, AlertCircle, XCircle, Zap } from "lucide-react";
+import { Check, AlertCircle, XCircle, Zap, LayoutDashboard } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/potatix/Button";
+import { useEffect, useState } from 'react';
+import { authClient } from '@/lib/auth/auth-client';
+import { useRouter } from 'next/navigation';
 
 interface ComparisonItem {
   feature: string;
@@ -126,6 +129,23 @@ function BenefitItem({ text }: { text: string }) {
 }
 
 function PricingCard() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const router = useRouter();
+  
+  // Check auth status
+  useEffect(() => {
+    const checkAuthStatus = async () => {
+      try {
+        const { data } = await authClient.getSession();
+        setIsLoggedIn(!!data);
+      } catch {
+        setIsLoggedIn(false);
+      }
+    };
+    
+    checkAuthStatus();
+  }, []);
+  
   return (
     <div className="bg-white rounded-md border border-slate-200 h-full hover:border-slate-300 transition-all duration-300">
       
@@ -156,14 +176,26 @@ function PricingCard() {
           </div>
         </div>
         
-        <Button 
-          type="primary"
-          size="large"
-          asChild
-          className="w-full justify-center" 
-        >
-          <Link href="/login">Get Started Now</Link>
-        </Button>
+        {isLoggedIn ? (
+          <Button 
+            type="primary"
+            size="large"
+            className="w-full justify-center"
+            iconLeft={<LayoutDashboard className="h-4 w-4" />}
+            onClick={() => router.push('/dashboard')}
+          >
+            Go to Dashboard
+          </Button>
+        ) : (
+          <Button 
+            type="primary"
+            size="large"
+            asChild
+            className="w-full justify-center" 
+          >
+            <Link href="/login">Get Started Now</Link>
+          </Button>
+        )}
       </div>
       
       <div className="p-6 sm:p-8 pt-2">
