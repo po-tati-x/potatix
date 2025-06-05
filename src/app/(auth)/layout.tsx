@@ -1,5 +1,7 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
+import Image from 'next/image';
+import TestimonialCarousel from '@/components/features/auth/testimonial-carousel';
 
 export const metadata: Metadata = {
   title: 'Authentication | Potatix',
@@ -8,24 +10,60 @@ export const metadata: Metadata = {
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-white flex flex-col items-center justify-center px-4 py-10">
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-4 -right-4 w-60 md:w-80 h-60 md:h-80 bg-[#06A28B]/20 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-40 md:w-60 h-40 md:h-60 bg-[#06A28B]/10 rounded-full blur-3xl" />
-      </div>
-      
-      <div className="relative max-w-md w-full mx-auto">
-        <div className="bg-white shadow-xl rounded-xl overflow-hidden border border-gray-200">
-          <div className="p-6 sm:p-8">
-            {children}
-          </div>
+    <div className="min-h-screen flex">
+      {/* Left side - Auth form */}
+      <div className="w-full md:w-[500px] flex flex-col items-center justify-center px-8 py-12 bg-white relative">
+        {/* Logo in top left */}
+        <div className="absolute top-6 left-6">
+          <Link href="/">
+            <Image 
+              src="https://www.potatix.com/potatix-logo.svg" 
+              alt="Potatix Logo" 
+              width={100} 
+              height={28} 
+              className="h-7 w-auto"
+              priority
+            />
+          </Link>
+        </div>
+        
+        <div className="w-full max-w-[400px]">
+          {children}
+        </div>
+        
+        <div className="mt-8 text-xs text-slate-500">
+          <Link href="/" className="hover:text-emerald-600 transition-colors">
+            &larr; Back to Home
+          </Link>
+        </div>
+
+        {/* Terms of service at bottom */}
+        <div className="absolute bottom-4 w-full max-w-[400px] text-center text-xs text-slate-500">
+          <p>
+            By continuing, you agree to Potatix&apos;s{' '}
+            <Link href="/terms" className="text-emerald-600 hover:text-emerald-700">
+              Terms of Service
+            </Link>{' '}
+            and{' '}
+            <Link href="/privacy" className="text-emerald-600 hover:text-emerald-700">
+              Privacy Policy
+            </Link>
+            , and to receive periodic emails with updates.
+          </p>
         </div>
       </div>
       
-      <div className="mt-8 text-center text-xs text-gray-500">
-        <Link href="/" className="hover:text-[#06A28B] transition-colors">
-          &larr; Back to Home
-        </Link>
+      {/* Right side - Quote section */}
+      <div className="hidden md:flex flex-1 relative bg-emerald-900 flex-col items-center justify-center p-12 text-white">
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-800 to-emerald-950 opacity-90" />
+        
+        <div className="relative z-10 w-full max-w-md mx-auto">
+          <TestimonialCarousel />
+        </div>
+        
+        <div className="absolute bottom-4 left-4 right-4 text-center text-emerald-400 text-xs">
+          © {new Date().getFullYear()} Potatix. All rights reserved.
+        </div>
       </div>
     </div>
   );
