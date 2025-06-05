@@ -52,7 +52,7 @@ const DemoVideo = () => {
             playsInline
             disablePictureInPicture
             disableRemotePlayback
-            src="/demo.mp4"
+            src="https://storage.potatix.com/potatix/demo.mp4"
           />
         </div>
       </div>

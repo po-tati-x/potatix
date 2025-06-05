@@ -21,7 +21,7 @@ const FEATURES: FeatureProps[] = [
     icon: <Gift className="h-4 w-4" />,
     accentColor: "bg-emerald-600",
     badge: "Free platform",
-    imagePath: "/images/features/free.jpg"
+    imagePath: "https://storage.potatix.com/potatix/images/features/free.jpg"
   },
   {
     title: "Custom domain",
@@ -29,7 +29,7 @@ const FEATURES: FeatureProps[] = [
     icon: <Globe className="h-4 w-4" />,
     accentColor: "bg-indigo-500",
     badge: "Free SSL included",
-    imagePath: "/images/features/domain.jpg"
+    imagePath: "https://storage.potatix.com/potatix/images/features/domain.jpg"
   },
   {
     title: "Beautiful landing pages",
@@ -37,7 +37,7 @@ const FEATURES: FeatureProps[] = [
     icon: <Palette className="h-4 w-4" />,
     accentColor: "bg-violet-500",
     badge: "Full customization",
-    imagePath: "/images/features/landing.jpg"
+    imagePath: "https://storage.potatix.com/potatix/images/features/landing.jpg"
   },
   {
     title: "100% data ownership",
@@ -45,7 +45,7 @@ const FEATURES: FeatureProps[] = [
     icon: <Database className="h-4 w-4" />,
     accentColor: "bg-blue-500",
     badge: "No lock-in",
-    imagePath: "/images/features/analytics.jpg"
+    imagePath: "https://storage.potatix.com/potatix/images/features/analytics.jpg"
   },
   {
     title: "Creator-friendly",
@@ -53,7 +53,7 @@ const FEATURES: FeatureProps[] = [
     icon: <BookOpen className="h-4 w-4" />,
     accentColor: "bg-slate-800",
     badge: "Content focus",
-    imagePath: "/images/features/creator.jpg"
+    imagePath: "https://storage.potatix.com/potatix/images/features/creator.jpg"
   },
   {
     title: "10-minute setup",
@@ -61,7 +61,7 @@ const FEATURES: FeatureProps[] = [
     icon: <Clock className="h-4 w-4" />,
     accentColor: "bg-amber-500",
     badge: "Instant deployment",
-    imagePath: "/images/features/easy.jpg"
+    imagePath: "https://storage.potatix.com/potatix/images/features/easy.jpg"
   },
   {
     title: "Student engagement",
@@ -69,7 +69,7 @@ const FEATURES: FeatureProps[] = [
     icon: <Users className="h-4 w-4" />,
     accentColor: "bg-emerald-600",
     badge: "Community tools",
-    imagePath: "/images/features/engagement.jpg"
+    imagePath: "https://storage.potatix.com/potatix/images/features/engagement.jpg"
   },
   {
     title: "Zero lock-in",
@@ -77,7 +77,7 @@ const FEATURES: FeatureProps[] = [
     icon: <Lock className="h-4 w-4" />,
     accentColor: "bg-rose-500",
     badge: "Full portability",
-    imagePath: "/images/features/zerolock.jpg"
+    imagePath: "https://storage.potatix.com/potatix/images/features/zerolock.jpg"
   },
 ];
 
