@@ -62,6 +62,12 @@ const getCookieDomain = () => {
   return `.${parts.slice(parts.length - 2).join('.')}`;
 };
 
+// Check if we're using HTTPS or HTTP
+const isSecureConnection = () => {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || '';
+  return appUrl.startsWith('https://');
+};
+
 export const auth = betterAuth({
   // Database adapter
   database: drizzleAdapter(db, {
@@ -99,7 +105,7 @@ export const auth = betterAuth({
     },
     defaultCookieAttributes: {
       httpOnly: true,
-      secure: true, // Always use secure for cookies
+      secure: isSecureConnection(), // Only use secure for HTTPS connections
       sameSite: "lax",
       path: "/",
       maxAge: 7 * 24 * 60 * 60 // 7 days
