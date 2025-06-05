@@ -6,7 +6,8 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/shadcn/accordion";
-import { MessageCircle } from "lucide-react";
+import { MessageCircle, ChevronRight } from "lucide-react";
+import { useState } from "react";
 
 interface FAQItem {
   question: string;
@@ -60,10 +61,36 @@ const FAQ_ITEMS: FAQItem[] = [
   },
 ];
 
-function FAQAccordion({ items }: { items: FAQItem[] }) {
+function HighlightedAnswer({ text }: { text: string }) {
+  // Highlight specific keywords
+  const highlightedText = text
+    .replace(/free\./g, '<span class="text-emerald-600 font-medium">free</span>.')
+    .replace(/free,/g, '<span class="text-emerald-600 font-medium">free</span>,')
+    .replace(/100%/g, '<span class="text-emerald-600 font-medium">100%</span>')
+    .replace(/no BS/g, '<span class="text-emerald-600 font-medium">no BS</span>')
+    .replace(/10 minutes/g, '<span class="text-emerald-600 font-medium">10 minutes</span>')
+    .replace(/Next\.js/g, '<span class="text-emerald-600 font-medium">Next.js</span>')
+    .replace(/Supabase/g, '<span class="text-emerald-600 font-medium">Supabase</span>')
+    .replace(/Stripe/g, '<span class="text-emerald-600 font-medium">Stripe</span>')
+    .replace(/Vercel/g, '<span class="text-emerald-600 font-medium">Vercel</span>');
+  
   return (
-    <div className="bg-white rounded-md border border-slate-200">
-      <Accordion type="single" collapsible className="w-full">
+    <div dangerouslySetInnerHTML={{ __html: highlightedText }} />
+  );
+}
+
+function FAQAccordion({ items }: { items: FAQItem[] }) {
+  const [openItem, setOpenItem] = useState<string | null>(null);
+
+  return (
+    <div className="bg-white rounded-md border border-slate-200 shadow-sm hover:shadow-md transition-all">
+      <Accordion 
+        type="single" 
+        collapsible 
+        className="w-full"
+        value={openItem || undefined}
+        onValueChange={(value) => setOpenItem(value)}
+      >
         {items.map((item, index) => (
           <AccordionItem 
             key={index}
@@ -71,12 +98,15 @@ function FAQAccordion({ items }: { items: FAQItem[] }) {
             className={`${index === items.length - 1 ? "" : "border-b border-slate-200"} group transition-all`}
           >
             <AccordionTrigger 
-              className="text-sm lg:text-base font-medium text-slate-900 py-3 px-4 hover:text-emerald-600 transition-colors data-[state=open]:text-emerald-600"
+              className="text-sm lg:text-base font-medium text-slate-800 py-4 px-5 hover:text-emerald-600 transition-colors data-[state=open]:text-emerald-600 data-[state=open]:bg-slate-50/80"
             >
-              {item.question}
+              <div className="flex items-center">
+                <ChevronRight className={`mr-2 h-4 w-4 shrink-0 text-emerald-500 transition-transform duration-200 group-data-[state=open]:rotate-90 opacity-0 group-hover:opacity-100 ${openItem === `item-${index}` ? 'opacity-100' : ''}`} />
+                {item.question}
+              </div>
             </AccordionTrigger>
-            <AccordionContent className="text-xs sm:text-sm text-slate-600 px-4 pb-4">
-              {item.answer}
+            <AccordionContent className="text-xs sm:text-sm leading-relaxed text-slate-600 px-5 pb-4 pt-1">
+              <HighlightedAnswer text={item.answer} />
             </AccordionContent>
           </AccordionItem>
         ))}
@@ -85,42 +115,22 @@ function FAQAccordion({ items }: { items: FAQItem[] }) {
   );
 }
 
-function ContactInfo() {
-  return (
-    <div className="mt-6 sm:mt-8 text-center">
-      <p className="text-xs sm:text-sm text-slate-600">
-        Still have questions?{" "}
-        <a 
-          href="mailto:hi@potatix.com" 
-          className="inline-flex items-center gap-1 text-emerald-600 hover:text-emerald-700 font-medium transition-colors"
-        >
-          Ask us directly
-          <MessageCircle className="w-3.5 h-3.5" />
-        </a>
-      </p>
-      <p className="mt-1 text-xs text-slate-500">
-        We reply within 24 hours at hi@potatix.com
-      </p>
-    </div>
-  );
-}
-
 export default function FAQ() {
   return (
     <section 
       id="faq" 
-      className="relative py-20"
+      className="relative py-16 md:py-20"
       aria-label="Frequently asked questions"
     >
       <div className="relative mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-        <div className="text-left w-full max-w-xl mb-6 sm:mb-8">
+        <div className="text-left w-full max-w-xl mb-8 sm:mb-12">
           <div className="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-700">
             <MessageCircle className="w-3.5 h-3.5 mr-1.5" /> 
             Common Questions
           </div>
           
-          <h2 className="mt-6 text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-slate-900 leading-tight">
-            Straight Answers
+          <h2 className="font-roboto mt-6 text-2xl sm:text-3xl lg:text-4xl tracking-tight text-slate-900 leading-tight">
+            Straight <span className="bg-gradient-to-r from-emerald-600 to-emerald-500 bg-clip-text text-transparent">Answers</span>
           </h2>
           
           <p className="mt-4 text-sm md:text-base text-slate-600 max-w-2xl">
@@ -128,9 +138,8 @@ export default function FAQ() {
           </p>
         </div>
 
-        <div className="max-w-3xl mx-auto">
+        <div className="max-w-3xl mx-auto space-y-6">
           <FAQAccordion items={FAQ_ITEMS} />
-          <ContactInfo />
         </div>
       </div>
     </section>
