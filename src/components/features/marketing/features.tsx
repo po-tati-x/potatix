@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Gift, Lock, BarChart, Database, Clock, Globe, Palette, BookOpen, Users, Video, Award } from "lucide-react";
+import { Gift, Lock, Database, Clock, Globe, Palette, BookOpen, Users } from "lucide-react";
 
 interface FeatureCardProps {
   title: string;
@@ -63,7 +63,7 @@ const FEATURES: FeatureCardProps[] = [
   },
   {
     title: "Zero lock-in",
-    description: "Cancel anytime, export everything. We don't trap you in our platform.",
+    description: "Cancel anytime, export everything. We don&apos;t trap you in our platform.",
     icon: <Lock className="h-4 w-4" />,
     accentColor: "bg-rose-500",
     badge: "Full portability",
