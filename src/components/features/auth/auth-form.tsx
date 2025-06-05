@@ -2,15 +2,15 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/shadcn/form';
 import { Input } from '@/components/ui/shadcn/input';
-import { EyeIcon, EyeOffIcon, Loader2 } from 'lucide-react';
+import { EyeIcon, EyeOffIcon } from 'lucide-react';
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from 'sonner';
 import { signIn, signUp } from '@/lib/auth/auth-client';
+import { Button } from '@/components/ui/potatix/Button';
 
 // Form validation schema that matches backend requirements
 const authSchema = z.object({
@@ -29,6 +29,8 @@ interface AuthFormProps {
   customTitle?: string;
   customDescription?: string;
 }
+
+const customInputStyles = "h-10 bg-white border border-slate-200 rounded-md focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200 focus-visible:ring-1 focus-visible:ring-emerald-200 focus-visible:border-emerald-500";
 
 export default function AuthForm({ 
   isLoginMode = false, 
@@ -111,19 +113,11 @@ export default function AuthForm({
 
   return (
     <div className="w-full">
-      <div className="mb-5 flex flex-col items-center justify-center">
-        <Image 
-          src="https://www.potatix.com/potatix-logo.svg" 
-          alt="Potatix Logo" 
-          width={130} 
-          height={36} 
-          className="h-9 w-auto mb-4"
-          priority
-        />
-        <h2 className="text-xl font-medium text-center text-slate-900">
-          {customTitle || (isSignUp ? "Create your account" : "Welcome back")}
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold text-slate-900">
+          {customTitle || (isSignUp ? "Create account" : "Welcome back")}
         </h2>
-        <p className="text-sm text-center text-slate-600 mt-1">
+        <p className="text-sm text-slate-600 mt-1">
           {customDescription || (isSignUp 
             ? "Fill out the form below to get started" 
             : "Enter your credentials to access your account")}
@@ -149,7 +143,7 @@ export default function AuthForm({
                       {...field} 
                       type="text" 
                       placeholder="Your name" 
-                      className="h-10 bg-white border border-slate-300 shadow-sm focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 rounded-md"
+                      className={customInputStyles}
                     />
                   </FormControl>
                   <FormMessage className="text-xs" />
@@ -171,7 +165,7 @@ export default function AuthForm({
                     {...field} 
                     type="email" 
                     placeholder="you@example.com" 
-                    className="h-10 bg-white border border-slate-300 shadow-sm focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 rounded-md"
+                    className={customInputStyles}
                   />
                 </FormControl>
                 <FormMessage className="text-xs" />
@@ -202,7 +196,7 @@ export default function AuthForm({
                     <Input 
                       {...field} 
                       type={showPassword ? "text" : "password"} 
-                      className="h-10 bg-white border border-slate-300 shadow-sm focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 rounded-md pr-10" 
+                      className={`${customInputStyles} pr-10`} 
                     />
                   </FormControl>
                   <button
@@ -214,30 +208,27 @@ export default function AuthForm({
                     {showPassword ? <EyeOffIcon size={16} /> : <EyeIcon size={16} />}
                   </button>
                 </div>
-                {isSignUp && (
-                  <div className="text-xs text-slate-500 mt-1">
-                    Password must be at least 8 characters.
-                  </div>
-                )}
                 <FormMessage className="text-xs" />
               </FormItem>
             )}
           />
           
           <div className="pt-2">
-            <button 
-              type="submit"
+            <Button 
+              type="primary"
+              size="medium"
+              block
               disabled={isLoading}
-              className="w-full h-10 px-4 py-2 bg-emerald-600 text-white font-medium rounded-md hover:bg-emerald-700 transition-colors flex items-center justify-center space-x-2"
+              loading={isLoading}
+              htmlType="submit"
             >
-              {isLoading && <Loader2 className="animate-spin h-4 w-4 mr-2" />}
-              {isLoading ? "Processing..." : (isSignUp ? "Create Account" : "Sign In")}
-            </button>
+              {isSignUp ? "Create Account" : "Sign In"}
+            </Button>
           </div>
         </form>
       </Form>
       
-      <div className="mt-5 text-center">
+      <div className="mt-4 text-center">
         <button
           type="button"
           onClick={() => {
