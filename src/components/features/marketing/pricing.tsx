@@ -180,7 +180,7 @@ function PricingCard() {
           <div className="flex items-start gap-3">
             <AlertCircle className="h-5 w-5 text-blue-500 flex-shrink-0" aria-hidden="true" />
             <p className="text-xs text-blue-800">
-              Only standard payment processing fees (Stripe's 2.9% + 30¢) apply when you sell. We don't add any fees on top.
+              Only standard payment processing fees (Stripe&apos;s 2.9% + 30¢) apply when you sell. We don&apos;t add any fees on top.
             </p>
           </div>
         </div>
