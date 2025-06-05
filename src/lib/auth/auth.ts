@@ -127,6 +127,19 @@ export const auth = betterAuth({
     minPasswordLength: 8
   },
   
+  // Social providers
+  socialProviders: {
+    google: {
+      clientId: process.env.GOOGLE_CLIENT_ID as string,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+      prompt: "select_account", // Always ask to select an account
+    },
+    github: {
+      clientId: process.env.GITHUB_CLIENT_ID as string,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
+    },
+  },
+  
   // Secret for encryption
   secret: process.env.BETTER_AUTH_SECRET,
   
