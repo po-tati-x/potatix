@@ -5,6 +5,7 @@ import { BookOpen, Gift, Users, Sparkles, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/potatix/Button";
 import { useEffect, useState, useRef } from 'react';
 import { authClient } from '@/lib/auth/auth-client';
+import { Skeleton } from "@/components/ui/shadcn/skeleton";
 
 // Proper TypeScript interfaces
 interface StatProps {
@@ -24,6 +25,7 @@ const Stat = ({ icon, value, label }: StatProps) => (
 
 const DemoVideo = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // Ensure video plays when it's loaded
@@ -34,15 +36,23 @@ const DemoVideo = () => {
     }
   }, []);
 
+  const handleVideoLoaded = () => {
+    setIsLoading(false);
+  };
+
   return (
     <div className="hidden md:block relative">
       <div className="relative w-full max-w-md aspect-video mx-auto">
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-4 -right-4 w-full h-full bg-gradient-to-br from-emerald-100 to-emerald-50 rounded-md transform rotate-2" style={{ maxWidth: 'calc(100% + 2rem)' }} />
-          <div className="absolute -bottom-4 -left-4 w-full h-full border-2 border-emerald-200 rounded-md transform -rotate-2" style={{ maxWidth: 'calc(100% + 2rem)' }} />
-        </div>
-        
         <div className="relative rounded-md overflow-hidden border border-slate-200 shadow-lg">
+          {isLoading && (
+            <div className="absolute inset-0 z-10">
+              <Skeleton className="w-full h-full bg-slate-200/70">
+                <div className="h-full w-full flex items-center justify-center">
+                  <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                </div>
+              </Skeleton>
+            </div>
+          )}
           <video 
             ref={videoRef}
             className="w-full h-full object-cover"
@@ -52,6 +62,7 @@ const DemoVideo = () => {
             playsInline
             disablePictureInPicture
             disableRemotePlayback
+            onLoadedData={handleVideoLoaded}
             src="https://storage.potatix.com/potatix/demo.mp4"
           />
         </div>
