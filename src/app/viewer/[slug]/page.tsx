@@ -1,52 +1,54 @@
 'use client';
 
-import { useMemo } from 'react';
-import { use } from 'react';
+import { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
 import { Course } from '@/lib/types/api';
 import CourseOverview from './components/course-overview';
+import axios from 'axios';
 
-// Extend Window interface to include our course data
-declare global {
-  interface Window {
-    __COURSE_DATA__?: Course;
-    __ENROLLMENT_STATUS__?: 'active' | 'pending' | 'rejected' | null;
-  }
-}
+type EnrollmentStatus = 'active' | 'pending' | 'rejected' | null;
 
-interface CourseViewerProps {
-  params: Promise<{
-    slug: string;
-  }>;
-}
-
-export default function CourseViewerPage({ params }: CourseViewerProps) {
-  const { slug: courseSlug } = use(params);
+export default function CourseViewerPage() {
+  const { slug: courseSlug } = useParams() as { slug: string };
   
-  // Get course data from window object (injected by layout or server)
-  const course = useMemo(() => {
-    if (typeof window !== 'undefined') {
-      return window.__COURSE_DATA__;
+  const [isLoading, setIsLoading] = useState(true);
+  const [course, setCourse] = useState<Course | null>(null);
+  const [enrollmentStatus, setEnrollmentStatus] = useState<EnrollmentStatus>(null);
+  
+  useEffect(() => {
+    async function fetchCourseData() {
+      try {
+        setIsLoading(true);
+        
+        // Fetch course data
+        const { data } = await axios.get(`/api/courses/slug/${courseSlug}`);
+        
+        if (!data?.course) {
+          throw new Error('Course not found');
+        }
+        
+        setCourse(data.course);
+        
+        // Try to get enrollment status if user is logged in
+        try {
+          const { data: enrollment } = await axios.get(`/api/courses/enrollment?slug=${courseSlug}`);
+          setEnrollmentStatus(enrollment?.status || null);
+        } catch {
+          // User might not be logged in, no enrollment status
+          setEnrollmentStatus(null);
+        }
+      } catch (error) {
+        console.error(`Failed to load course "${courseSlug}":`, error);
+        setCourse(null);
+      } finally {
+        setIsLoading(false);
+      }
     }
-    return null;
-  }, []);
+    
+    fetchCourseData();
+  }, [courseSlug]);
   
-  // Get enrollment status from window object
-  const enrollmentStatus = useMemo(() => {
-    if (typeof window !== 'undefined') {
-      return window.__ENROLLMENT_STATUS__;
-    }
-    return null;
-  }, []);
-  
-  // Derived state for course statistics
-  const lessonsCount = useMemo(() => course?.lessons?.length || 0, [course?.lessons]);
-  const unlockedLessonsCount = useMemo(() => 
-    course?.lessons?.filter(lesson => lesson.videoId)?.length || 0, 
-    [course?.lessons]
-  );
-  
-  // If no course data is available yet, show a loading state
-  if (!course) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen bg-slate-50">
         <div className="text-center">
@@ -56,6 +58,25 @@ export default function CourseViewerPage({ params }: CourseViewerProps) {
       </div>
     );
   }
+  
+  if (!course) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-slate-50">
+        <div className="text-center">
+          <div className="mx-auto mb-4 rounded-full bg-red-100 p-3">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </div>
+          <p className="text-lg font-medium text-slate-900">Course not found</p>
+          <p className="mt-1 text-sm text-slate-500">We couldn&apos;t find the course you&apos;re looking for.</p>
+        </div>
+      </div>
+    );
+  }
+  
+  const lessonsCount = course.lessons?.length || 0;
+  const unlockedLessonsCount = course.lessons?.filter(lesson => lesson.videoId)?.length || 0;
   
   return (
     <CourseOverview 
