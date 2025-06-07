@@ -10,6 +10,7 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: 'images.unsplash.com' },
       { protocol: 'https', hostname: 'storage.potatix.com' },
       { protocol: 'https', hostname: 'image.mux.com' },
+      { protocol: 'http', hostname: 'ptx.com' },
     ],
   },
   async headers() {

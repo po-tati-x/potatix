@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { Toaster } from "sonner";
 import { QueryProvider } from '@/lib/providers/query-provider';
+import { PostHogProvider } from '@/lib/providers/posthog';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -22,8 +23,10 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         <QueryProvider>
+        <PostHogProvider>
           {children}
           <Toaster richColors position="top-right" />
+          </PostHogProvider>
         </QueryProvider>
       </body>
     </html>
