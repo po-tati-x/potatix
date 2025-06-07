@@ -6,3 +6,16 @@
 @source not inline("filter-[url('filters.svg#filter-id')]");
 @source not inline("cursor-[url(hand.cur),_pointer]");
 @source not inline("list-style-image:url(...)");
+
+/* Add scrollbar hiding utility to the end of the file */
+
+/* Hide scrollbar but keep functionality */
+.scrollbar-hide {
+  /* For Chrome, Safari and Opera */
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  /* For IE, Edge and Firefox */
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
