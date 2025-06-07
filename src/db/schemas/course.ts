@@ -1,4 +1,4 @@
-import { pgTable, text, integer, timestamp, doublePrecision } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, timestamp, doublePrecision, json } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { user } from "./users";
 
@@ -57,6 +57,19 @@ export const lesson = pgTable("lesson", {
   // Video upload status and metadata
   uploadStatus: text('uploadStatus'),
   duration: integer('duration'),
+  
+  // Transcript data cached from AI processing
+  transcriptData: json('transcriptData').$type<{
+    chapters: Array<{
+      id: string;
+      title: string;
+      description: string;
+      timestamp: number;
+    }>;
+    textLength: number;
+    duration: number;
+    processedAt: string;
+  }>(),
   
   // Ordering is critical for correct display
   order: integer('order').notNull(),
