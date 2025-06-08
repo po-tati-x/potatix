@@ -3,6 +3,7 @@ import { db } from '@/db';
 import { courseSchema } from '@/db';
 import { auth } from '@/lib/auth/auth';
 import { eq, asc } from 'drizzle-orm';
+import { getMuxAssetId, deleteMuxAsset } from '@/lib/utils/mux';
 
 // Define module update data type
 interface ModuleUpdateData {
@@ -203,6 +204,39 @@ export async function DELETE(
   }
   
   try {
+    // Get all lessons with videos first
+    const lessonsWithVideos = await db
+      .select({
+        id: courseSchema.lesson.id,
+        videoId: courseSchema.lesson.videoId
+      })
+      .from(courseSchema.lesson)
+      .where(eq(courseSchema.lesson.moduleId, moduleId));
+      
+    console.log(`[API:DELETE:Module] Found ${lessonsWithVideos.length} lessons with potential videos to clean up`);
+    
+    // Process videos deletion
+    const videoResults = [];
+    for (const lesson of lessonsWithVideos) {
+      if (lesson.videoId) {
+        console.log(`[API:DELETE:Module] Cleaning up Mux asset for lesson ${lesson.id} with playback ID ${lesson.videoId}`);
+        
+        // Get asset ID from playback ID
+        const assetId = await getMuxAssetId(lesson.videoId);
+        
+        if (assetId) {
+          // Delete the Mux asset
+          const deleted = await deleteMuxAsset(assetId);
+          videoResults.push({
+            lessonId: lesson.id,
+            assetId,
+            deleted
+          });
+          console.log(`[API:DELETE:Module] Mux asset deletion for ${assetId}: ${deleted ? 'Success' : 'Failed'}`);
+        }
+      }
+    }
+    
     // Delete lessons first (foreign key constraint)
     await db.delete(courseSchema.lesson)
       .where(eq(courseSchema.lesson.moduleId, moduleId));
@@ -211,7 +245,14 @@ export async function DELETE(
     await db.delete(courseSchema.courseModule)
       .where(eq(courseSchema.courseModule.id, moduleId));
     
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ 
+      success: true,
+      videoCleanup: {
+        total: lessonsWithVideos.filter(l => l.videoId).length,
+        deleted: videoResults.filter(r => r.deleted).length,
+        failed: videoResults.filter(r => !r.deleted).length
+      }
+    });
   } catch (error) {
     console.error('Failed to delete module:', error);
     const message = error instanceof Error ? error.message : 'Failed to delete module';
