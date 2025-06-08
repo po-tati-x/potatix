@@ -3,7 +3,7 @@ import { nanoid } from 'nanoid';
 import { db } from '@/db';
 import { courseSchema } from '@/db';
 import { auth } from '@/lib/auth/auth';
-import { eq, desc, asc } from 'drizzle-orm';
+import { eq, desc, asc, and, count } from 'drizzle-orm';
 import { slugify } from '@/lib/utils/courses';
 
 // Define lesson type for creation
@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ courses: [] });
     }
     
-    // For each course, get the number of lessons
+    // For each course, get the number of lessons, modules, and student enrollments
     const coursesWithCounts = await Promise.all(
       courses.map(async (course) => {
         // Count lessons
@@ -79,11 +79,27 @@ export async function GET(request: NextRequest) {
           })
           .from(courseSchema.courseModule)
           .where(eq(courseSchema.courseModule.courseId, course.id));
+        
+        // Count student enrollments (active only)
+        const enrollmentResult = await db
+          .select({
+            studentCount: count()
+          })
+          .from(courseSchema.courseEnrollment)
+          .where(
+            and(
+              eq(courseSchema.courseEnrollment.courseId, course.id),
+              eq(courseSchema.courseEnrollment.status, 'active')
+            )
+          );
+        
+        const studentCount = enrollmentResult[0]?.studentCount || 0;
           
         return {
           ...course,
           lessonCount: lessonCount.length,
           moduleCount: moduleCount.length,
+          studentCount: studentCount
         };
       })
     );
@@ -249,7 +265,7 @@ export async function POST(request: NextRequest) {
       course: {
         ...course,
         modules: modulesWithLessons,
-        lessons // Keep flat lesson list for backward compatibility
+        lessons, // For compatibility
       }
     });
   } catch (error) {
