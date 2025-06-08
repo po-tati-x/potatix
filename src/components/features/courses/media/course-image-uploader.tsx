@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react';
 import { X, Image as ImageIcon } from 'lucide-react';
 import Image from 'next/image';
-import { useUploadCourseImage } from '@/lib/api';
+import { useUploadCourseImage } from '@/lib/api/courses';
 
 interface CourseImageUploaderProps {
   initialUrl?: string;
