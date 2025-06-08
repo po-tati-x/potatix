@@ -1,6 +1,6 @@
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/potatix/Button";
-import { useCreateModule } from "@/lib/api";
+import { useCreateModule } from "@/lib/api/courses";
 import type { Module, CreateModuleData } from "@/lib/types/api";
 import { CourseModuleEditor } from "@/components/features/courses/lessons/module-editor";
 import { DraggableModuleList } from "@/components/features/courses/lessons/draggable-module-list";

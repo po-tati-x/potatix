@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ArrowLeft, Loader2, Save } from "lucide-react";
 import { Button } from "@/components/ui/potatix/Button";
 import { StatusBadge } from "@/components/features/courses/status-badge";
-import { useCourse } from "@/lib/api";
+import { useCourse } from "@/lib/api/courses";
 
 interface CourseHeaderProps {
   // Make courseId optional to support simple navigation
