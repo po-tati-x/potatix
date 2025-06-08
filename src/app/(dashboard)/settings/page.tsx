@@ -1,71 +1,130 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Save, User, Shield, Bell, CreditCard, LogOut, Loader2, AlertTriangle, ArrowLeft } from 'lucide-react';
+import { Loader2, ArrowLeft, Save } from 'lucide-react';
 import { Button } from '@/components/ui/potatix/Button';
-import { authClient } from '@/lib/auth/auth-client';
+import { signOut } from '@/lib/auth/auth-client';
+import { toast } from 'sonner';
 
-// Form field component
-const FormField = ({ 
-  label, 
-  children, 
-  required = false,
-  description 
-}: { 
-  label: string; 
-  children: React.ReactNode; 
-  required?: boolean;
-  description?: string;
-}) => (
-  <div className="space-y-1.5">
-    <label className="block text-sm font-medium text-slate-700">
-      {label}
-      {required && <span className="text-red-500 ml-1">*</span>}
-    </label>
-    {children}
-    {description && (
-      <p className="text-xs text-slate-500">{description}</p>
-    )}
-  </div>
-);
+// Import components
+import { ProfileSection } from '@/components/features/settings/profile-section';
+import { SecuritySection } from '@/components/features/settings/security-section';
+import { BillingSection } from '@/components/features/settings/billing-section';
+import { DangerZone } from '@/components/features/settings/danger-zone';
 
-// Toggle switch component
-const Toggle = ({ 
-  id, 
-  name, 
-  defaultChecked = false 
-}: { 
-  id: string; 
-  name: string; 
-  defaultChecked?: boolean; 
-}) => (
-  <div className="relative">
-    <input 
-      type="checkbox" 
-      id={id} 
-      name={name} 
-      defaultChecked={defaultChecked}
-      className="sr-only peer"
-    />
-    <div className="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:bg-emerald-600 transition-colors cursor-pointer peer-focus:ring-2 peer-focus:ring-emerald-500"></div>
-    <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-5 shadow-sm"></div>
-  </div>
-);
+// Import store and types
+import { useProfileStore } from '@/lib/stores/profile';
+import { UserProfile } from '@/lib/types/profile';
+
+// Default empty profile when data is loading
+const DEFAULT_USER_PROFILE: UserProfile = {
+  name: '',
+  email: '',
+};
 
 export default function SettingsPage() {
   const router = useRouter();
-  const [saving, setSaving] = useState(false);
   
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
-    
-    setTimeout(() => {
-      setSaving(false);
-    }, 600);
+  // Get state and actions from zustand store
+  const { 
+    profile,
+    loading,
+    saving,
+    error,
+    securityForm,
+    fetchProfile,
+    updateProfile,
+    updatePassword,
+    deleteAccount,
+  } = useProfileStore();
+  
+  // Fetch profile on mount
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
+  
+  // Handle profile update
+  const handleSaveProfile = (data: Pick<UserProfile, 'name' | 'bio'>) => {
+    updateProfile(data);
   };
   
+  // Handle profile image update  
+  const handleImageUpdate = (file: File | null) => {
+    updateProfile({ image: file });
+  };
+  
+  // Handle password change
+  const handleSavePassword = (data: { currentPassword: string; newPassword: string }) => {
+    updatePassword(data);
+  };
+  
+  // Handle plan upgrade
+  const handleUpgradePlan = () => {
+    router.push('/plans');
+  };
+  
+  // Handle sign out
+  const handleSignOut = async () => {
+    try {
+      await signOut({
+        fetchOptions: {
+          onSuccess: () => router.push('/login')
+        }
+      });
+    } catch (error) {
+      console.error("Sign out failed:", error);
+      router.push('/login');
+    }
+  };
+  
+  // Handle account deletion
+  const handleDeleteAccount = () => {
+    if (window.confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
+      deleteAccount();
+    }
+  };
+  
+  // Handle form submission
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    
+    // Get form data
+    const formData = new FormData(e.currentTarget);
+    const name = formData.get('name') as string;
+    const bio = formData.get('bio') as string;
+    
+    if (!name) {
+      toast.error('Name is required');
+      return;
+    }
+    
+    handleSaveProfile({ name, bio: bio || null });
+  };
+  
+  // Loading state
+  if (loading) {
+    return (
+      <div className="h-[80vh] flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-emerald-500" />
+      </div>
+    );
+  }
+  
+  // Error state
+  if (error) {
+    return (
+      <div className="max-w-5xl mx-auto px-4 py-6">
+        <div className="p-4 bg-red-50 rounded border border-red-200 text-red-700">
+          Failed to load profile data. Please try refreshing the page.
+        </div>
+      </div>
+    );
+  }
+  
+  // User data with fallback to default
+  const userData = profile || DEFAULT_USER_PROFILE;
+
   return (
     <div className="max-w-5xl mx-auto px-4 py-6">
       {/* Back button */}
@@ -101,7 +160,7 @@ export default function SettingsPage() {
               size="small"
               icon={saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
               disabled={saving}
-              onClick={handleSubmit}
+              htmlType="submit"
               form="settings-form"
             >
               {saving ? 'Saving...' : 'Save Changes'}
@@ -115,185 +174,30 @@ export default function SettingsPage() {
           {/* Main content */}
           <div className="lg:col-span-2 space-y-5">
             {/* Profile Section */}
-            <div className="border border-slate-200 rounded-md overflow-hidden bg-white">
-              <div className="border-b border-slate-200 px-4 py-2.5 bg-slate-50">
-                <div className="flex items-center gap-3">
-                  <User className="h-4 w-4 text-slate-600" />
-                  <h2 className="text-sm font-medium text-slate-900">Profile</h2>
-                </div>
-              </div>
-              
-              <div className="p-4 space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField label="Full Name" required>
-                    <input
-                      type="text"
-                      name="name"
-                      defaultValue="John Developer"
-                      className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
-                    />
-                  </FormField>
-                  
-                  <FormField label="Email" description="Email cannot be changed">
-                    <input
-                      type="email"
-                      name="email"
-                      defaultValue="john@example.com"
-                      disabled
-                      className="w-full px-3 py-2 border border-slate-300 rounded-md bg-slate-50 text-slate-500 cursor-not-allowed text-sm"
-                    />
-                  </FormField>
-                </div>
-                
-                <FormField label="Bio" description="Brief description for your profile. Max 160 characters.">
-                  <textarea
-                    name="bio"
-                    rows={3}
-                    defaultValue="Software developer specializing in TypeScript and React."
-                    className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 text-sm resize-none"
-                  />
-                </FormField>
-              </div>
-            </div>
+            <ProfileSection 
+              userData={userData}
+              onImageUpdate={handleImageUpdate}
+              loading={saving}
+            />
 
             {/* Security Section */}
-            <div className="border border-slate-200 rounded-md overflow-hidden bg-white">
-              <div className="border-b border-slate-200 px-4 py-2.5 bg-slate-50">
-                <div className="flex items-center gap-3">
-                  <Shield className="h-4 w-4 text-slate-600" />
-                  <h2 className="text-sm font-medium text-slate-900">Security</h2>
-                </div>
-              </div>
-              
-              <div className="p-4 space-y-4">
-                <FormField label="Current Password">
-                  <input
-                    type="password"
-                    name="currentPassword"
-                    className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
-                  />
-                </FormField>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField label="New Password">
-                    <input
-                      type="password"
-                      name="newPassword"
-                      className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
-                    />
-                  </FormField>
-                  
-                  <FormField label="Confirm New Password" description="Leave password fields empty if you don't want to change it.">
-                    <input
-                      type="password"
-                      name="confirmPassword"
-                      className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
-                    />
-                  </FormField>
-                </div>
-              </div>
-            </div>
-
-            {/* Notifications Section */}
-            <div className="border border-slate-200 rounded-md overflow-hidden bg-white">
-              <div className="border-b border-slate-200 px-4 py-2.5 bg-slate-50">
-                <div className="flex items-center gap-3">
-                  <Bell className="h-4 w-4 text-slate-600" />
-                  <h2 className="text-sm font-medium text-slate-900">Notifications</h2>
-                </div>
-              </div>
-              
-              <div className="p-4 space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-sm font-medium text-slate-900">Email Notifications</h3>
-                    <p className="text-xs text-slate-600 mt-0.5">Receive emails about your account activity</p>
-                  </div>
-                  <Toggle id="email-notifications" name="emailNotifications" defaultChecked />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-sm font-medium text-slate-900">Marketing Emails</h3>
-                    <p className="text-xs text-slate-600 mt-0.5">Receive emails about new features and offers</p>
-                  </div>
-                  <Toggle id="marketing-emails" name="marketingEmails" />
-                </div>
-              </div>
-            </div>
+            <SecuritySection 
+              onSavePassword={handleSavePassword}
+              error={securityForm.error}
+            />
           </div>
           
           {/* Sidebar */}
           <div className="space-y-5">
             {/* Billing */}
-            <div className="border border-slate-200 rounded-md overflow-hidden bg-white">
-              <div className="border-b border-slate-200 px-4 py-2.5 bg-slate-50">
-                <div className="flex items-center gap-3">
-                  <CreditCard className="h-4 w-4 text-slate-600" />
-                  <h3 className="text-sm font-medium text-slate-900">Billing</h3>
-                </div>
-              </div>
-              
-              <div className="p-4">
-                <div className="space-y-3">
-                  <div className="text-center">
-                    <h4 className="text-sm font-medium text-slate-900">Free Plan</h4>
-                    <p className="text-xs text-slate-600 mt-0.5 mb-3">You&apos;re currently on the free plan</p>
-                  </div>
-                  <Button
-                    type="outline"
-                    size="small"
-                    onClick={() => router.push('/plans')}
-                    className="w-full"
-                  >
-                    Upgrade Plan
-                  </Button>
-                </div>
-              </div>
-            </div>
+            <BillingSection plan="free" onUpgrade={handleUpgradePlan} />
 
             {/* Danger Zone */}
-            <div className="border border-red-200 rounded-md overflow-hidden bg-white">
-              <div className="border-b border-red-200 px-4 py-2.5 bg-red-50">
-                <div className="flex items-center gap-3">
-                  <AlertTriangle className="h-4 w-4 text-red-600" />
-                  <h3 className="text-sm font-medium text-red-900">Danger Zone</h3>
-                </div>
-              </div>
-              
-              <div className="p-4 space-y-3">
-                <Button
-                  type="outline"
-                  size="small"
-                  icon={<LogOut className="h-3.5 w-3.5" />}
-                  onClick={async () => {
-                    try {
-                      await authClient.signOut({
-                        fetchOptions: {
-                          onSuccess: () => {
-                            router.push('/login');
-                          }
-                        }
-                      });
-                    } catch (error) {
-                      console.error("Settings SignOut failed:", error);
-                      router.push('/login');
-                    }
-                  }}
-                  className="w-full"
-                >
-                  Sign Out
-                </Button>
-                
-                <Button
-                  type="danger"
-                  size="small"
-                  className="w-full"
-                >
-                  Delete Account
-                </Button>
-              </div>
-            </div>
+            <DangerZone 
+              onSignOut={handleSignOut}
+              onDeleteAccount={handleDeleteAccount}
+              isDeletingAccount={saving}
+            />
           </div>
         </div>
       </form>
