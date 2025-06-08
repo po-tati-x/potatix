@@ -51,6 +51,16 @@ export async function POST(request: Request) {
       new_asset_settings: {
         playback_policy: ['public'],
         passthrough: JSON.stringify({ lessonId }),
+        input: [
+          {
+            generated_subtitles: [
+              {
+                language_code: 'en',
+                name: 'English CC'
+              }
+            ]
+          }
+        ]
       },
     });
 
