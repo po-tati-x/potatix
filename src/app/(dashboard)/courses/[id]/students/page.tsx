@@ -7,7 +7,7 @@ import {
   ChevronDown, Filter, RefreshCcw, ChevronRight
 } from 'lucide-react';
 import { Button } from '@/components/ui/potatix/Button';
-import { useCourse } from '@/lib/api';
+import { useCourse } from "@/lib/api/courses";
 import axios from 'axios';
 import { toast } from 'sonner';
 
