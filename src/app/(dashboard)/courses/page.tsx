@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { PlusCircle, Loader2, BookOpen, RefreshCcw } from 'lucide-react';
-import { useAllCourses, useCreateCourse } from '@/lib/api';
+import { useAllCourses, useCreateCourse } from '@/lib/api/courses';
 import { CourseCard } from '@/components/features/courses/course-card';
 import { Button } from '@/components/ui/potatix/Button';
 import type { Course, CreateCourseData } from '@/lib/types/api';
