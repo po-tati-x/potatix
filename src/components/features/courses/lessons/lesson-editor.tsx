@@ -8,7 +8,7 @@ import { DraggableProvidedDragHandleProps } from "@hello-pangea/dnd";
 import { FormField } from "../../../ui/potatix/form-field";
 import { VideoUploader } from "../media/video-uploader";
 import { VideoPreview } from "../media/video-preview";
-import { useUpdateLesson, useDeleteLesson } from "@/lib/api";
+import { useUpdateLesson, useDeleteLesson } from "@/lib/api/courses";
 
 // Types for the lesson editor component
 interface LessonEditorProps {
