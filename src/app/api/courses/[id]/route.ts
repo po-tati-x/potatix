@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
 import { courseSchema } from '@/db';
 import { auth } from '@/lib/auth/auth';
-import { eq, asc } from 'drizzle-orm';
+import { eq, asc, and, count } from 'drizzle-orm';
+import { getMuxAssetId, deleteMuxAsset } from '@/lib/utils/mux';
 
 // Define proper types for course and lesson
 interface Lesson {
@@ -38,6 +39,7 @@ interface Course {
   slug?: string | null;
   lessons?: Lesson[];
   modules?: Module[];
+  studentCount?: number;
 }
 
 // Type for the structured API response
@@ -87,6 +89,21 @@ async function getCourseWithAuth(request: NextRequest, courseId: string): Promis
     if (course.userId !== session.user.id) {
       return { error: 'Access denied', status: 403 };
     }
+    
+    // Get student count for this course (active only)
+    const enrollmentResult = await db
+      .select({
+        studentCount: count()
+      })
+      .from(courseSchema.courseEnrollment)
+      .where(
+        and(
+          eq(courseSchema.courseEnrollment.courseId, courseId),
+          eq(courseSchema.courseEnrollment.status, 'active')
+        )
+      );
+    
+    const studentCount = enrollmentResult[0]?.studentCount || 0;
     
     // Get modules for this course
     const modules = await db.select({
@@ -138,7 +155,8 @@ async function getCourseWithAuth(request: NextRequest, courseId: string): Promis
       course: { 
         ...course, 
         modules: modulesWithLessons,
-        lessons // Keep flat lesson list for backward compatibility
+        lessons, // Keep flat lesson list for backward compatibility
+        studentCount // Add student count to the response
       } 
     };
   } catch (error) {
@@ -271,6 +289,39 @@ export async function DELETE(
   }
   
   try {
+    // Get all lessons with videos first
+    const lessonsWithVideos = await db
+      .select({
+        id: courseSchema.lesson.id,
+        videoId: courseSchema.lesson.videoId
+      })
+      .from(courseSchema.lesson)
+      .where(eq(courseSchema.lesson.courseId, courseId));
+      
+    console.log(`[API:DELETE:Course] Found ${lessonsWithVideos.length} lessons with potential videos to clean up`);
+    
+    // Process videos deletion
+    const videoResults = [];
+    for (const lesson of lessonsWithVideos) {
+      if (lesson.videoId) {
+        console.log(`[API:DELETE:Course] Cleaning up Mux asset for lesson ${lesson.id} with playback ID ${lesson.videoId}`);
+        
+        // Get asset ID from playback ID
+        const assetId = await getMuxAssetId(lesson.videoId);
+        
+        if (assetId) {
+          // Delete the Mux asset
+          const deleted = await deleteMuxAsset(assetId);
+          videoResults.push({
+            lessonId: lesson.id,
+            assetId,
+            deleted
+          });
+          console.log(`[API:DELETE:Course] Mux asset deletion for ${assetId}: ${deleted ? 'Success' : 'Failed'}`);
+        }
+      }
+    }
+    
     // Delete lessons first (foreign key constraint)
     await db.delete(courseSchema.lesson)
       .where(eq(courseSchema.lesson.courseId, courseId));
@@ -283,7 +334,14 @@ export async function DELETE(
     await db.delete(courseSchema.course)
       .where(eq(courseSchema.course.id, courseId));
     
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ 
+      success: true,
+      videoCleanup: {
+        total: lessonsWithVideos.filter(l => l.videoId).length,
+        deleted: videoResults.filter(r => r.deleted).length,
+        failed: videoResults.filter(r => !r.deleted).length
+      }
+    });
   } catch (error) {
     console.error('Failed to delete course:', error);
     const message = error instanceof Error ? error.message : 'Failed to delete course';
