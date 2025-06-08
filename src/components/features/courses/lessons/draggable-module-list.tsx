@@ -7,7 +7,7 @@ import {
   DropResult,
   DraggableProvidedDragHandleProps,
 } from "@hello-pangea/dnd";
-import { useReorderModules } from "@/lib/api";
+import { useReorderModules } from "@/lib/api/courses";
 import { UIModule } from "@/lib/stores/courses";
 
 // Type for the core drag and drop functionality only
