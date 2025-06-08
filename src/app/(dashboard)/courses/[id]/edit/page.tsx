@@ -12,7 +12,7 @@ import { CourseStats } from "@/components/features/courses/course-form/course-st
 import { SlugEditor } from "@/components/features/courses/course-form/slug-editor";
 import { Course, CreateCourseData } from "@/lib/types/api";
 import { useUIStore } from "@/lib/stores/courses";
-import { useCourse, useUpdateCourse, useUploadCourseImage } from "@/lib/api";
+import { useCourse, useUpdateCourse, useUploadCourseImage } from "@/lib/api/courses";
 
 export default function EditCoursePageWrapper() {
   const params = useParams();
