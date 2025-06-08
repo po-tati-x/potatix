@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { ChevronDown, ChevronRight, Edit, Check, X, Plus, Trash2, GripVertical } from 'lucide-react';
 import { useUIStore, UILesson } from '@/lib/stores/courses';
-import { useUpdateModule, useDeleteModule, useCreateLesson } from '@/lib/api';
+import { useUpdateModule, useDeleteModule, useCreateLesson } from "@/lib/api/courses";
 import { LessonEditor } from '@/components/features/courses/lessons/lesson-editor';
 import { DraggableLessonList } from '@/components/features/courses/lessons/draggable-lesson-list';
 import { useQueryClient } from '@tanstack/react-query';
