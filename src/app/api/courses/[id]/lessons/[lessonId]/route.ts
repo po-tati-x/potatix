@@ -4,6 +4,7 @@ import { courseSchema } from '@/db';
 import { auth } from '@/lib/auth/auth';
 import { z } from 'zod';
 import { eq, and } from 'drizzle-orm';
+import { getMuxAssetId, deleteMuxAsset } from '@/lib/utils/mux';
 
 // Lesson update validation schema
 const lessonUpdateSchema = z.object({
@@ -217,8 +218,25 @@ export async function DELETE(
     );
   }
   
+  const lesson = ownershipCheck.lesson as Lesson;
+  let videoDeleted = false;
+  
   try {
-    // Delete the lesson
+    // First attempt to delete the video if it exists
+    if (lesson.videoId) {
+      console.log(`Attempting to clean up Mux video asset for lesson ${lessonId} with playback ID ${lesson.videoId}`);
+      
+      // Get asset ID from playback ID
+      const assetId = await getMuxAssetId(lesson.videoId);
+      
+      if (assetId) {
+        // Delete the Mux asset
+        videoDeleted = await deleteMuxAsset(assetId);
+        console.log(`Mux asset deletion result for ${assetId}: ${videoDeleted ? 'Success' : 'Failed'}`);
+      }
+    }
+    
+    // Then delete the lesson from the database
     await db.delete(courseSchema.lesson)
       .where(
         and(
@@ -229,7 +247,8 @@ export async function DELETE(
     
     return NextResponse.json({
       success: true,
-      message: 'Lesson deleted successfully'
+      message: 'Lesson deleted successfully',
+      videoDeleted: lesson.videoId ? videoDeleted : null
     });
   } catch (error) {
     console.error('Failed to delete lesson:', error);
