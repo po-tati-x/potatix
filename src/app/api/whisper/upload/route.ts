@@ -46,8 +46,15 @@ export async function POST(request: NextRequest) {
     
     console.log('Whisper endpoint:', endpoint);
     
-    // Update token value with the latest token
-    const authToken = "REDACTED_GOOGLE_TOKEN";
+    // Get token from environment variables
+    const authToken = process.env.GOOGLE_AUTH_TOKEN;
+    
+    if (!authToken) {
+      return NextResponse.json(
+        { error: 'Authentication token not configured' },
+        { status: 500 }
+      );
+    }
     
     // Try different payload formats to see what works
     const payloads = [
