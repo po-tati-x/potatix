@@ -12,7 +12,7 @@ import Modal from '@/components/ui/potatix/Modal';
 import { Button } from '@/components/ui/potatix/Button';
 import { Module, Lesson } from '@/lib/types/api';
 import { useUIStore } from '@/lib/stores/courses';
-import { useCourse, useDeleteCourse } from '@/lib/api';
+import { useCourse, useDeleteCourse } from '@/lib/api/courses';
 
 // Status badge component
 const StatusBadge = ({ status }: { status: string }) => {
@@ -405,7 +405,13 @@ function CoursePage({ courseId }: { courseId: string }) {
                   size="small"
                   icon={<ExternalLink className="h-4 w-4" />}
                   className="w-full"
-                  onClick={() => router.push(`/courses/${courseId}/preview`)}
+                  onClick={() => {
+                    if (course.slug) {
+                      window.open(`https://${course.slug}.potatix.com`, '_blank', 'noopener,noreferrer');
+                    } else {
+                      router.push(`/courses/${courseId}/preview`);
+                    }
+                  }}
                 >
                   Preview Course
                 </Button>
