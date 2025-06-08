@@ -16,6 +16,18 @@ export interface Lesson {
   moduleId: string;
   createdAt: string;
   updatedAt: string;
+  // Transcript data from AI processing
+  transcriptData?: {
+    chapters: Array<{
+      id: string;
+      title: string;
+      description: string;
+      timestamp: number;
+    }>;
+    textLength: number;
+    duration: number;
+    processedAt: string;
+  };
 }
 
 export interface CourseModule {
@@ -41,6 +53,7 @@ export interface Course {
   imageUrl?: string;
   userId: string;
   lessonCount?: number;
+  studentCount?: number; // Number of active students enrolled
   createdAt: string;
   updatedAt?: string;
   lessons?: Lesson[];
