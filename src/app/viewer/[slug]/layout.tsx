@@ -1,24 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { useCourseBySlug } from '@/lib/api';
-import type { Course } from '@/lib/types/api';
-import LoadingState from './components/loading-state';
-import ErrorState from './components/error-state';
-import CourseSidebar from './components/course-sidebar';
+import { useCourseBySlug } from "@/lib/api/courses";
+import LoadingState from '@/components/features/viewer/loading-state';
+import ErrorState from '@/components/features/viewer/error-state';
+import CourseSidebar from '@/components/features/viewer/sidebar/course-sidebar-container';
 import { Menu, X } from 'lucide-react';
 import { use } from 'react';
 import { authClient } from '@/lib/auth/auth-client';
 import axios from 'axios';
-
-// Type declaration for window with course data
-declare global {
-  interface Window {
-    __COURSE_DATA__?: Course;
-    __ENROLLMENT_STATUS__?: 'active' | 'pending' | 'rejected' | null;
-  }
-}
+import { useViewerStore } from '@/lib/stores/viewer';
 
 interface CourseLayoutProps {
   children: React.ReactNode;
@@ -31,15 +23,43 @@ export default function CourseLayout({ children, params }: CourseLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
   const { slug: courseSlug } = use(params);
+
+  // Get store state and actions
+  const {
+    isMobileSidebarOpen,
+    isSidebarCollapsed,
+    isAuthenticated,
+    isEnrolled,
+    enrollmentStatus,
+    isEnrollmentLoading,
+    isEnrolling,
+    
+    // Actions
+    setCourse,
+    setCourseSlug,
+    toggleMobileSidebar,
+    toggleSidebarCollapsed,
+    setAuthenticated,
+    setEnrollmentStatus,
+    setEnrollmentLoading,
+    setEnrolling,
+    setAuthChecked
+  } = useViewerStore();
   
-  const { data: course, isLoading: courseLoading, error: courseError } = useCourseBySlug(courseSlug);
+  // Load course data
+  const { 
+    data: course, 
+    isLoading: courseLoading, 
+    error: courseError 
+  } = useCourseBySlug(courseSlug);
   
-  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isEnrolled, setIsEnrolled] = useState(false);
-  const [enrollmentStatus, setEnrollmentStatus] = useState<'active' | 'pending' | 'rejected' | null>(null);
-  const [isEnrollmentLoading, setIsEnrollmentLoading] = useState(true);
-  const [isEnrolling, setIsEnrolling] = useState(false);
+  // Set course data in the store when it loads
+  useEffect(() => {
+    if (course) {
+      setCourse(course);
+      setCourseSlug(courseSlug);
+    }
+  }, [course, courseSlug, setCourse, setCourseSlug]);
   
   // Determine if we're on a lesson page
   const isLessonPage = pathname.includes('/lesson/');
@@ -55,49 +75,46 @@ export default function CourseLayout({ children, params }: CourseLayoutProps) {
     async function checkAuth() {
       try {
         const { data: session } = await authClient.getSession();
-        setIsAuthenticated(!!session?.user);
+        setAuthenticated(!!session?.user);
+        setAuthChecked(true);
       } catch (error) {
         console.error('Failed to check authentication status:', error);
-        setIsAuthenticated(false);
+        setAuthenticated(false);
+        setAuthChecked(true);
       }
     }
     
     checkAuth();
-  }, []);
+  }, [setAuthenticated, setAuthChecked]);
   
   // Check enrollment status when authenticated
   useEffect(() => {
     async function checkEnrollment() {
       if (!isAuthenticated || !courseSlug) {
-        setIsEnrolled(false);
         setEnrollmentStatus(null);
-        setIsEnrollmentLoading(false);
+        setEnrollmentLoading(false);
         return;
       }
       
       try {
-        setIsEnrollmentLoading(true);
+        setEnrollmentLoading(true);
         const response = await axios.get(`/api/courses/enrollment?slug=${courseSlug}`);
-        const isUserEnrolled = response.data.isEnrolled;
-        setIsEnrolled(isUserEnrolled);
         
-        // Also get enrollment status if enrolled
-        if (isUserEnrolled && response.data.enrollment) {
+        if (response.data.isEnrolled && response.data.enrollment) {
           setEnrollmentStatus(response.data.enrollment.status);
         } else {
           setEnrollmentStatus(null);
         }
       } catch (error) {
         console.error('Failed to check enrollment status:', error);
-        setIsEnrolled(false);
         setEnrollmentStatus(null);
       } finally {
-        setIsEnrollmentLoading(false);
+        setEnrollmentLoading(false);
       }
     }
     
     checkEnrollment();
-  }, [isAuthenticated, courseSlug]);
+  }, [isAuthenticated, courseSlug, setEnrollmentStatus, setEnrollmentLoading]);
   
   // Enroll in the course
   const handleEnroll = async () => {
@@ -109,9 +126,8 @@ export default function CourseLayout({ children, params }: CourseLayoutProps) {
     }
     
     try {
-      setIsEnrolling(true);
+      setEnrolling(true);
       const response = await axios.post('/api/courses/enrollment', { courseSlug });
-      setIsEnrolled(true);
       
       // Set the enrollment status from the response
       if (response.data.enrollment) {
@@ -120,26 +136,11 @@ export default function CourseLayout({ children, params }: CourseLayoutProps) {
     } catch (error) {
       console.error('Failed to enroll in course:', error);
     } finally {
-      setIsEnrolling(false);
+      setEnrolling(false);
     }
   };
   
-  // Share course data with children through window object
-  useEffect(() => {
-    if (course) {
-      window.__COURSE_DATA__ = course;
-      window.__ENROLLMENT_STATUS__ = enrollmentStatus;
-    }
-    
-    // Cleanup function to remove the course data when the component unmounts
-    return () => {
-      delete window.__COURSE_DATA__;
-      delete window.__ENROLLMENT_STATUS__;
-    };
-  }, [course, enrollmentStatus]);
-  
-  // If user is not enrolled and trying to access a restricted page (like a lesson),
-  // redirect to the course overview page - THIS HOOK MUST BE BEFORE ANY CONDITIONAL RETURNS
+  // If user is not enrolled and trying to access a restricted page (like a lesson), redirect
   useEffect(() => {
     // Redirect only if:
     // 1. User is not enrolled OR enrollment status is pending/rejected
@@ -155,11 +156,6 @@ export default function CourseLayout({ children, params }: CourseLayoutProps) {
       window.location.href = '/';
     }
   }, [isEnrolled, enrollmentStatus, isAuthPage, isLessonPage, courseLoading, isEnrollmentLoading]);
-  
-  // Toggle mobile sidebar
-  const toggleMobileSidebar = () => {
-    setIsMobileSidebarOpen(!isMobileSidebarOpen);
-  };
 
   // Loading state
   if (courseLoading || isEnrollmentLoading) {
@@ -192,34 +188,44 @@ export default function CourseLayout({ children, params }: CourseLayoutProps) {
         </button>
       </div>
       
-      {/* Sidebar - fixed on mobile, always visible on desktop */}
-      <div className={`
-        ${isMobileSidebarOpen ? 'block' : 'hidden'} 
-        lg:block
-        fixed lg:relative 
-        inset-0 lg:inset-auto 
-        z-10 lg:z-0
-        w-full lg:w-80 
-        h-screen
-        lg:h-auto
-        bg-white
-        lg:border-r lg:border-slate-200
-      `}>
-        <CourseSidebar 
-          course={course}
-          currentLessonId={currentLessonId}
-          courseSlug={courseSlug}
-          isAuthenticated={isAuthenticated}
-          isEnrolled={isEnrolled}
-          onEnroll={handleEnroll}
-          isEnrolling={isEnrolling}
-          enrollmentStatus={enrollmentStatus}
-        />
-      </div>
-      
-      {/* Main content - scrollable independently */}
-      <div className="lg:flex-1 h-full overflow-y-auto">
-        {children}
+      {/* Layout container with sidebar and content */}
+      <div className="flex flex-1 h-full overflow-hidden">
+        {/* Sidebar container */}
+        <div className="relative flex flex-col lg:flex-row">
+          {/* Sidebar component */}
+          <div className={`
+            ${isMobileSidebarOpen ? 'block' : 'hidden'} 
+            lg:flex
+            fixed lg:static 
+            inset-0 lg:inset-auto 
+            z-10 lg:z-0
+            w-full 
+            h-screen
+            lg:h-full
+            bg-white
+            lg:border-r lg:border-slate-200
+            transition-all duration-300 ease-in-out
+            ${isSidebarCollapsed ? 'lg:w-16' : 'lg:w-80'}
+          `}>
+            <CourseSidebar 
+              course={course}
+              currentLessonId={currentLessonId}
+              courseSlug={courseSlug}
+              isAuthenticated={isAuthenticated}
+              isEnrolled={isEnrolled}
+              onEnroll={handleEnroll}
+              isEnrolling={isEnrolling}
+              enrollmentStatus={enrollmentStatus}
+              isCollapsed={isSidebarCollapsed}
+              onToggleCollapse={toggleSidebarCollapsed}
+            />
+          </div>
+        </div>
+        
+        {/* Main content - scrollable independently */}
+        <div className="flex-1 h-full overflow-y-auto w-full min-w-0">
+          {children}
+        </div>
       </div>
     </div>
   );
