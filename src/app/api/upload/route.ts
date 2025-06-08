@@ -1,17 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { nanoid } from 'nanoid';
 import { auth } from '@/lib/auth/auth';
-
-// Configure R2 client
-const s3Client = new S3Client({
-  region: 'auto',
-  endpoint: `https://${process.env.CLOUDFLARE_R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-  credentials: {
-    accessKeyId: process.env.CLOUDFLARE_R2_ACCESS_KEY as string,
-    secretAccessKey: process.env.CLOUDFLARE_R2_SECRET_KEY as string,
-  }
-});
+import { uploadFile } from '@/lib/utils/r2-client';
 
 // Helper to authenticate user
 async function authenticateUser(request: NextRequest) {
@@ -83,18 +73,13 @@ export async function POST(request: NextRequest) {
       const arrayBuffer = await file.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
       
-      // Upload to R2
-      await s3Client.send(new PutObjectCommand({
-        Bucket: process.env.CLOUDFLARE_R2_BUCKET_NAME as string,
-        Key: key,
-        Body: buffer,
-        ContentType: file.type,
-      }));
+      // Upload to R2 using the utility function
+      const fileUrl = await uploadFile(buffer, key, file.type);
       
       // Return the public URL
       return NextResponse.json({
-        fileUrl: `${process.env.CLOUDFLARE_R2_PUBLIC_URL}/${key}`,
-        key: key,
+        fileUrl,
+        key,
       });
     } else {
       return NextResponse.json(
