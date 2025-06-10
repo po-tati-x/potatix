@@ -1,0 +1,24 @@
+{
+  "name": "@potatix/db",
+  "version": "0.0.10",
+  "private": true,
+  "main": "./db/index.ts",
+  "types": "./db/index.ts",
+  "scripts": {
+    "db:generate": "bunx drizzle-kit generate",
+    "db:push": "bunx drizzle-kit push",
+    "db:studio": "bunx drizzle-kit studio",
+    "db:migrate": "bunx drizzle-kit migrate",
+    "db:pull": "bunx drizzle-kit pull"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.43.1",
+    "pg": "^8.15.6",
+    "postgres": "^3.4.5"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.15.1",
+    "drizzle-kit": "^0.31.1",
+    "typescript": "^5"
+  }
+}
