@@ -1,1 +1,0 @@
-ALTER TABLE "lesson" ADD COLUMN "transcriptData" json;
