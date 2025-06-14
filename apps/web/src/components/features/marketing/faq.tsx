@@ -5,7 +5,7 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/components/ui/shadcn/accordion";
+} from "@/components/ui/accordion";
 import { MessageCircle, ChevronRight } from "lucide-react";
 import { useState } from "react";
 
@@ -17,66 +17,99 @@ interface FAQItem {
 const FAQ_ITEMS: FAQItem[] = [
   {
     question: "Is it any good?",
-    answer: "yes"
+    answer: "yes",
   },
   {
     question: "What exactly does Potatix do?",
-    answer: "Potatix is a minimalist platform built specifically for course creators who want to monetize their expertise. We handle payment processing, video hosting, and basic user auth - that's it. No bloat, no BS, just the core features you actually need."
+    answer:
+      "Potatix is a minimalist platform built specifically for course creators who want to monetize their expertise. We handle payment processing, video hosting, and basic user auth - that's it. No bloat, no BS, just the core features you actually need.",
   },
   {
     question: "How much does it cost?",
-    answer: "It's completely free. No monthly fees, no revenue sharing, no hidden charges. You keep 100% of what you earn. Only standard payment processing fees (Stripe's 2.9% + 30¢) apply when you sell."
+    answer:
+      "It's completely free. No monthly fees, no revenue sharing, no hidden charges. You keep 100% of what you earn. Only standard payment processing fees (Stripe's 2.9% + 30¢) apply when you sell.",
   },
   {
     question: "Why did you build this?",
-    answer: "Most platforms are bloated with features nobody uses, charge monthly fees even when you're not selling, and weren't built with creators in mind. We created the minimal solution we wish existed - focused exclusively on course creators who want a simple way to sell their content without the complexity."
+    answer:
+      "Most platforms are bloated with features nobody uses, charge monthly fees even when you're not selling, and weren't built with creators in mind. We created the minimal solution we wish existed - focused exclusively on course creators who want a simple way to sell their content without the complexity.",
   },
   {
     question: "How long does it take to set up?",
-    answer: "Under 10 minutes. Upload your videos, set a price, get a payment link. That's it. No need to waste days configuring complex settings or figuring out unnecessary features."
+    answer:
+      "Under 10 minutes. Upload your videos, set a price, get a payment link. That's it. No need to waste days configuring complex settings or figuring out unnecessary features.",
   },
   {
     question: "What if I have an existing course somewhere else?",
-    answer: "Just upload your content and start selling. No complicated migration process because there's not much to migrate. We're designed for simplicity - but if you need help moving over, just ask."
+    answer:
+      "Just upload your content and start selling. No complicated migration process because there's not much to migrate. We're designed for simplicity - but if you need help moving over, just ask.",
   },
   {
     question: "What's your tech stack?",
-    answer: "Next.js, Supabase, Stripe, and Vercel. We're built for reliability and performance using modern tech that we trust."
+    answer:
+      "Next.js, Supabase, Stripe, and Vercel. We're built for reliability and performance using modern tech that we trust.",
   },
   {
-    question: "What about marketing, community features, gamification, AI, etc.?",
-    answer: "We don't have any of that stuff. Potatix focuses exclusively on the core problem: letting you sell access to your content. For everything else, there are better specialized tools you can use. We believe in doing one thing well rather than many things poorly."
+    question:
+      "What about marketing, community features, gamification, AI, etc.?",
+    answer:
+      "We don't have any of that stuff. Potatix focuses exclusively on the core problem: letting you sell access to your content. For everything else, there are better specialized tools you can use. We believe in doing one thing well rather than many things poorly.",
   },
   {
     question: "What if I want to leave Potatix?",
-    answer: "Export your content and student data anytime. No lock-in, no hostage-taking. We don't believe in trapping users - if we're not providing value, you should be able to leave easily."
+    answer:
+      "Export your content and student data anytime. No lock-in, no hostage-taking. We don't believe in trapping users - if we're not providing value, you should be able to leave easily.",
   },
   {
     question: "Who is this NOT for?",
-    answer: "If you need fancy marketing tools, complex community features, or elaborate course structures with extensive quizzes and certificates, Potatix isn't for you. We're for creators who want a simple, no-BS way to sell their knowledge without the overhead."
+    answer:
+      "If you need fancy marketing tools, complex community features, or elaborate course structures with extensive quizzes and certificates, Potatix isn't for you. We're for creators who want a simple, no-BS way to sell their knowledge without the overhead.",
   },
   {
     question: "Why is it free? What's the catch?",
-    answer: "There's no catch. We're focused on product-market fit right now. We want to build something creators genuinely love before worrying about monetization. In the future, we may introduce optional premium features, but the core platform will remain free."
+    answer:
+      "There's no catch. We're focused on product-market fit right now. We want to build something creators genuinely love before worrying about monetization. In the future, we may introduce optional premium features, but the core platform will remain free.",
   },
 ];
 
 function HighlightedAnswer({ text }: { text: string }) {
   // Highlight specific keywords
   const highlightedText = text
-    .replace(/free\./g, '<span class="text-emerald-600 font-medium">free</span>.')
-    .replace(/free,/g, '<span class="text-emerald-600 font-medium">free</span>,')
+    .replace(
+      /free\./g,
+      '<span class="text-emerald-600 font-medium">free</span>.',
+    )
+    .replace(
+      /free,/g,
+      '<span class="text-emerald-600 font-medium">free</span>,',
+    )
     .replace(/100%/g, '<span class="text-emerald-600 font-medium">100%</span>')
-    .replace(/no BS/g, '<span class="text-emerald-600 font-medium">no BS</span>')
-    .replace(/10 minutes/g, '<span class="text-emerald-600 font-medium">10 minutes</span>')
-    .replace(/Next\.js/g, '<span class="text-emerald-600 font-medium">Next.js</span>')
-    .replace(/Supabase/g, '<span class="text-emerald-600 font-medium">Supabase</span>')
-    .replace(/Stripe/g, '<span class="text-emerald-600 font-medium">Stripe</span>')
-    .replace(/Vercel/g, '<span class="text-emerald-600 font-medium">Vercel</span>');
-  
-  return (
-    <div dangerouslySetInnerHTML={{ __html: highlightedText }} />
-  );
+    .replace(
+      /no BS/g,
+      '<span class="text-emerald-600 font-medium">no BS</span>',
+    )
+    .replace(
+      /10 minutes/g,
+      '<span class="text-emerald-600 font-medium">10 minutes</span>',
+    )
+    .replace(
+      /Next\.js/g,
+      '<span class="text-emerald-600 font-medium">Next.js</span>',
+    )
+    .replace(
+      /Supabase/g,
+      '<span class="text-emerald-600 font-medium">Supabase</span>',
+    )
+    .replace(
+      /Stripe/g,
+      '<span class="text-emerald-600 font-medium">Stripe</span>',
+    )
+    .replace(
+      /Vercel/g,
+      '<span class="text-emerald-600 font-medium">Vercel</span>',
+    );
+
+  return <div dangerouslySetInnerHTML={{ __html: highlightedText }} />;
 }
 
 function FAQAccordion({ items }: { items: FAQItem[] }) {
@@ -84,24 +117,24 @@ function FAQAccordion({ items }: { items: FAQItem[] }) {
 
   return (
     <div className="bg-white rounded-md border border-slate-200 shadow-sm hover:shadow-md transition-all">
-      <Accordion 
-        type="single" 
-        collapsible 
+      <Accordion
+        type="single"
+        collapsible
         className="w-full"
         value={openItem || undefined}
         onValueChange={(value) => setOpenItem(value)}
       >
         {items.map((item, index) => (
-          <AccordionItem 
+          <AccordionItem
             key={index}
-            value={`item-${index}`} 
+            value={`item-${index}`}
             className={`${index === items.length - 1 ? "" : "border-b border-slate-200"} group transition-all`}
           >
-            <AccordionTrigger 
-              className="text-sm lg:text-base font-medium text-slate-800 py-4 px-5 hover:text-emerald-600 transition-colors data-[state=open]:text-emerald-600 data-[state=open]:bg-slate-50/80"
-            >
+            <AccordionTrigger className="text-sm lg:text-base font-medium text-slate-800 py-4 px-5 hover:text-emerald-600 transition-colors data-[state=open]:text-emerald-600 data-[state=open]:bg-slate-50/80">
               <div className="flex items-center">
-                <ChevronRight className={`mr-2 h-4 w-4 shrink-0 text-emerald-500 transition-transform duration-200 group-data-[state=open]:rotate-90 opacity-0 group-hover:opacity-100 ${openItem === `item-${index}` ? 'opacity-100' : ''}`} />
+                <ChevronRight
+                  className={`mr-2 h-4 w-4 shrink-0 text-emerald-500 transition-transform duration-200 group-data-[state=open]:rotate-90 opacity-0 group-hover:opacity-100 ${openItem === `item-${index}` ? "opacity-100" : ""}`}
+                />
                 {item.question}
               </div>
             </AccordionTrigger>
@@ -117,22 +150,25 @@ function FAQAccordion({ items }: { items: FAQItem[] }) {
 
 export default function FAQ() {
   return (
-    <section 
-      id="faq" 
+    <section
+      id="faq"
       className="relative py-16 md:py-20"
       aria-label="Frequently asked questions"
     >
       <div className="relative mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
         <div className="text-left w-full max-w-xl mb-8 sm:mb-12">
           <div className="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-700">
-            <MessageCircle className="w-3.5 h-3.5 mr-1.5" /> 
+            <MessageCircle className="w-3.5 h-3.5 mr-1.5" />
             Common Questions
           </div>
-          
+
           <h2 className="font-roboto mt-6 text-2xl sm:text-3xl lg:text-4xl tracking-tight text-slate-900 leading-tight">
-            Straight <span className="bg-gradient-to-r from-emerald-600 to-emerald-500 bg-clip-text text-transparent">Answers</span>
+            Straight{" "}
+            <span className="bg-gradient-to-r from-emerald-600 to-emerald-500 bg-clip-text text-transparent">
+              Answers
+            </span>
           </h2>
-          
+
           <p className="mt-4 text-sm md:text-base text-slate-600 max-w-2xl">
             No marketing fluff. Here&apos;s what creators actually want to know.
           </p>
@@ -144,4 +180,4 @@ export default function FAQ() {
       </div>
     </section>
   );
-} 
+}

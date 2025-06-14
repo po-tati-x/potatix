@@ -79,7 +79,7 @@ function CompanyInfo() {
     <div className="space-y-4">
       <Link href="/" className="inline-block">
         <Image 
-          src="/potatix-logo-white.svg" 
+          src="https://storage.potatix.com/potatix/images/potatix-logo-white.svg" 
           alt="Potatix Logo" 
           width={120} 
           height={32} 
