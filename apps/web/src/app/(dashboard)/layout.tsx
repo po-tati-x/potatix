@@ -1,30 +1,27 @@
-'use client';
-
+import { ReactNode } from 'react';
 import { AppSidebar } from '@/components/features/app-sidebar/app-sidebar';
 import { MainNav } from '@/components/features/app-sidebar/main-nav';
 
-export const dynamic = "force-static";
+export async function generateMetadata() {
+  return {
+    title: 'Dashboard - Potatix',
+    description: 'Manage your courses, students, and revenue',
+  };
+}
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
-  // No session fetching or checks - middleware already handles this
-  
+
   return (
-    <>
-      <div className="min-h-screen w-full bg-white">
-        <MainNav
-          sidebar={AppSidebar}
-        >
-          <main className="flex-1 overflow-y-auto">
-            <div className="container py-6">
-              {children}
-            </div>
-          </main>
-        </MainNav>
-      </div>
-    </>
+    <div className="min-h-screen w-full bg-white">
+      <MainNav sidebar={AppSidebar}>
+        <main className="flex-1 overflow-y-auto">
+          <div className="container py-6">{children}</div>
+        </main>
+      </MainNav>
+    </div>
   );
 } 
