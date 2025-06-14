@@ -66,3 +66,8 @@ temp/
 
 # Turborepo
 .turbo
+
+# ignore nested package installs & builds
+node_modules/
+**/node_modules/
+**/dist/
