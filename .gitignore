@@ -9,6 +9,8 @@
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
+/apps/web/node_modules
+/apps/web/.next
 
 # testing
 /coverage
@@ -61,3 +63,6 @@ temp/
 # documentation - NEVER commit these private docs
 /docs/
 /documentation/
+
+# Turborepo
+.turbo
