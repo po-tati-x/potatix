@@ -71,3 +71,6 @@ temp/
 node_modules/
 **/node_modules/
 **/dist/
+
+# added pattern to ignore package .cache folders
+**/.cache/
