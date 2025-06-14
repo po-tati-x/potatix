@@ -1,27 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import { Lesson } from "@/lib/types/api";
-import { UILesson } from "@/lib/stores/courses";
-import { GripVertical, Trash2, ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, Trash2, GripVertical } from "lucide-react";
 import { DraggableProvidedDragHandleProps } from "@hello-pangea/dnd";
-import { FormField } from "../../../ui/potatix/form-field";
+import { UILesson } from './draggable-lesson-list';
+import { FormField } from "../../../ui/form-field";
 import { VideoUploader } from "../media/video-uploader";
 import { VideoPreview } from "../media/video-preview";
-import { useUpdateLesson, useDeleteLesson } from "@/lib/api/courses";
+import { useUpdateLesson, useDeleteLesson } from "@/lib/client/hooks/use-courses";
+import type { Lesson } from "@/lib/shared/types/courses";
 
-// Types for the lesson editor component
 interface LessonEditorProps {
   courseId: string;
   lesson: UILesson;
   index: number;
-  dragHandleProps: DraggableProvidedDragHandleProps | null;
-  onFileChange: (
-    e: React.ChangeEvent<HTMLInputElement>,
-    lessonId: string,
-  ) => void;
+  dragHandleProps?: DraggableProvidedDragHandleProps | null;
+  onFileChange: (e: React.ChangeEvent<HTMLInputElement>, lessonId: string) => void;
   onFileRemove: (lessonId: string) => void;
-  onToggleExpanded?: (id: string) => void;
+  onToggleExpanded?: (lessonId: string) => void;
   onDirectUploadComplete?: (lessonId: string) => void;
 }
 
@@ -36,16 +32,16 @@ export function LessonEditor({
   onFileChange,
   onFileRemove,
   onToggleExpanded,
-  onDirectUploadComplete,
+  onDirectUploadComplete
 }: LessonEditorProps) {
   const isExpanded = lesson.expanded ?? false;
-  const [title, setTitle] = useState(lesson.title || '');
-  const [description, setDescription] = useState(lesson.description || '');
+  const [title, setTitle] = useState(lesson.title || "");
+  const [description, setDescription] = useState(lesson.description || "");
 
   // Use React Query mutations
   const { mutate: updateLesson } = useUpdateLesson();
   const { mutate: deleteLesson } = useDeleteLesson();
-  
+
   const handleToggle = () => {
     if (onToggleExpanded) {
       onToggleExpanded(lesson.id);
@@ -53,18 +49,18 @@ export function LessonEditor({
   };
 
   const handleUpdateField = (field: keyof Lesson, value: string) => {
-    if (field === 'title') {
+    if (field === "title") {
       setTitle(value);
-    } else if (field === 'description') {
+    } else if (field === "description") {
       setDescription(value);
     }
 
     // Debounce API call for better UX
     const timer = setTimeout(() => {
       updateLesson({
-        courseId,
         lessonId: lesson.id,
-        data: { [field]: value }
+        [field]: value,
+        courseId
       });
     }, 500);
 
@@ -72,18 +68,20 @@ export function LessonEditor({
   };
 
   const handleRemoveLesson = () => {
-    if (window.confirm('Are you sure you want to remove this lesson?')) {
-      deleteLesson({ 
-        courseId, 
-        lessonId: lesson.id 
-      });
+    if (window.confirm("Are you sure you want to remove this lesson?")) {
+      deleteLesson({ lessonId: lesson.id, courseId });
     }
   };
-  
+
   return (
     <div className="overflow-hidden border border-slate-200 rounded-lg bg-white transition-all hover:border-slate-300">
       {/* Header */}
-      <div className="bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between group">
+      <div
+        className="bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between group hover:bg-slate-50 transition-colors"
+        onClick={handleToggle}
+        role="button"
+        tabIndex={0}
+      >
         <div className="flex items-center gap-3">
           {dragHandleProps && (
             <div
@@ -93,11 +91,10 @@ export function LessonEditor({
               <GripVertical className="h-4 w-4 text-slate-400 group-hover:text-slate-600 transition-colors" />
             </div>
           )}
-          
+
           {/* Toggle expand/collapse */}
-          <div 
+          <div
             className="cursor-pointer p-1.5 hover:bg-slate-200 active:bg-slate-300 rounded-md transition-colors"
-            onClick={handleToggle}
           >
             {isExpanded ? (
               <ChevronDown className="h-4 w-4 text-slate-600" />
@@ -105,7 +102,7 @@ export function LessonEditor({
               <ChevronRight className="h-4 w-4 text-slate-600" />
             )}
           </div>
-          
+
           <div className="flex items-center gap-3">
             <div className="h-6 w-6 bg-slate-800 text-white rounded-full flex items-center justify-center">
               <span className="text-xs font-medium">{index + 1}</span>
@@ -119,7 +116,6 @@ export function LessonEditor({
         <button
           type="button"
           onClick={(e) => {
-            e.preventDefault(); 
             e.stopPropagation();
             handleRemoveLesson();
           }}
@@ -163,17 +159,17 @@ export function LessonEditor({
 
           <FormField label="Lesson Video">
             {!lesson.file && !lesson.fileUrl && !lesson.uploading ? (
-              <VideoUploader 
-                lessonId={lesson.id} 
+              <VideoUploader
+                lessonId={lesson.id}
                 onFileChange={onFileChange}
-                onDirectUploadComplete={onDirectUploadComplete} 
+                onDirectUploadComplete={onDirectUploadComplete}
               />
             ) : (
-              <VideoPreview lesson={lesson} onFileRemove={onFileRemove} />
+              <VideoPreview lesson={lesson} onFileRemove={() => onFileRemove(lesson.id)} />
             )}
           </FormField>
         </div>
       )}
     </div>
   );
-} 
+}
