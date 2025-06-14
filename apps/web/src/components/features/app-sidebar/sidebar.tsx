@@ -1,14 +1,14 @@
 'use client';
 
-import { ReactNode, useEffect } from 'react';
+import { ReactNode } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { ChevronLeft, UserCircle } from 'lucide-react';
-import { cn } from '@/lib/utils/cn';
+import { cn } from '@/lib/shared/utils/cn';
 import { NavItem, NavSection, useNavigationConfig } from './sidebar-navigation';
-import { useProfileStore } from '@/lib/stores/profile';
+import { useProfile } from '@/lib/client/hooks/use-profile';
 
 interface SidebarProps {
   slug: string;
@@ -20,12 +20,7 @@ interface SidebarProps {
 export function Sidebar({ slug, toolContent, newsContent, bottom }: SidebarProps) {
   const config = useNavigationConfig(slug);
   const showNewsContent = !config.title && newsContent;
-  const { profile, fetchProfile } = useProfileStore();
-
-  // Fetch profile on mount
-  useEffect(() => {
-    fetchProfile();
-  }, [fetchProfile]);
+  const { profile } = useProfile();
 
   return (
     <div className="scrollbar-hide relative flex h-full w-full flex-col overflow-y-auto overflow-x-hidden">
@@ -46,7 +41,7 @@ export function Sidebar({ slug, toolContent, newsContent, bottom }: SidebarProps
               </div>
             ) : (
               <Image
-                src="/potatix-isolated.svg"
+                src="https://storage.potatix.com/potatix/images/potatix-isolated.svg"
                 alt="Potatix"
                 width={87.2}
                 height={15.2}
