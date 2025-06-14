@@ -1,152 +1,147 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// Import utility functions
-import {
-  extractSubdomain,
-  addCorsHeaders,
-  handlePreflight,
-  mapPathToViewerPath,
-  getBaseDomain,
-  logger
-} from "@/lib/utils/middleware";
+/**
+ * Extract subdomain from host
+ */
+function getSubdomain(host: string, baseDomain: string): string | null {
+  if (!host) return null;
 
-import {
-  getSessionToken,
-  isPublicPath,
-  isProtectedPath,
-  isApiRoute
-} from "@/lib/auth/middleware-auth";
+  const hostWithoutPort = host.split(":")[0];
 
-// Environment validation at build time
-const MAIN_APP_URL = (() => {
-  const url = process.env.NEXT_PUBLIC_APP_URL;
-  if (!url) throw new Error('NEXT_PUBLIC_APP_URL env variable is required');
-  return url;
-})();
+  // Main domain or www
+  if (
+    hostWithoutPort === baseDomain ||
+    hostWithoutPort === `www.${baseDomain}`
+  ) {
+    return null;
+  }
 
-// Log startup info
-logger.info(`Base domain: ${getBaseDomain()}`);
-logger.info(`Main app URL: ${MAIN_APP_URL}`);
+  // Production subdomain
+  if (hostWithoutPort.endsWith(`.${baseDomain}`)) {
+    return hostWithoutPort.replace(`.${baseDomain}`, "");
+  }
+
+  // Local development
+  if (hostWithoutPort.endsWith(".localhost")) {
+    return hostWithoutPort.replace(".localhost", "");
+  }
+
+  return null;
+}
 
 /**
- * Handle course subdomain access and rewrites
+ * Get rewritten path for course subdomain
  */
-function handleCourseSubdomain(
-  request: NextRequest, 
-  pathname: string, 
-  courseSlug: string, 
-  isAuthenticated: boolean
-): NextResponse {
-  try {
-    // Always let API routes pass through without rewriting
-    if (isApiRoute(pathname)) {
-      logger.info(`Bypassing API route: ${pathname}`);
-      const response = NextResponse.next();
-      const origin = request.headers.get('origin');
-      return addCorsHeaders(response, origin, MAIN_APP_URL);
-    }
-    
-    const url = request.nextUrl.clone();
-    logger.info(`Processing course subdomain: ${courseSlug}, path: ${pathname}`);
-    
-    // Intercept redirects to /dashboard when on course subdomain
-    if (pathname === '/dashboard') {
-      const homeUrl = new URL('/', request.url);
-      return NextResponse.redirect(homeUrl);
-    }
-    
-    // Auth handling for course access
-    if (!isAuthenticated && !pathname.startsWith(`/viewer/${courseSlug}/auth`)) {
-      url.pathname = `/viewer/${courseSlug}/auth`;
-      url.searchParams.set('redirectTo', mapPathToViewerPath(pathname, courseSlug));
-      logger.info(`Redirecting unauthenticated user to: ${url.pathname}`);
-      return NextResponse.rewrite(url);
-    }
-    
-    // URL rewriting for authenticated users
-    if (pathname === '/' || pathname === '') {
-      url.pathname = `/viewer/${courseSlug}`;
-      logger.info(`Rewriting root path to: ${url.pathname}`);
-      return NextResponse.rewrite(url);
-    }
-    
-    if (pathname.startsWith('/lesson/')) {
-      url.pathname = `/viewer/${courseSlug}/lesson/${pathname.replace('/lesson/', '')}`;
-      logger.info(`Rewriting lesson path to: ${url.pathname}`);
-      return NextResponse.rewrite(url);
-    }
-    
-    if (pathname.startsWith(`/viewer/${courseSlug}`)) {
-      return NextResponse.next();
-    }
-    
-    url.pathname = `/viewer/${courseSlug}${pathname}`;
-    logger.info(`Rewriting path to: ${url.pathname}`);
-    return NextResponse.rewrite(url);
-  } catch (error) {
-    logger.error(`Course handling error: ${(error as Error).message}`);
-    return new NextResponse('Internal Server Error', { status: 500 });
+function getRewrittenPath(pathname: string, courseSlug: string): string {
+  // Don't rewrite API routes
+  if (pathname.startsWith("/api/")) {
+    return pathname;
   }
+
+  // Don't double-rewrite viewer paths
+  if (pathname.startsWith(`/viewer/${courseSlug}`)) {
+    return pathname;
+  }
+
+  // Rewrite patterns
+  if (pathname === "/") {
+    return `/viewer/${courseSlug}`;
+  }
+
+  if (pathname.startsWith("/lesson/")) {
+    const lessonPath = pathname.replace("/lesson/", "");
+    return `/viewer/${courseSlug}/lesson/${lessonPath}`;
+  }
+
+  // All other paths
+  return `/viewer/${courseSlug}${pathname}`;
 }
 
-export function middleware(request: NextRequest) {
-  try {
-    const { pathname } = request.nextUrl;
-    const host = request.headers.get('host') || '';
-    const origin = request.headers.get('origin');
-    
-    logger.info(`Incoming request: ${host}${pathname}`);
-    
-    // Handle CORS preflight requests
-    if (request.method === 'OPTIONS') {
-      return handlePreflight(origin, MAIN_APP_URL);
-    }
-    
-    // Skip public routes early (including all API routes)
-    if (isPublicPath(pathname)) {
-      const response = NextResponse.next();
-      
-      if (isApiRoute(pathname)) {
-        addCorsHeaders(response, origin, MAIN_APP_URL);
+/**
+ * Basic auth middleware for Next.js
+ */
+function authMiddleware(
+  request: NextRequest,
+  options?: {
+    publicPaths?: string[];
+    authRedirectUrl?: string;
+  }
+) {
+  // Default public paths that don't require auth
+  const publicPaths = options?.publicPaths || [
+    "/",
+    "/signin",
+    "/login",
+    "/signup",
+    "/api/auth",
+  ];
+
+  // Skip auth check for public paths
+  const path = request.nextUrl.pathname;
+  if (publicPaths.some((p) => path.startsWith(p) || path === p)) {
+    return NextResponse.next();
+  }
+
+  // Check for auth cookie - better-auth uses prefixed session_token by default
+  // Try both with and without prefix to be safe
+  const authCookie = request.cookies.get("better-auth.session_token") || 
+                     request.cookies.get("session_token");
+  if (!authCookie) {
+    // Redirect to auth page if no token
+    const url = new URL(options?.authRedirectUrl || "/login", request.url);
+    url.searchParams.set("callbackUrl", request.url);
+    return NextResponse.redirect(url);
+  }
+
+  // Let the request continue
+  return NextResponse.next();
+}
+
+/**
+ * Main middleware - handles subdomain routing and auth
+ */
+export default function middleware(request: NextRequest) {
+  const host = request.headers.get("host") ?? "";
+  const baseDomain = process.env.NEXT_PUBLIC_APP_URL
+    ? new URL(process.env.NEXT_PUBLIC_APP_URL).hostname
+    : "localhost";
+
+  const courseSlug = getSubdomain(host, baseDomain);
+
+  // If course subdomain, handle rewrite and auth
+  if (courseSlug) {
+    const originalPath = request.nextUrl.pathname;
+    const rewrittenPath = getRewrittenPath(originalPath, courseSlug);
+
+    // If path needs rewriting
+    if (rewrittenPath !== originalPath) {
+      // Create rewritten URL for auth check
+      const rewrittenUrl = request.nextUrl.clone();
+      rewrittenUrl.pathname = rewrittenPath;
+
+      // Create new request for auth middleware to check
+      const rewriteRequest = new NextRequest(rewrittenUrl, {
+        method: request.method,
+        headers: request.headers,
+      });
+
+      // Run auth middleware on rewritten path
+      const authResponse = authMiddleware(rewriteRequest);
+
+      // If auth wants to redirect, respect that
+      if (authResponse.headers.has("Location")) {
+        return authResponse;
       }
-      
-      return response;
+
+      // Otherwise, return the rewrite
+      return NextResponse.rewrite(rewrittenUrl);
     }
-    
-    // Authentication check
-    const sessionToken = getSessionToken(request);
-    const isAuthenticated = Boolean(sessionToken);
-    
-    // Try to extract course slug from host
-    const courseSlug = extractSubdomain(host);
-    logger.info(`Extracted subdomain: ${courseSlug || 'none'} from host: ${host}`);
-    
-    // Course subdomain handling
-    if (courseSlug) {
-      return handleCourseSubdomain(request, pathname, courseSlug, isAuthenticated);
-    }
-    
-    // Protected route handling on main domain
-    if (isProtectedPath(pathname) && !isAuthenticated) {
-      const loginUrl = new URL('/login', request.url);
-      loginUrl.searchParams.set('redirect', pathname);
-      return NextResponse.redirect(loginUrl);
-    }
-    
-    // Default case
-    const response = NextResponse.next();
-    return addCorsHeaders(response, origin, MAIN_APP_URL);
-  } catch (error) {
-    logger.error(`Middleware error: ${(error as Error).message}`);
-    return new NextResponse('Internal Server Error', { status: 500 });
   }
+
+  // No subdomain or no rewrite needed - just run auth
+  return authMiddleware(request);
 }
 
-// Configure which paths this middleware will run on - exclude asset paths
 export const config = {
-  matcher: [
-    // Match all paths except NextJS internals and static files
-    '/((?!_next/static|_next/image|favicon.ico).*)'
-  ],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };
-  
