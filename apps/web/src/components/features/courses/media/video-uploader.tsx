@@ -3,19 +3,22 @@
 import { useState, useEffect } from "react";
 import MuxUploader from "@mux/mux-uploader-react";
 import { AlertCircle, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/potatix/Button";
+import { Button } from "@/components/ui/new-button";
 
 // Video uploader component
 interface VideoUploaderProps {
   lessonId: string;
   onDirectUploadComplete?: (lessonId: string) => void;
-  onFileChange?: (e: React.ChangeEvent<HTMLInputElement>, lessonId: string) => void;
+  onFileChange?: (
+    e: React.ChangeEvent<HTMLInputElement>,
+    lessonId: string,
+  ) => void;
 }
 
-export function VideoUploader({ 
-  lessonId, 
+export function VideoUploader({
+  lessonId,
   onDirectUploadComplete,
-  onFileChange 
+  onFileChange,
 }: VideoUploaderProps) {
   const [uploadUrl, setUploadUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -58,7 +61,7 @@ export function VideoUploader({
   // Define a type for the Mux upload success event
   const handleUploadSuccess = (evt: CustomEvent) => {
     console.log("Upload success:", evt.detail);
-    
+
     // Mark lesson as processing in the parent component
     if (onDirectUploadComplete) {
       onDirectUploadComplete(lessonId);
@@ -132,9 +135,7 @@ export function VideoUploader({
     return (
       <div className="border border-slate-200 rounded-md overflow-hidden">
         <div className="bg-slate-50 border-b border-slate-200 px-4 py-2">
-          <h4 className="text-xs font-medium text-slate-700">
-            Upload Video
-          </h4>
+          <h4 className="text-xs font-medium text-slate-700">Upload Video</h4>
         </div>
         <div className="p-4">
           <MuxUploader
@@ -144,7 +145,8 @@ export function VideoUploader({
           />
           <div className="mt-3">
             <p className="text-xs text-slate-500">
-              Drag and drop or click to upload. Your video will be processed automatically after upload.
+              Drag and drop or click to upload. Your video will be processed
+              automatically after upload.
             </p>
             <div className="mt-2 flex items-center gap-1">
               <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
@@ -152,10 +154,12 @@ export function VideoUploader({
                 English captions will be automatically generated
               </p>
             </div>
-            
+
             {onFileChange && (
               <div className="mt-4 pt-4 border-t border-slate-100">
-                <p className="text-xs font-medium text-slate-700 mb-2">Or select a file from your device:</p>
+                <p className="text-xs font-medium text-slate-700 mb-2">
+                  Or select a file from your device:
+                </p>
                 <input
                   type="file"
                   accept="video/*"
@@ -186,7 +190,9 @@ export function VideoUploader({
   return (
     <div className="border border-slate-200 rounded-md p-6 text-center">
       <AlertCircle className="h-6 w-6 text-slate-400 mx-auto mb-3" />
-      <p className="text-xs text-slate-600">Something went wrong. Please try again.</p>
+      <p className="text-xs text-slate-600">
+        Something went wrong. Please try again.
+      </p>
       <Button
         type="outline"
         size="small"
@@ -195,10 +201,12 @@ export function VideoUploader({
       >
         Retry
       </Button>
-      
+
       {onFileChange && (
         <div className="mt-4 pt-4 border-t border-slate-200 text-left">
-          <p className="text-xs font-medium text-slate-700 mb-2">Or select a file from your device:</p>
+          <p className="text-xs font-medium text-slate-700 mb-2">
+            Or select a file from your device:
+          </p>
           <input
             type="file"
             accept="video/*"
