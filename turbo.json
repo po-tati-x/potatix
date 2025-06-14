@@ -1,16 +1,59 @@
 {
-  "$schema": "https://turborepo.com/schema.json",
+  "$schema": "https://turbo.build/schema.json",
+  "ui": "tui",
   "tasks": {
+    "dev": {
+      "dependsOn": ["^dev"],
+      "persistent": false,
+      "cache": false
+    },
+    "clean": {
+      "cache": false
+    },
     "build": {
       "dependsOn": ["^build"],
-      "outputs": [".next/**", "!.next/cache/**"]
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "outputs": ["dist/**"]
     },
-    "check-types": {
-      "dependsOn": ["^check-types"]
+    "auth:schema:generate": {
+      "cache": false,
+      "interactive": true
     },
-    "dev": {
-      "persistent": true,
+    "format": {
+      "outputs": [".cache/.prettiercache"],
+      "outputLogs": "new-only"
+    },
+    "lint": {
+      "dependsOn": ["^build"],
+      "outputs": [".cache/.eslintcache"]
+    },
+    "typecheck": {
+      "dependsOn": ["^build"],
+      "outputs": [".cache/tsbuildinfo.json"]
+    },
+    "push": {
+      "env": ["DB_POSTGRES_URL"],
+      "cache": false,
+      "interactive": true
+    },
+    "start": {
+      "dependsOn": ["^build"]
+    },
+    "studio": {
+      "cache": false,
+      "persistent": true
+    },
+    "ui-add": {
+      "cache": false,
+      "interactive": true
+    },
+    "env:copy-example": {
+      "cache": false
+    },
+    "env:remove": {
       "cache": false
     }
-  }
+  },
+  "globalEnv": [],
+  "globalPassThroughEnv": ["NODE_ENV", "CI", "npm_lifecycle_event"]
 }
