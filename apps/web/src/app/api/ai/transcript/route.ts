@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { fetchMuxTranscript } from "@/lib/utils/mux";
-import { GoogleGenAI } from "@google/genai";
-import { db, lesson as lessonTable } from "@potatix/db";
+import { fetchMuxTranscript } from "@/lib/server/utils/mux";
+import { db as rawDb, lesson as lessonTable } from "@potatix/db";
 import { eq } from "drizzle-orm";
+import { generateChaptersFromTranscript } from '@/lib/server/services/ai';
 
 export const dynamic = "force-dynamic";
 
@@ -12,13 +12,7 @@ function convertTimeToSeconds(timeString: string): number {
   return hours * 3600 + minutes * 60 + seconds;
 }
 
-// Define type for processed chapter data
-interface ChapterData {
-  id: string;
-  title: string;
-  description: string;
-  timestamp: number;
-}
+const database = rawDb!;
 
 export async function GET(request: NextRequest) {
   try {
@@ -35,7 +29,7 @@ export async function GET(request: NextRequest) {
 
     // Check if we already have transcriptData in the DB when lessonId is provided
     if (lessonId) {
-      const existingLesson = await db
+      const existingLesson = await database
         .select()
         .from(lessonTable)
         .where(eq(lessonTable.id, lessonId))
@@ -118,81 +112,20 @@ export async function GET(request: NextRequest) {
 
     // Process with Gemini
     try {
-      // Initialize the Gemini API client
-      const ai = new GoogleGenAI({
-        apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY || "",
-      });
+      const chaptersRaw = await generateChaptersFromTranscript(structuredTranscript.substring(0, 100000));
 
-      // Set up model
-      const model = ai.models.generateContentStream;
-
-      // Prepare the prompt - ask for direct JSON output
-      const promptText = `
-You are a video transcript analyzer for a chess tutorial site. Analyze this chess video transcript and identify meaningful chapters.
-
-CHESS VIDEO TRANSCRIPT:
-"""
-${structuredTranscript.substring(0, 100000)}
-"""
-
-IMPORTANT - RESPONSE MUST BE VALID JSON:
-Return ONLY a JSON array of chapters, with the following structure:
-{
-  "id": "1",  // Chapter number as string, starting from 1
-  "title": "Title of chapter",  // Short, descriptive title
-  "description": "Detailed description",  // Longer description of the chapter content
-  "timestamp": 0  // Timestamp in seconds where this chapter begins
-}
-
-Important instructions:
-1. Create chapters at meaningful points in the content
-2. Place timestamps at natural topic transitions
-3. DO NOT use arbitrary timestamps
-4. Use as many chapters as needed to properly segment the content - there is NO fixed number required
-5. First chapter should always start at timestamp 0
-
-No explanations, no extra text, ONLY the raw JSON array.
-`;
-
-      // Set up content for the model
-      const contents = [
-        {
-          role: "user",
-          parts: [{ text: promptText }],
-        },
-      ];
-
-      console.log("Sending request to Gemini API...");
-
-      // Generate content
-      const response = await model({
-        model: "gemini-2.5-pro-preview-06-05",
-        contents,
-      });
-
-      // Collect all chunks of text
-      let fullResponse = "";
-      for await (const chunk of response) {
-        fullResponse += chunk.text || "";
+      interface Chapter {
+        id: string;
+        title: string;
+        description: string;
+        timestamp: number;
       }
 
-      console.log(`Raw Gemini response: ${fullResponse.substring(0, 100)}...`);
+      const finalChapters: Chapter[] = (chaptersRaw as unknown as Omit<Chapter, 'id'>[]).map((c, idx) => ({
+        ...c,
+        id: (idx + 1).toString(),
+      }));
 
-      // Clean up response in case there's any markdown code block formatting
-      const jsonText = fullResponse.replace(/```json|```/g, "").trim();
-
-      // Parse JSON
-      const chapters = JSON.parse(jsonText);
-
-      // Assign proper IDs to ensure they're sequential
-      const finalChapters = chapters.map(
-        (chapter: ChapterData, index: number) => ({
-          ...chapter,
-          id: (index + 1).toString(),
-        }),
-      );
-
-      // Create response data object
       const responseData = {
         chapters: finalChapters,
         textLength: structuredTranscript.length,
@@ -200,34 +133,21 @@ No explanations, no extra text, ONLY the raw JSON array.
         processedAt: new Date().toISOString(),
       };
 
-      // Update the lesson in the database if lessonId is provided
       if (lessonId) {
         try {
-          await db
+          await database
             .update(lessonTable)
-            .set({
-              transcriptData: responseData,
-              updatedAt: new Date(),
-            })
+            .set({ transcriptData: responseData, updatedAt: new Date() })
             .where(eq(lessonTable.id, lessonId));
-
-          console.log(`Updated transcriptData for lesson ${lessonId}`);
-        } catch (dbError) {
-          console.error("Failed to update lesson transcript data:", dbError);
-          // Continue execution - we'll still return the data even if DB update fails
+        } catch (err) {
+          console.error('Failed to update lesson transcript data:', err);
         }
       }
 
       return NextResponse.json(responseData);
     } catch (error) {
-      console.error("Error processing with Gemini:", error);
-      return NextResponse.json(
-        {
-          error: error instanceof Error ? error.message : "Gemini API error",
-          status: "AI_FAILURE",
-        },
-        { status: 422 },
-      );
+      console.error('AI processing failed:', error);
+      return NextResponse.json({ error: 'AI_FAILURE' }, { status: 422 });
     }
   } catch (error) {
     console.error("Error processing request:", error);
