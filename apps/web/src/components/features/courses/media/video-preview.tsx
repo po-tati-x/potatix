@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { CheckCircle, FilmIcon, PlayCircle, Trash2, Loader2, X } from "lucide-react";
-import { UILesson } from "@/lib/stores/courses";
 import Player from "next-video/player";
+import type { UILesson } from "../lessons/draggable-lesson-list";
 
 interface VideoPreviewProps {
   lesson: UILesson;

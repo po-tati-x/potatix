@@ -3,16 +3,18 @@
 import { useState, useRef } from 'react';
 import { X, Image as ImageIcon } from 'lucide-react';
 import Image from 'next/image';
-import { useUploadCourseImage } from '@/lib/api/courses';
+import { useUploadCourseImage } from '@/lib/client/hooks/use-courses';
 
 interface CourseImageUploaderProps {
   initialUrl?: string;
+  courseId: string;
   onImageUploaded: (url: string) => void;
   onImageRemoved: () => void;
 }
 
 export function CourseImageUploader({
   initialUrl,
+  courseId,
   onImageUploaded,
   onImageRemoved,
 }: CourseImageUploaderProps) {
@@ -20,7 +22,7 @@ export function CourseImageUploader({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Use React Query for image uploads
-  const { mutate: uploadImage, isPending: imageUploading } = useUploadCourseImage();
+  const { mutate: uploadImage, isPending: imageUploading } = useUploadCourseImage(courseId);
 
   // Handle image upload
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -47,10 +49,14 @@ export function CourseImageUploader({
     };
     reader.readAsDataURL(file);
     
+    // Create FormData
+    const formData = new FormData();
+    formData.append('file', file);
+    
     // Upload image using React Query mutation
-    uploadImage(file, {
+    uploadImage(formData, {
       onSuccess: (result) => {
-        onImageUploaded(result.fileUrl);
+        onImageUploaded(result.imageUrl);
       },
       onError: (error) => {
         console.error('Failed to upload image:', error);
