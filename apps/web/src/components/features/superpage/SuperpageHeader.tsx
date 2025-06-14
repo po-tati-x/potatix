@@ -1,13 +1,13 @@
-import { ArrowLeft, Eye, EyeOff, Loader2, Save } from 'lucide-react';
-import { Button } from '@/components/ui/potatix/Button';
-import { SuperpageHeaderProps } from './types';
+import { ArrowLeft, Eye, EyeOff, Loader2, Save } from "lucide-react";
+import { Button } from "@/components/ui/new-button";
+import { SuperpageHeaderProps } from "./types";
 
-export function SuperpageHeader({ 
-  showPreview, 
-  saving, 
-  onTogglePreview, 
-  onSave, 
-  onBack 
+export function SuperpageHeader({
+  showPreview,
+  saving,
+  onTogglePreview,
+  onSave,
+  onBack,
 }: SuperpageHeaderProps) {
   return (
     <>
@@ -37,29 +37,41 @@ export function SuperpageHeader({
               Customize your public landing page with all your important links
             </p>
           </div>
-          
+
           <div className="flex items-center gap-3">
             <Button
               type="outline"
               size="small"
-              icon={showPreview ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+              icon={
+                showPreview ? (
+                  <EyeOff className="h-3.5 w-3.5" />
+                ) : (
+                  <Eye className="h-3.5 w-3.5" />
+                )
+              }
               onClick={onTogglePreview}
             >
-              {showPreview ? 'Hide Preview' : 'Show Preview'}
+              {showPreview ? "Hide Preview" : "Show Preview"}
             </Button>
-            
+
             <Button
               type="primary"
               size="small"
-              icon={saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+              icon={
+                saving ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Save className="h-3.5 w-3.5" />
+                )
+              }
               disabled={saving}
               onClick={onSave}
             >
-              {saving ? 'Saving...' : 'Save Changes'}
+              {saving ? "Saving..." : "Save Changes"}
             </Button>
           </div>
         </div>
       </header>
     </>
   );
-} 
+}

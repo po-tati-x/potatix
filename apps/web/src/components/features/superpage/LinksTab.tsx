@@ -1,20 +1,16 @@
-import { LinkIcon, PlusCircle } from 'lucide-react';
-import { Button } from '@/components/ui/potatix/Button';
-import { 
-  DragDropContext, 
-  Droppable, 
-  Draggable, 
-} from '@hello-pangea/dnd';
-import { LinksTabProps } from './types';
-import { LinkEditor } from './LinkEditor';
+import { LinkIcon, PlusCircle } from "lucide-react";
+import { Button } from "@/components/ui/new-button";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
+import { LinksTabProps } from "./types";
+import { LinkEditor } from "./LinkEditor";
 
-export function LinksTab({ 
-  links, 
+export function LinksTab({
+  links,
   iconOptions,
-  onAddLink, 
-  onLinkChange, 
+  onAddLink,
+  onLinkChange,
   onDeleteLink,
-  onDragEnd
+  onDragEnd,
 }: LinksTabProps) {
   return (
     <div className="space-y-5">
@@ -29,7 +25,7 @@ export function LinksTab({
           Add Link
         </Button>
       </div>
-      
+
       <DragDropContext onDragEnd={onDragEnd}>
         <Droppable droppableId="links">
           {(provided) => (
@@ -57,18 +53,20 @@ export function LinksTab({
           )}
         </Droppable>
       </DragDropContext>
-      
+
       {links.length === 0 && (
         <div className="text-center py-12 border border-dashed border-slate-300 rounded-md bg-slate-50">
           <div className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 mb-4">
             <LinkIcon className="h-5 w-5 text-slate-500" />
           </div>
-          
-          <h3 className="text-sm font-medium text-slate-900 mb-2">No links yet</h3>
+
+          <h3 className="text-sm font-medium text-slate-900 mb-2">
+            No links yet
+          </h3>
           <p className="text-xs text-slate-500 mb-4 max-w-sm mx-auto">
             Add links to your important resources, social profiles, and more.
           </p>
-          
+
           <Button
             type="primary"
             size="small"
@@ -81,4 +79,4 @@ export function LinksTab({
       )}
     </div>
   );
-} 
+}
