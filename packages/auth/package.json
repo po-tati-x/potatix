@@ -1,0 +1,32 @@
+{
+  "name": "@potatix/auth",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./client": "./src/client.ts",
+    "./server": "./src/server.ts"
+  },
+  "scripts": {
+    "build": "tsc",
+    "clean": "git clean -xdf .cache .turbo dist node_modules",
+    "dev": "tsc",
+    "format": "prettier --check . --ignore-path ../../.gitignore",
+    "auth:schema:generate": "pnpx @better-auth/cli generate --config ./src/cli-config.ts --output ../db/src/schemas/auth.ts",
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit"
+  },
+  "prettier": "@potatix/prettier-config",
+  "dependencies": {
+    "@potatix/db": "workspace:*",
+    "better-auth": "^1.2.9"
+  },
+  "devDependencies": {
+    "@potatix/eslint-config": "workspace:*",
+    "@potatix/prettier-config": "workspace:*",
+    "@potatix/typescript-config": "workspace:*",
+    "@types/node": "^24.0.1",
+    "eslint": "^9.28.0",
+    "typescript": "^5.8.3"
+  }
+}
