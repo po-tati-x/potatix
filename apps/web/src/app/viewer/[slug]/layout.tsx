@@ -1,16 +1,14 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
-import { useCourseBySlug } from "@/lib/api/courses";
-import LoadingState from '@/components/features/viewer/loading-state';
-import ErrorState from '@/components/features/viewer/error-state';
-import CourseSidebar from '@/components/features/viewer/sidebar/course-sidebar-container';
-import { Menu, X } from 'lucide-react';
-import { use } from 'react';
-import { authClient } from '@/lib/auth/auth-client';
-import axios from 'axios';
-import { useViewerStore } from '@/lib/stores/viewer';
+import { useEffect, useState, use as usePromise } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import { useCourseBySlug } from "@/lib/client/hooks/use-courses";
+import LoadingState from "@/components/features/viewer/loading-state";
+import ErrorState from "@/components/features/viewer/error-state";
+import CourseSidebar from "@/components/features/viewer/sidebar/course-sidebar-container";
+import { Menu, X } from "lucide-react";
+import { authClient } from "@/lib/auth/auth";
+import axios from "axios";
 
 interface CourseLayoutProps {
   children: React.ReactNode;
@@ -22,71 +20,45 @@ interface CourseLayoutProps {
 export default function CourseLayout({ children, params }: CourseLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const { slug: courseSlug } = use(params);
+  const { slug: courseSlug } = usePromise(params);
 
-  // Get store state and actions
-  const {
-    isMobileSidebarOpen,
-    isSidebarCollapsed,
-    isAuthenticated,
-    isEnrolled,
-    enrollmentStatus,
-    isEnrollmentLoading,
-    isEnrolling,
-    
-    // Actions
-    setCourse,
-    setCourseSlug,
-    toggleMobileSidebar,
-    toggleSidebarCollapsed,
-    setAuthenticated,
-    setEnrollmentStatus,
-    setEnrollmentLoading,
-    setEnrolling,
-    setAuthChecked
-  } = useViewerStore();
-  
+  // UI state
+  const [isMobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  const toggleMobileSidebar = () => setMobileSidebarOpen((s) => !s);
+  const toggleSidebarCollapsed = () => setSidebarCollapsed((s) => !s);
+
+  // Auth / enrollment state
+  const [isAuthenticated, setAuthenticated] = useState(false);
+  const [enrollmentStatus, setEnrollmentStatus] = useState<"active" | "pending" | "rejected" | null>(null);
+  const [isEnrollmentLoading, setEnrollmentLoading] = useState(false);
+  const [isEnrolling, setEnrolling] = useState(false);
+
+  const isEnrolled = enrollmentStatus === "active";
+
   // Load course data
-  const { 
-    data: course, 
-    isLoading: courseLoading, 
-    error: courseError 
+  const {
+    data: course,
+    isLoading: courseLoading,
+    error: courseError,
   } = useCourseBySlug(courseSlug);
-  
-  // Set course data in the store when it loads
-  useEffect(() => {
-    if (course) {
-      setCourse(course);
-      setCourseSlug(courseSlug);
-    }
-  }, [course, courseSlug, setCourse, setCourseSlug]);
-  
-  // Determine if we're on a lesson page
-  const isLessonPage = pathname.includes('/lesson/');
-  const isAuthPage = pathname.includes('/auth');
-  
-  // Get the current lesson ID from the URL if we're on a lesson page
-  const currentLessonId = isLessonPage 
-    ? pathname.split('/lesson/')[1] 
-    : '';
-  
+
   // Check authentication status
   useEffect(() => {
     async function checkAuth() {
       try {
         const { data: session } = await authClient.getSession();
         setAuthenticated(!!session?.user);
-        setAuthChecked(true);
       } catch (error) {
-        console.error('Failed to check authentication status:', error);
+        console.error("Failed to check authentication status:", error);
         setAuthenticated(false);
-        setAuthChecked(true);
       }
     }
-    
+
     checkAuth();
-  }, [setAuthenticated, setAuthChecked]);
-  
+  }, []);
+
   // Check enrollment status when authenticated
   useEffect(() => {
     async function checkEnrollment() {
@@ -95,51 +67,55 @@ export default function CourseLayout({ children, params }: CourseLayoutProps) {
         setEnrollmentLoading(false);
         return;
       }
-      
+
       try {
         setEnrollmentLoading(true);
-        const response = await axios.get(`/api/courses/enrollment?slug=${courseSlug}`);
-        
+        const response = await axios.get(
+          `/api/courses/enrollment?slug=${courseSlug}`,
+        );
+
         if (response.data.isEnrolled && response.data.enrollment) {
           setEnrollmentStatus(response.data.enrollment.status);
         } else {
           setEnrollmentStatus(null);
         }
       } catch (error) {
-        console.error('Failed to check enrollment status:', error);
+        console.error("Failed to check enrollment status:", error);
         setEnrollmentStatus(null);
       } finally {
         setEnrollmentLoading(false);
       }
     }
-    
+
     checkEnrollment();
-  }, [isAuthenticated, courseSlug, setEnrollmentStatus, setEnrollmentLoading]);
-  
+  }, [isAuthenticated, courseSlug]);
+
   // Enroll in the course
   const handleEnroll = async () => {
     if (isEnrolling) return;
-    
+
     if (!isAuthenticated) {
       router.push(`/viewer/${courseSlug}/auth`);
       return;
     }
-    
+
     try {
       setEnrolling(true);
-      const response = await axios.post('/api/courses/enrollment', { courseSlug });
-      
+      const response = await axios.post("/api/courses/enrollment", {
+        courseSlug,
+      });
+
       // Set the enrollment status from the response
       if (response.data.enrollment) {
         setEnrollmentStatus(response.data.enrollment.status);
       }
     } catch (error) {
-      console.error('Failed to enroll in course:', error);
+      console.error("Failed to enroll in course:", error);
     } finally {
       setEnrolling(false);
     }
   };
-  
+
   // If user is not enrolled and trying to access a restricted page (like a lesson), redirect
   useEffect(() => {
     // Redirect only if:
@@ -147,15 +123,22 @@ export default function CourseLayout({ children, params }: CourseLayoutProps) {
     // 2. Not on auth page
     // 3. Trying to access a lesson page
     // 4. Course data has loaded and enrollment status has been checked
-    if (((!isEnrolled || enrollmentStatus === 'pending' || enrollmentStatus === 'rejected') && 
-        !isAuthPage && 
-        isLessonPage && 
-        !courseLoading && 
-        !isEnrollmentLoading)) {
+    if (
+      !isEnrolled &&
+      !pathname.includes("/auth") &&
+      pathname.includes("/lesson/") &&
+      !courseLoading &&
+      !isEnrollmentLoading
+    ) {
       // Redirect to the ROOT URL of the subdomain, not the internal viewer path
-      window.location.href = '/';
+      window.location.href = "/";
     }
-  }, [isEnrolled, enrollmentStatus, isAuthPage, isLessonPage, courseLoading, isEnrollmentLoading]);
+  }, [
+    isEnrolled,
+    pathname,
+    courseLoading,
+    isEnrollmentLoading,
+  ]);
 
   // Loading state
   if (courseLoading || isEnrollmentLoading) {
@@ -165,11 +148,11 @@ export default function CourseLayout({ children, params }: CourseLayoutProps) {
   // Error state
   if (courseError || !course) {
     return (
-      <ErrorState 
+      <ErrorState
         title="Course Not Found"
         message="This course does not exist or is currently unavailable."
         buttonText="Back to Homepage"
-        buttonAction={() => router.push('/')}
+        buttonAction={() => router.push("/")}
       />
     );
   }
@@ -179,37 +162,45 @@ export default function CourseLayout({ children, params }: CourseLayoutProps) {
     <div className="flex flex-col lg:flex-row h-screen overflow-hidden bg-slate-50">
       {/* Mobile header with menu toggle */}
       <div className="lg:hidden p-4 border-b border-slate-200 bg-white flex items-center justify-between">
-        <h1 className="text-lg font-medium text-slate-900 truncate">{course.title}</h1>
-        <button 
+        <h1 className="text-lg font-medium text-slate-900 truncate">
+          {course.title}
+        </h1>
+        <button
           onClick={toggleMobileSidebar}
           className="p-2 text-slate-600 hover:text-emerald-600"
         >
-          {isMobileSidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          {isMobileSidebarOpen ? (
+            <X className="h-5 w-5" />
+          ) : (
+            <Menu className="h-5 w-5" />
+          )}
         </button>
       </div>
-      
+
       {/* Layout container with sidebar and content */}
       <div className="flex flex-1 h-full overflow-hidden">
         {/* Sidebar container */}
         <div className="relative flex flex-col lg:flex-row">
           {/* Sidebar component */}
-          <div className={`
-            ${isMobileSidebarOpen ? 'block' : 'hidden'} 
+          <div
+            className={`
+            ${isMobileSidebarOpen ? "block" : "hidden"}
             lg:flex
-            fixed lg:static 
-            inset-0 lg:inset-auto 
+            fixed lg:static
+            inset-0 lg:inset-auto
             z-10 lg:z-0
-            w-full 
+            w-full
             h-screen
             lg:h-full
             bg-white
             lg:border-r lg:border-slate-200
             transition-all duration-300 ease-in-out
-            ${isSidebarCollapsed ? 'lg:w-16' : 'lg:w-80'}
-          `}>
-            <CourseSidebar 
+            ${isSidebarCollapsed ? "lg:w-16" : "lg:w-80"}
+          `}
+          >
+            <CourseSidebar
               course={course}
-              currentLessonId={currentLessonId}
+              currentLessonId={pathname.split("/lesson/")[1]}
               courseSlug={courseSlug}
               isAuthenticated={isAuthenticated}
               isEnrolled={isEnrolled}
@@ -221,7 +212,7 @@ export default function CourseLayout({ children, params }: CourseLayoutProps) {
             />
           </div>
         </div>
-        
+
         {/* Main content - scrollable independently */}
         <div className="flex-1 h-full overflow-y-auto w-full min-w-0">
           {children}
@@ -229,4 +220,4 @@ export default function CourseLayout({ children, params }: CourseLayoutProps) {
       </div>
     </div>
   );
-} 
+}

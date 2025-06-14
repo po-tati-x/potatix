@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Bot, User, Copy, Check } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, type Variants } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { type Message } from 'ai';
@@ -29,15 +29,37 @@ export const MessageBubble = ({ message, lessonId, onCopy }: MessageProps) => {
   
   const MarkdownComponents = createMarkdownComponents(handleJumpToTimestamp);
 
+  // Animation variants for smoother entry/exit
+  const bubbleVariants: Variants = {
+    hidden: {
+      opacity: 0,
+      y: isUser ? 10 : 10,
+      scale: 0.97,
+    },
+    visible: {
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      transition: { type: 'spring', stiffness: 300, damping: 24 } as const,
+    },
+    exit: {
+      opacity: 0,
+      scale: 0.95,
+      transition: { duration: 0.15 },
+    },
+  };
+
   return (
-    <motion.div 
+    <motion.div
+      layout
+      variants={bubbleVariants}
+      initial="hidden"
+      animate="visible"
+      exit="exit"
       className={`flex ${isUser ? 'justify-end' : 'justify-start'} group`}
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2 }}
     >
       <div className={`max-w-[85%] rounded-lg p-3 ${
-        isUser ? 'bg-emerald-500 text-white' : 'bg-white shadow-sm border border-slate-200 text-slate-700'
+        isUser ? 'bg-emerald-500 text-white' : 'bg-white border border-slate-200 text-slate-700'
       }`}>
         <div className="flex items-center justify-between mb-1.5">
           <div className={`flex items-center text-xs ${isUser ? 'text-emerald-50' : 'text-slate-500'}`}>

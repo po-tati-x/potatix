@@ -104,19 +104,29 @@ export function createMarkdownComponents(handleJumpToTimestamp: (timeStr: string
         <code {...props} className="block bg-slate-100 text-slate-800 p-2 rounded text-xs overflow-x-auto my-2">{children}</code>
     ),
 
-    // Custom styling for strong/bold text
-    strong: ({ children, ...props }: MarkdownComponentProps) => (
-      <strong {...props} className="font-semibold">{children}</strong>
-    ),
+    // Custom styling for strong/bold text, preserves bold but makes timestamps clickable
+    strong: ({ children, ...props }: MarkdownComponentProps) => {
+      const text = children?.toString() || '';
+      if (text.match(/\[\d+:\d+\]/)) {
+        return renderWithTimestamps(text, handleJumpToTimestamp, 'strong', 'font-semibold');
+      }
+      return <strong {...props} className="font-semibold">{children}</strong>;
+    },
     
-    // Phase/Step highlighting
+    // Custom styling for em/italic text
     em: ({ children, ...props }: MarkdownComponentProps) => {
       const text = children?.toString() || '';
-      
+
+      // Phase/Step highlighting
       if (text.match(/^(Phase|Step|Section) \d+:/i)) {
         return <em {...props} className="block font-semibold text-emerald-700 mt-2 mb-1 not-italic">{children}</em>;
       }
-      
+
+      // Make timestamps inside italics clickable as well
+      if (text.match(/\[\d+:\d+\]/)) {
+        return renderWithTimestamps(text, handleJumpToTimestamp, 'em');
+      }
+
       return <em {...props}>{children}</em>;
     },
   };

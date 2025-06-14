@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 
 export const LoadingIndicator = () => (
   <motion.div 
-    className="flex items-center text-sm text-slate-500 bg-white p-2 rounded-lg shadow-sm border border-slate-200"
+    className="flex items-center text-sm text-slate-500 bg-white p-2 rounded-lg border border-slate-200"
     initial={{ opacity: 0 }}
     animate={{ opacity: 1 }}
     transition={{ duration: 0.3 }}

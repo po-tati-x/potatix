@@ -1,6 +1,6 @@
 'use client';
 
-import { Lesson } from '@/lib/types/api';
+import { Lesson } from '@/lib/shared/types/courses';
 import { Lock, Play, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';

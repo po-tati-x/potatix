@@ -2,19 +2,19 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { ChevronDown, ChevronUp, Play, Clock, RefreshCw } from 'lucide-react';
-import { cn } from '@/lib/utils/cn';
-import { useVideoStore } from '@/lib/stores/video-player';
-import { useVideoChapters } from '@/lib/api/transcript';
-import { useLesson } from '@/lib/api/courses/lesson-hooks';
-import { VideoEventType, videoEventBus } from '@/lib/events/video-event-bus';
+import { cn } from '@/lib/shared/utils/cn';
+import { useVideoStore } from './video-context';
+import { VideoEventType, videoEventBus } from '@/lib/shared/utils/video-event-bus';
+
+interface Chapter { id: string; title: string; timestamp: number }
 
 interface VideoChaptersProps {
   lessonId: string;
   videoId: string;
-  courseId: string;
+  courseId?: string; // reserved
 }
 
-export function VideoChapters({ lessonId, videoId, courseId }: VideoChaptersProps) {
+export function VideoChapters({ lessonId, videoId }: VideoChaptersProps) {
   const [isExpanded, setIsExpanded] = useState(true);
   
   // Get video store state and actions
@@ -27,35 +27,46 @@ export function VideoChapters({ lessonId, videoId, courseId }: VideoChaptersProp
     seekTo
   } = useVideoStore();
   
-  // First fetch the lesson data to check if we have cached transcript data
-  const {
-    data: lessonData,
-    isLoading: isLoadingLesson,
-    error: lessonError
-  } = useLesson(courseId, lessonId);
-  
-  // Fetch chapters from API if needed
-  const { 
-    data: chaptersData,
-    isLoading: isLoadingChapters,
-    error: chaptersError,
-    refetch: refetchChapters
-  } = useVideoChapters(videoId, lessonId);
+  // Local fetch state for chapters
+  const [chaptersData, setChaptersData] = useState<{ chapters: Chapter[] } | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Use the cached data from the lesson if available, otherwise use the API data
-  const isLoading = isLoadingLesson || (!lessonData?.transcriptData && isLoadingChapters);
-  const error = !lessonData?.transcriptData ? chaptersError : lessonError;
+  const fetchChapters = useCallback(async () => {
+    if (!videoId) return;
+    try {
+      setIsLoading(true);
+      const res = await fetch(`/api/ai/transcript?playbackId=${videoId}&lessonId=${lessonId}`);
+      const json = await res.json();
+      if (res.ok) {
+        setChaptersData(json);
+      } else {
+        setError(json.error || 'Failed to load chapters');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load chapters');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [videoId, lessonId]);
+
+  // Fetch on mount / change
+  useEffect(() => {
+    fetchChapters();
+  }, [fetchChapters]);
+
+  const refetchChapters = fetchChapters;
   
   // Update chapters in store when data is available
   useEffect(() => {
     // Check if we have chapters from either source
-    const chaptersToUse = lessonData?.transcriptData?.chapters || chaptersData?.chapters;
+    const chaptersToUse = chaptersData?.chapters;
     
     // Only update if we have chapters and they're different from what's in the store
     if (chaptersToUse?.length && JSON.stringify(chaptersToUse) !== JSON.stringify(chapters)) {
       setChapters(chaptersToUse);
     }
-  }, [lessonData, chaptersData, chapters, setChapters]);
+  }, [chaptersData, chapters, setChapters]);
   
   // Manual update for active chapter based on current time
   useEffect(() => {
@@ -82,7 +93,6 @@ export function VideoChapters({ lessonId, videoId, courseId }: VideoChaptersProp
   
   // Handle jump to timestamp
   const handleJumpTo = useCallback((timestamp: number, chapterId: string): void => {
-    // Call the Zustand store method directly
     seekTo(timestamp);
     
     // Set active chapter ID directly for immediate UI update

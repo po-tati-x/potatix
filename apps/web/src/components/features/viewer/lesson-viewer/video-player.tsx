@@ -3,8 +3,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import Player from 'next-video/player';
 import { Lock, AlertTriangle, RotateCcw } from 'lucide-react';
-import { useVideoStore } from '@/lib/stores/video-player';
-import { VideoEventType, videoEventBus } from '@/lib/events/video-event-bus';
+import { useVideoStore } from './video-context';
+import { VideoEventType, videoEventBus } from '@/lib/shared/utils/video-event-bus';
 
 interface VideoPlayerProps {
   videoId: string | null | undefined;
