@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { BookOpen, ExternalLink, BookText, Clock } from 'lucide-react';
-import { Course } from '@/lib/types/api';
+import { Course } from '@/lib/shared/types/courses';
+import { formatMonthDay } from '@/lib/shared/utils/format';
 
 interface CourseCardProps {
   course: Course;
@@ -83,10 +84,7 @@ export function CourseCard({ course }: CourseCardProps) {
               <div className="flex items-center text-xs text-slate-500">
                 <Clock className="h-3.5 w-3.5 mr-1.5" />
                 <span>
-                  {course.updatedAt ? new Date(course.updatedAt).toLocaleDateString(undefined, { 
-                    month: 'short', 
-                    day: 'numeric' 
-                  }) : 'Recently'}
+                  {course.updatedAt ? formatMonthDay(course.updatedAt) : 'Recently'}
                 </span>
               </div>
             </div>
