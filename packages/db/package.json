@@ -1,24 +1,51 @@
 {
   "name": "@potatix/db",
-  "version": "0.0.10",
   "private": true,
-  "main": "./db/index.ts",
-  "types": "./db/index.ts",
-  "scripts": {
-    "db:generate": "bunx drizzle-kit generate",
-    "db:push": "bunx drizzle-kit push",
-    "db:studio": "bunx drizzle-kit studio",
-    "db:migrate": "bunx drizzle-kit migrate",
-    "db:pull": "bunx drizzle-kit pull"
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "default": "./src/index.ts"
+    },
+    "./client": {
+      "types": "./dist/src/client.d.ts",
+      "default": "./src/client.ts"
+    },
+    "./schema": {
+      "types": "./dist/src/schema.d.ts",
+      "default": "./src/schema.ts"
+    }
   },
+  "scripts": {
+    "build": "tsc --build",
+    "clean": "git clean -xdf .cache .turbo dist node_modules",
+    "dev": "tsc --build tsconfig.package.json",
+    "env:copy-example": "shx -- cp -n .env.example .env",
+    "env:remove": "shx -- rm -f .env",
+    "env:run": "dotenv --",
+    "format": "prettier --check . --ignore-path ../../.gitignore",
+    "lint": "eslint",
+    "push": "pnpm env:run drizzle-kit push",
+    "studio": "pnpm env:run drizzle-kit studio",
+    "typecheck": "tsc --build --noEmit --emitDeclarationOnly false"
+  },
+  "prettier": "@potatix/prettier-config",
   "dependencies": {
-    "drizzle-orm": "^0.43.1",
-    "pg": "^8.15.6",
-    "postgres": "^3.4.5"
+    "drizzle-orm": "^0.44.2",
+    "drizzle-valibot": "^0.4.2",
+    "pg": "^8.16.0",
+    "valibot": "^1.1.0"
   },
   "devDependencies": {
-    "@types/pg": "^8.15.1",
+    "@potatix/eslint-config": "workspace:*",
+    "@potatix/prettier-config": "workspace:*",
+    "@potatix/typescript-config": "workspace:*",
+    "@types/node": "^24.0.1",
+    "@types/pg": "^8.15.4",
+    "dotenv-cli": "^8.0.0",
     "drizzle-kit": "^0.31.1",
-    "typescript": "^5"
+    "eslint": "^9.28.0",
+    "shx": "^0.4.0",
+    "typescript": "^5.8.3"
   }
 }
