@@ -5,7 +5,7 @@ import { headers } from "next/headers";
 import type { Course } from "@/lib/shared/types/courses";
 
 // Central application origin (proto + host + optional port)
-const APP_ORIGIN = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? "http://potatix.ocom";
+const APP_ORIGIN = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? "https://potatix.com";
 
 // Server-side component – fetch course once, hand straight to the client UI
 export default async function CourseViewerPage({ params }: { params: Promise<{ slug: string }> }) {

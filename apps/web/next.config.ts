@@ -64,7 +64,7 @@ const nextConfig: NextConfig = {
   // Webpack config for monorepo packages
   transpilePackages: ['@potatix/ui', '@potatix/db', '@potatix/auth'],
   // This is required for subdomain routing in development
-  allowedDevOrigins: ['potatix..com', '*.potatix.com'],
+  allowedDevOrigins: ['potatix.com', '*.potatix.com'],
 };
 
 export default nextConfig;
