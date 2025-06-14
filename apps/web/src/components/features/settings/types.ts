@@ -1,11 +1,16 @@
-import { UserProfile } from "@/lib/types/profile";
+import { UserProfile } from "@/lib/shared/types/profile";
 
 /**
  * Props for ProfileSection component
  */
 export type ProfileSectionProps = {
   userData: UserProfile;
+  /**
+   * Callback invoked when user uploads or deletes a profile image.
+   * If `null` is passed, the image should be removed.
+   */
   onImageUpdate: (file: File | null) => void;
+  /** Indicates whether the profile image is being uploaded */
   loading: boolean;
 };
 
