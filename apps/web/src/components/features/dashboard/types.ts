@@ -1,4 +1,4 @@
-// Dashboard types
+// Dashboard types with proper TypeScript interfaces
 
 export interface CourseData {
   id: string;
@@ -45,4 +45,30 @@ export interface UserCardProps {
   memberSince: string;
   onEditProfile: () => void;
   onSignOut: () => void;
+}
+
+export interface CourseProgressData {
+  id: string;
+  title: string;
+  activeStudents: number;
+  completionRate: number;
+  avgEngagement: number;
+  bottleneckLesson: string;
+  dropoffRate: number;
+}
+
+export interface RevenueData {
+  totalRevenue: number;
+  momRevenueChange: number;
+  avgRevenuePerStudent: number;
+  avgCourseValue: number;
+  monthlyRecurringRevenue: number;
+  topPerformingCourses: TopPerformingCourse[];
+}
+
+export interface TopPerformingCourse {
+  id: string;
+  title: string;
+  revenue: number;
+  growth: number;
 } 
