@@ -1,50 +1,50 @@
 import { NextRequest, NextResponse } from "next/server";
 import { nanoid } from "nanoid";
-import { auth } from "@/lib/auth/auth";
-import {
-  uploadFile,
-  deleteFile,
-  extractKeyFromUrl,
-} from "@/lib/utils/r2-client";
+import { apiAuth, createErrorResponse, AuthResult } from "@/lib/auth/api-auth";
+import { uploadFile, deleteFile, extractKeyFromUrl } from "@/lib/server/utils/r2-client";
 import { db, authSchema } from "@potatix/db";
 import { eq } from "drizzle-orm";
+
+// Type guard to check if auth result has userId
+function hasUserId(auth: AuthResult): auth is { userId: string } {
+  return 'userId' in auth && typeof auth.userId === 'string';
+}
 
 // Max file size 5MB
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
+/**
+ * POST /api/user/profile/image
+ * Upload profile image
+ */
 export async function POST(request: NextRequest) {
+  // Authenticate user
+  const auth = await apiAuth(request);
+  if (!hasUserId(auth)) {
+    return createErrorResponse(auth.error, auth.status);
+  }
+  
+  if (!db) {
+    return createErrorResponse("Database not initialized", 500);
+  }
+  
   try {
-    // Get the current session
-    const session = await auth.api.getSession({
-      headers: request.headers,
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     // Get form data with the file
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
 
     if (!file) {
-      return NextResponse.json({ error: "No file provided" }, { status: 400 });
+      return createErrorResponse("No file provided", 400);
     }
 
     // Validate file size
     if (file.size > MAX_FILE_SIZE) {
-      return NextResponse.json(
-        { error: "File too large (max 5MB)" },
-        { status: 400 },
-      );
+      return createErrorResponse("File too large (max 5MB)", 400);
     }
 
     // Validate file type
     if (!file.type.startsWith("image/")) {
-      return NextResponse.json(
-        { error: "Only image files are allowed" },
-        { status: 400 },
-      );
+      return createErrorResponse("Only image files are allowed", 400);
     }
 
     // Get file extension
@@ -52,14 +52,11 @@ export async function POST(request: NextRequest) {
     const allowedExtensions = ["jpg", "jpeg", "png", "gif", "webp"];
 
     if (!allowedExtensions.includes(fileExtension)) {
-      return NextResponse.json(
-        { error: "Invalid file format" },
-        { status: 400 },
-      );
+      return createErrorResponse("Invalid file format", 400);
     }
 
     // Generate a unique filename
-    const fileName = `profile/${session.user.id}/${nanoid()}.${fileExtension}`;
+    const fileName = `profile/${auth.userId}/${nanoid()}.${fileExtension}`;
 
     // Convert file to buffer
     const buffer = Buffer.from(await file.arrayBuffer());
@@ -68,11 +65,11 @@ export async function POST(request: NextRequest) {
     const users = await db
       .select()
       .from(authSchema.user)
-      .where(eq(authSchema.user.id, session.user.id))
+      .where(eq(authSchema.user.id, auth.userId))
       .limit(1);
 
     if (!users.length) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+      return createErrorResponse("User not found", 404);
     }
 
     const userData = users[0];
@@ -100,7 +97,7 @@ export async function POST(request: NextRequest) {
         image: imageUrl,
         updatedAt: new Date(),
       })
-      .where(eq(authSchema.user.id, session.user.id));
+      .where(eq(authSchema.user.id, auth.userId));
 
     // Return success response with the image URL
     return NextResponse.json({
@@ -109,34 +106,35 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Error uploading profile image:", error);
-    return NextResponse.json(
-      { error: "Failed to upload profile image" },
-      { status: 500 },
-    );
+    return createErrorResponse("Failed to upload profile image", 500);
   }
 }
 
-// DELETE endpoint to remove profile picture
+/**
+ * DELETE /api/user/profile/image
+ * Delete profile image
+ */
 export async function DELETE(request: NextRequest) {
+  // Authenticate user
+  const auth = await apiAuth(request);
+  if (!hasUserId(auth)) {
+    return createErrorResponse(auth.error, auth.status);
+  }
+  
+  if (!db) {
+    return createErrorResponse("Database not initialized", 500);
+  }
+  
   try {
-    // Get the current session
-    const session = await auth.api.getSession({
-      headers: request.headers,
-    });
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     // Get the user to check if they have a profile image
     const users = await db
       .select()
       .from(authSchema.user)
-      .where(eq(authSchema.user.id, session.user.id))
+      .where(eq(authSchema.user.id, auth.userId))
       .limit(1);
 
     if (!users.length) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+      return createErrorResponse("User not found", 404);
     }
 
     const userData = users[0];
@@ -162,7 +160,7 @@ export async function DELETE(request: NextRequest) {
         image: null,
         updatedAt: new Date(),
       })
-      .where(eq(authSchema.user.id, session.user.id));
+      .where(eq(authSchema.user.id, auth.userId));
 
     // Return success response
     return NextResponse.json({
@@ -171,9 +169,6 @@ export async function DELETE(request: NextRequest) {
     });
   } catch (error) {
     console.error("Error deleting profile image:", error);
-    return NextResponse.json(
-      { error: "Failed to delete profile image" },
-      { status: 500 },
-    );
+    return createErrorResponse("Failed to delete profile image", 500);
   }
-}
+} 

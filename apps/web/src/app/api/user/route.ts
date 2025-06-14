@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { apiAuth, createErrorResponse, AuthResult } from "@/lib/auth/api-auth";
 import { userService } from "@/lib/server/services/user";
-import type { ApiResponse } from "@/lib/shared/types/api";
 
 // Type guard to check if auth result has userId
 function hasUserId(auth: AuthResult): auth is { userId: string } {
@@ -9,7 +8,7 @@ function hasUserId(auth: AuthResult): auth is { userId: string } {
 }
 
 /**
- * GET /api/user/profile
+ * GET /api/user
  * Get user profile
  */
 export async function GET(request: NextRequest) {
@@ -27,7 +26,7 @@ export async function GET(request: NextRequest) {
       return createErrorResponse("User profile not found", 404);
     }
     
-    return NextResponse.json({ data: profile, error: null } as ApiResponse<typeof profile>);
+    return NextResponse.json(profile);
   } catch (error) {
     console.error("[API] Failed to get user profile:", error);
     return createErrorResponse("Failed to fetch profile", 500);
@@ -35,7 +34,7 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * PATCH /api/user/profile
+ * PATCH /api/user
  * Update user profile
  */
 export async function PATCH(request: NextRequest) {
@@ -58,9 +57,31 @@ export async function PATCH(request: NextRequest) {
     // Update profile
     const updatedProfile = await userService.updateProfile(auth.userId, updateInput);
     
-    return NextResponse.json({ data: updatedProfile, error: null } as ApiResponse<typeof updatedProfile>);
+    return NextResponse.json(updatedProfile);
   } catch (error) {
     console.error("[API] Failed to update user profile:", error);
     return createErrorResponse("Failed to update profile", 500);
+  }
+}
+
+/**
+ * DELETE /api/user
+ * Delete user account
+ */
+export async function DELETE(request: NextRequest) {
+  // Authenticate user
+  const auth = await apiAuth(request);
+  if (!hasUserId(auth)) {
+    return createErrorResponse(auth.error, auth.status);
+  }
+  
+  try {
+    // Delete account
+    await userService.deleteAccount(auth.userId);
+    
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("[API] Failed to delete account:", error);
+    return createErrorResponse("Failed to delete account", 500);
   }
 } 
