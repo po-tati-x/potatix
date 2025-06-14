@@ -1,0 +1,22 @@
+{
+  "name": "@potatix/prettier-config",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./index.js"
+  },
+  "scripts": {
+    "clean": "git clean -xdf .cache .turbo node_modules",
+    "format": "prettier --check . --ignore-path ../../.gitignore",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "prettier": "^3.5.3"
+  },
+  "devDependencies": {
+    "@potatix/typescript-config": "workspace:*",
+    "typescript": "^5.8.3"
+  },
+  "prettier": "@potatix/prettier-config"
+}
