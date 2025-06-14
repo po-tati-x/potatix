@@ -17,7 +17,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         <div className="absolute top-6 left-6">
           <Link href="/">
             <Image 
-              src="https://www.potatix.com/potatix-logo.svg" 
+              src="https://storage.potatix.com/potatix/images/potatix-logo.svg" 
               alt="Potatix Logo" 
               width={100} 
               height={28} 
