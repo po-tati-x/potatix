@@ -1,47 +1,44 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useDashboardStore } from '@/lib/stores/dashboard';
 import { BarChart2, TrendingDown, AlertCircle, CheckSquare, BookOpen } from 'lucide-react';
-import { formatNumber } from '@/lib/utils/format';
+import { formatNumber } from '@/lib/shared/utils/format';
+import { useCourseProgressData } from '@/lib/client/hooks/use-dashboard-adapter';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export function CourseProgressTracking() {
-  const { 
-    courses, 
-    isCoursesLoading,
-    progressData,
-    isProgressLoading,
-    progressError,
-    fetchProgressData
-  } = useDashboardStore();
+  const { progressData, courses, isLoading, error } = useCourseProgressData();
 
-  // Fetch progress data when courses are loaded
-  useEffect(() => {
-    if (courses?.length && !progressData.length && !isProgressLoading) {
-      fetchProgressData();
-    }
-  }, [courses, progressData.length, isProgressLoading, fetchProgressData]);
-
-  // Loading state
-  if (isCoursesLoading || isProgressLoading) {
+  // Loading state with skeleton
+  if (isLoading) {
     return (
       <div className="border border-slate-200 rounded-md overflow-hidden bg-white">
         <div className="border-b border-slate-200 px-4 py-2.5 bg-slate-50">
           <div className="flex items-center gap-2">
             <BarChart2 className="h-4 w-4 text-slate-500" />
-            <h2 className="text-sm font-medium text-slate-900">Course Progress</h2>
+            <Skeleton className="h-5 w-36" />
           </div>
         </div>
-        <div className="p-4 flex flex-col items-center justify-center h-[300px]">
-          <div className="h-6 w-6 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin mb-3" />
-          <p className="text-sm text-slate-500">Loading progress metrics...</p>
+        <div className="p-4 space-y-4">
+          {[...Array(2)].map((_, i) => (
+            <div key={i} className="border border-slate-100 rounded-md p-4">
+              <div className="flex items-center justify-between mb-3">
+                <Skeleton className="h-5 w-48" />
+                <Skeleton className="h-4 w-24" />
+              </div>
+              <Skeleton className="h-2 w-full mb-3" />
+              <div className="grid grid-cols-2 gap-3">
+                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-16 w-full" />
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     );
   }
 
   // Error state
-  if (progressError) {
+  if (error) {
     return (
       <div className="border border-slate-200 rounded-md overflow-hidden bg-white">
         <div className="border-b border-slate-200 px-4 py-2.5 bg-slate-50">

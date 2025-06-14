@@ -1,47 +1,53 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useDashboardStore } from '@/lib/stores/dashboard';
 import { DollarSign, TrendingUp, TrendingDown, AlertCircle, BarChart3 } from 'lucide-react';
-import { formatCurrency } from '@/lib/utils/format';
+import { formatCurrency } from '@/lib/shared/utils/format';
+import { useRevenueInsightsData } from "@/lib/client/hooks/use-dashboard-adapter";
+import { Skeleton } from '@/components/ui/skeleton';
+import { TopPerformingCourse } from './types';
 
 export function RevenueInsightsPanel() {
-  const { 
-    courses, 
-    isCoursesLoading,
-    revenueData,
-    isRevenueLoading,
-    revenueError,
-    fetchRevenueData
-  } = useDashboardStore();
+  const { revenueData, courses, isLoading, error } = useRevenueInsightsData();
 
-  // Fetch revenue data when courses are loaded
-  useEffect(() => {
-    if (courses?.length && !revenueData && !isRevenueLoading) {
-      fetchRevenueData();
-    }
-  }, [courses, revenueData, isRevenueLoading, fetchRevenueData]);
-
-  // Loading state
-  if (isCoursesLoading || isRevenueLoading) {
+  // Loading state with skeleton
+  if (isLoading) {
     return (
       <div className="border border-slate-200 rounded-md overflow-hidden bg-white">
         <div className="border-b border-slate-200 px-4 py-2.5 bg-slate-50">
           <div className="flex items-center gap-2">
             <DollarSign className="h-4 w-4 text-slate-500" />
-            <h2 className="text-sm font-medium text-slate-900">Revenue Insights</h2>
+            <Skeleton className="h-5 w-36" />
           </div>
         </div>
-        <div className="p-4 flex flex-col items-center justify-center h-[240px]">
-          <div className="h-6 w-6 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin mb-3" />
-          <p className="text-sm text-slate-500">Loading revenue data...</p>
+        <div className="p-4 space-y-4">
+          <div>
+            <Skeleton className="h-4 w-24 mb-1" />
+            <Skeleton className="h-8 w-40 mb-1" />
+            <Skeleton className="h-5 w-48" />
+          </div>
+          <div className="grid grid-cols-3 gap-3 mb-4">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="p-3 rounded-md bg-slate-50">
+                <Skeleton className="h-4 w-16 mb-1" />
+                <Skeleton className="h-5 w-full" />
+              </div>
+            ))}
+          </div>
+          <div>
+            <Skeleton className="h-5 w-40 mb-2" />
+            <div className="space-y-2">
+              {[...Array(2)].map((_, i) => (
+                <Skeleton key={i} className="h-10 w-full" />
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
   // Error state
-  if (revenueError) {
+  if (error) {
     return (
       <div className="border border-slate-200 rounded-md overflow-hidden bg-white">
         <div className="border-b border-slate-200 px-4 py-2.5 bg-slate-50">
@@ -137,7 +143,7 @@ export function RevenueInsightsPanel() {
           </div>
           
           <div className="space-y-2">
-            {revenueData.topPerformingCourses.map(course => (
+            {revenueData.topPerformingCourses.map((course: TopPerformingCourse) => (
               <div key={course.id} className="flex items-center justify-between text-sm p-2 border border-slate-100 rounded-md">
                 <p className="text-xs font-medium text-slate-900 truncate flex-1">{course.title}</p>
                 <div className="flex items-center gap-3">
