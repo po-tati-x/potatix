@@ -1,9 +1,8 @@
 import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { ArrowLeft, Loader2, Save } from "lucide-react";
-import { Button } from "@/components/ui/potatix/Button";
+import { ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/new-button";
 import { StatusBadge } from "@/components/features/courses/status-badge";
-import { useCourse } from "@/lib/api/courses";
+import { useCourse } from "@/lib/client/hooks/use-courses";
 
 interface CourseHeaderProps {
   // Make courseId optional to support simple navigation
@@ -15,7 +14,7 @@ interface CourseHeaderProps {
   disabled?: boolean;
   isPending?: boolean;
   // Make the callbacks optional
-  onStatusChange?: (status: 'draft' | 'published' | 'archived') => void;
+  onStatusChange?: (status: "draft" | "published" | "archived") => void;
   onSave?: (e: React.FormEvent) => Promise<void> | void;
 }
 
@@ -24,22 +23,17 @@ export function CourseHeader({
   backHref = "/courses",
   title = "Edit Course",
   status,
-  loading = false,
-  disabled = false,
-  isPending = false,
   onStatusChange,
-  onSave,
 }: CourseHeaderProps) {
   const router = useRouter();
-  
+
   // The useCourse hook already has the enabled option built into it
   // Just pass an empty string when courseId is undefined
-  const { data: course } = useCourse(courseId || '');
-  
+  const { data: course } = useCourse(courseId || "");
+
   // Determine back button text
-  const backButtonText = courseId && course?.title 
-    ? `Back to ${course.title}`
-    : "Back to courses";
+  const backButtonText =
+    courseId && course?.title ? `Back to ${course.title}` : "Back to courses";
 
   return (
     <>
@@ -53,7 +47,9 @@ export function CourseHeader({
             </span>
           }
           className="text-slate-500 hover:text-slate-900 group"
-          onClick={() => router.push(courseId ? `/courses/${courseId}` : backHref)}
+          onClick={() =>
+            router.push(courseId ? `/courses/${courseId}` : backHref)
+          }
         >
           {backButtonText}
         </Button>
@@ -65,7 +61,7 @@ export function CourseHeader({
             <h1 className="text-xl font-medium text-slate-900">{title}</h1>
             {status && onStatusChange && (
               <StatusBadge
-                status={status as 'draft' | 'published' | 'archived'}
+                status={status as "draft" | "published" | "archived"}
                 onChange={onStatusChange}
               />
             )}
@@ -75,42 +71,8 @@ export function CourseHeader({
               </div>
             )}
           </div>
-
-          <div className="flex items-center gap-3">
-            {/* Show cancel button only if we have navigation targets */}
-            {(courseId || backHref) && (
-              <Button
-                type="outline"
-                size="small"
-                asChild
-              >
-                <Link href={courseId ? `/courses/${courseId}` : backHref}>Cancel</Link>
-              </Button>
-            )}
-            
-            {/* Only show save button if onSave is provided */}
-            {onSave && (
-              <div className="flex items-center gap-2">
-                {isPending && (
-                  <div className="text-amber-600 text-xs">
-                    <span className="inline-block w-2 h-2 rounded-full bg-amber-500 mr-1"></span>
-                    Uploads in progress
-                  </div>
-                )}
-                <Button
-                  type="primary"
-                  size="small"
-                  iconLeft={loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-                  onClick={onSave}
-                  disabled={loading || disabled}
-                >
-                  {loading ? "Saving..." : "Save Changes"}
-                </Button>
-              </div>
-            )}
-          </div>
         </div>
       </header>
     </>
   );
-} 
+}
