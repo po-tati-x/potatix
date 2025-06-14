@@ -1,5 +1,8 @@
-import { Bot } from 'lucide-react';
+'use client';
+
+import { Bot, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
 
 interface ChatPromptProps {
   prompt: string;
@@ -9,12 +12,15 @@ interface ChatPromptProps {
 interface EmptyStateProps {
   setInput: (value: string) => void;
   focusInput: () => void;
+  lessonId: string;
+  courseId: string;
+  lessonTitle: string;
 }
 
 // Simple chat prompt button
 const ChatPrompt = ({ prompt, onClick }: ChatPromptProps) => (
   <motion.button
-    className="text-left px-3 py-2 bg-white border border-slate-200 rounded-md hover:bg-slate-50 shadow-sm text-xs"
+    className="text-left px-3 py-2 bg-white border border-slate-200 rounded-md hover:bg-slate-50 text-xs"
     onClick={() => onClick(prompt)}
     whileHover={{ y: -2, scale: 1.02 }}
     transition={{ type: "spring", stiffness: 400, damping: 10 }}
@@ -23,19 +29,44 @@ const ChatPrompt = ({ prompt, onClick }: ChatPromptProps) => (
   </motion.button>
 );
 
-export const EmptyState = ({ setInput, focusInput }: EmptyStateProps) => {
+export const EmptyState = ({ setInput, focusInput, lessonId, courseId, lessonTitle }: EmptyStateProps) => {
+  const [prompts, setPrompts] = useState<string[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  // Fetch AI-generated prompts once
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const resp = await fetch('/api/chat/lesson/prompts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ lessonId, courseId, lessonTitle }),
+        });
+
+        if (resp.ok) {
+          const data = await resp.json();
+          if (!cancelled) setPrompts(data.prompts as string[]);
+        }
+      } catch {}
+      if (!cancelled) setLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, [lessonId, courseId, lessonTitle]);
+
   const handlePromptClick = (prompt: string) => {
     setInput(prompt);
     focusInput();
   };
 
-  const prompts = [
-    "Explain this lesson in simple terms",
-    "Summarize the key points of this lesson",
-    "What are practical applications of this?",
-    "Give me code examples from this lesson",
-    "What should I focus on in this lesson?"
+  const fallbackPrompts = [
+    'Explain this lesson in simple terms',
+    'Summarize the key points of this lesson',
+    'What are practical applications of this?',
+    'Give me code examples from this lesson',
+    'What should I focus on in this lesson?',
   ];
+  const displayPrompts = prompts.length > 0 ? prompts : fallbackPrompts;
 
   return (
     <div className="flex flex-col items-center justify-center h-full p-4 select-none">
@@ -72,13 +103,13 @@ export const EmptyState = ({ setInput, focusInput }: EmptyStateProps) => {
         animate={{ opacity: 1 }}
         transition={{ delay: 0.3 }}
       >
-        {prompts.map((prompt) => (
-          <ChatPrompt 
-            key={prompt} 
-            prompt={prompt} 
-            onClick={handlePromptClick}
-          />
-        ))}
+        {loading ? (
+          <div className="flex justify-center py-4"><Loader2 className="h-4 w-4 animate-spin text-slate-400" /></div>
+        ) : (
+          displayPrompts.map((prompt) => (
+            <ChatPrompt key={prompt} prompt={prompt} onClick={handlePromptClick} />
+          ))
+        )}
       </motion.div>
     </div>
   );

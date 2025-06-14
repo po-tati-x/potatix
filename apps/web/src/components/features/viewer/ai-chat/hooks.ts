@@ -1,5 +1,5 @@
 import { useCallback, useState, useEffect } from 'react';
-import { VideoEventType, videoEventBus } from '@/lib/events/video-event-bus';
+import { VideoEventType, videoEventBus } from '@/lib/shared/utils/video-event-bus';
 
 /**
  * Hook to handle jumping to video timestamps

@@ -2,7 +2,8 @@
 
 import { memo, useRef, useEffect } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
-import { useChatWithLesson } from '@/lib/api/chat';
+import { useChatWithLesson } from '@/lib/client/api/chat';
+import { AnimatePresence, LayoutGroup } from 'framer-motion';
 
 // Import custom hooks
 import { useMessageInteractions, useInputResizing } from './hooks';
@@ -18,12 +19,13 @@ interface AIChatPanelProps {
   lessonId: string;
   courseId: string;
   lessonTitle: string;
+  onHideChat?: () => void;
 }
 
 /**
  * Main chat panel component
  */
-function AIChatPanel({ lessonId, courseId, lessonTitle }: AIChatPanelProps) {
+function AIChatPanel({ lessonId, courseId, lessonTitle, onHideChat }: AIChatPanelProps) {
   // Use our custom hooks
   const { 
     messages, 
@@ -82,6 +84,7 @@ function AIChatPanel({ lessonId, courseId, lessonTitle }: AIChatPanelProps) {
         messageCount={messages.length}
         isCopied={isCopied}
         onClearChat={handleClearChat}
+        onHideChat={onHideChat}
       />
       
       {/* Messages */}
@@ -90,18 +93,26 @@ function AIChatPanel({ lessonId, courseId, lessonTitle }: AIChatPanelProps) {
         className="flex-1 overflow-y-auto scrollbar-hide p-4 space-y-4 bg-slate-50"
       >
         {messages.length === 0 ? (
-          <EmptyState setInput={setInput} focusInput={focusInput} />
+          <EmptyState 
+            setInput={setInput} 
+            focusInput={focusInput}
+            lessonId={lessonId}
+            courseId={courseId}
+            lessonTitle={lessonTitle}
+          />
         ) : (
-          <>
-            {messages.map(message => (
-              <MessageBubble 
-                key={message.id} 
-                message={message} 
-                lessonId={lessonId}
-                onCopy={handleCopy} 
-              />
-            ))}
-          </>
+          <LayoutGroup>
+            <AnimatePresence initial={false}>
+              {messages.map(message => (
+                <MessageBubble 
+                  key={message.id} 
+                  message={message} 
+                  lessonId={lessonId}
+                  onCopy={handleCopy} 
+                />
+              ))}
+            </AnimatePresence>
+          </LayoutGroup>
         )}
         
         {isLoading && <LoadingIndicator />}

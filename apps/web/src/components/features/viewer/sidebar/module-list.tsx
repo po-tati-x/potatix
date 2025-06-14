@@ -1,8 +1,7 @@
 'use client';
 
-import { Course, Lesson } from '@/lib/types/api';
+import { Course, Lesson, CourseModule } from '@/lib/shared/types/courses';
 import { useMemo } from 'react';
-import { useViewerStore } from '@/lib/stores/viewer';
 import LessonItem from './lesson-item';
 
 // Defined types with consistent naming
@@ -26,21 +25,21 @@ interface ModuleListProps {
   currentLessonId: string;
   isCollapsed?: boolean;
   isLocked?: boolean;
+  completedLessons?: string[];
 }
 
 export default function ModuleList({
   course,
   currentLessonId,
   isCollapsed = false,
-  isLocked = false
+  isLocked = false,
+  completedLessons = []
 }: ModuleListProps) {
-  const { completedLessons } = useViewerStore();
-  
   // Transform lessons only once with completion status
   const enhancedLessons = useMemo(() => {
     if (!course.lessons) return [];
     
-    return course.lessons.map(lesson => ({
+    return course.lessons.map((lesson: Lesson) => ({
       ...lesson,
       completed: completedLessons.includes(lesson.id)
     }));
@@ -49,7 +48,7 @@ export default function ModuleList({
   // Generate module data only when dependencies change
   const moduleData = useMemo(() => {
     if (course.modules?.length) {
-      return course.modules.map(module => ({
+      return course.modules.map((module: CourseModule) => ({
         ...module,
         lessons: enhancedLessons.filter(lesson => lesson.moduleId === module.id)
       })) as UIModule[];
@@ -74,7 +73,7 @@ export default function ModuleList({
 
   // Filter available lessons only once per module
   const getAvailableLessons = (lessons: UILesson[] = []) => {
-    return lessons.filter(lesson => !isLocked && lesson.videoId);
+    return lessons.filter((lesson: UILesson) => !isLocked && (lesson as UILesson).videoId);
   };
   
   // Render module with its lessons

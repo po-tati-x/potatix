@@ -1,93 +1,118 @@
-'use client';
+"use client";
 
-import { BookOpen, Calendar, Users, Play, ChevronRight, Lock, Clock, CheckCircle, ArrowRight, Star, Code, BarChart2, GraduationCap, X } from 'lucide-react';
-import Image from 'next/image';
-import { Course, Lesson } from '@/lib/types/api';
-import Link from 'next/link';
-import { Button } from '@/components/ui/potatix/Button';
+import {
+  BookOpen,
+  Calendar,
+  Users,
+  Play,
+  ChevronRight,
+  Lock,
+  Clock,
+  CheckCircle,
+  ArrowRight,
+  Star,
+  Code,
+  BarChart2,
+  GraduationCap,
+  X,
+} from "lucide-react";
+import Image from "next/image";
+import { Course, Lesson } from "@/lib/shared/types/courses";
+import Link from "next/link";
+import { Button } from "@/components/ui/new-button";
 
 interface CourseOverviewProps {
   course: Course;
   unlockedLessonsCount: number;
   totalLessonsCount: number;
   courseSlug: string;
-  enrollmentStatus?: 'active' | 'pending' | 'rejected' | null;
+  enrollmentStatus?: "active" | "pending" | "rejected" | null;
 }
 
-export default function CourseOverview({ 
-  course, 
-  unlockedLessonsCount, 
-  totalLessonsCount, 
+export default function CourseOverview({
+  course,
+  unlockedLessonsCount,
+  totalLessonsCount,
   courseSlug,
-  enrollmentStatus
+  enrollmentStatus,
 }: CourseOverviewProps) {
   // Mock data for additional content sections
   const instructorData = {
     name: "Sarah Johnson",
     role: "Senior Developer & Instructor",
     bio: "10+ years experience in web development. Former lead engineer at Netflix.",
-    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=120&h=120&auto=format&fit=crop",
+    avatar:
+      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=120&h=120&auto=format&fit=crop",
     courses: 12,
-    students: 8750
+    students: 8750,
   };
-  
+
   const skills = [
-    "JavaScript Fundamentals", 
-    "React State Management", 
-    "API Integration", 
+    "JavaScript Fundamentals",
+    "React State Management",
+    "API Integration",
     "Component Architecture",
-    "Performance Optimization"
+    "Performance Optimization",
   ];
-  
+
   const reviews = [
     {
       id: 1,
       name: "Alex Thompson",
-      avatar: "https://images.unsplash.com/photo-1599566150163-29194dcaad36?q=80&w=40&h=40&auto=format&fit=crop",
+      avatar:
+        "https://images.unsplash.com/photo-1599566150163-29194dcaad36?q=80&w=40&h=40&auto=format&fit=crop",
       rating: 5,
       date: "2 weeks ago",
-      comment: "This course completely changed how I approach frontend development. Clear explanations and practical examples."
+      comment:
+        "This course completely changed how I approach frontend development. Clear explanations and practical examples.",
     },
     {
       id: 2,
       name: "Maya Peterson",
-      avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=40&h=40&auto=format&fit=crop",
+      avatar:
+        "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=40&h=40&auto=format&fit=crop",
       rating: 4,
       date: "1 month ago",
-      comment: "Great content overall. Some sections could have been more detailed, but I learned a lot of useful techniques."
-    }
+      comment:
+        "Great content overall. Some sections could have been more detailed, but I learned a lot of useful techniques.",
+    },
   ];
-  
+
   const relatedCourses = [
     {
       id: "adv-js",
       title: "Advanced JavaScript Patterns",
       instructor: "Sarah Johnson",
       students: 1245,
-      imageUrl: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?q=80&w=120&h=80&auto=format&fit=crop"
+      imageUrl:
+        "https://images.unsplash.com/photo-1555066931-4365d14bab8c?q=80&w=120&h=80&auto=format&fit=crop",
     },
     {
       id: "react-perf",
       title: "React Performance Optimization",
       instructor: "Michael Chen",
       students: 879,
-      imageUrl: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?q=80&w=120&h=80&auto=format&fit=crop"
-    }
+      imageUrl:
+        "https://images.unsplash.com/photo-1633356122544-f134324a6cee?q=80&w=120&h=80&auto=format&fit=crop",
+    },
   ];
-  
+
   const faqs = [
     {
       question: "How long do I have access to the course?",
-      answer: "You&apos;ll have lifetime access to all course materials after purchase."
+      answer:
+        "You&apos;ll have lifetime access to all course materials after purchase.",
     },
     {
       question: "Is this course suitable for beginners?",
-      answer: "This course is designed for intermediate developers who already have basic knowledge of JavaScript and React."
+      answer:
+        "This course is designed for intermediate developers who already have basic knowledge of JavaScript and React.",
     },
     {
       question: "Are the project files included?",
-      answer: "Yes, you&apos;ll get access to all source code and project files used in the course."
-    }
+      answer:
+        "Yes, you&apos;ll get access to all source code and project files used in the course.",
+    },
   ];
 
   return (
@@ -111,26 +136,34 @@ export default function CourseOverview({
                 </div>
               )}
             </div>
-            
+
             {/* Course details */}
             <div className="flex-1">
-              <h1 className="text-2xl sm:text-3xl font-medium mb-3">{course.title}</h1>
-              
+              <h1 className="text-2xl sm:text-3xl font-medium mb-3">
+                {course.title}
+              </h1>
+
               <p className="text-base text-slate-300 mb-4">
-                {course.description || "Learn how to build modern web applications with expert guidance."}
+                {course.description ||
+                  "Learn how to build modern web applications with expert guidance."}
               </p>
-              
+
               <div className="flex items-center gap-2 mb-4">
                 <div className="flex">
                   {[1, 2, 3, 4, 5].map((star) => (
-                    <Star key={star} className="h-4 w-4 text-amber-400 fill-amber-400" />
+                    <Star
+                      key={star}
+                      className="h-4 w-4 text-amber-400 fill-amber-400"
+                    />
                   ))}
                 </div>
                 <span className="text-sm text-slate-300">(42 reviews)</span>
                 <span className="text-sm text-slate-400">|</span>
-                <span className="text-sm text-slate-300">1,234 students enrolled</span>
+                <span className="text-sm text-slate-300">
+                  1,234 students enrolled
+                </span>
               </div>
-              
+
               <div className="flex flex-wrap gap-4 text-sm text-slate-400 mb-5">
                 <div className="flex items-center gap-1.5">
                   <Play className="h-4 w-4" />
@@ -147,11 +180,13 @@ export default function CourseOverview({
                 <div className="flex items-center gap-1.5">
                   <BarChart2 className="h-4 w-4" />
                   <span>Intermediate level</span>
-        </div>
-      </div>
-      
+                </div>
+              </div>
+
               <div className="flex flex-wrap gap-3">
-                <Link href={`/viewer/${courseSlug}/lesson/${course.lessons?.[0]?.id || '1'}`}>
+                <Link
+                  href={`/viewer/${courseSlug}/lesson/${course.lessons?.[0]?.id || "1"}`}
+                >
                   <Button
                     type="primary"
                     size="medium"
@@ -174,20 +209,24 @@ export default function CourseOverview({
           </div>
         </div>
       </div>
-      
+
       {/* Content */}
       <div className="max-w-5xl mx-auto px-4 py-6">
         {/* Course access info */}
-        {enrollmentStatus === 'rejected' ? (
+        {enrollmentStatus === "rejected" ? (
           <div className="mb-6 border border-red-200 rounded-md bg-red-50 overflow-hidden">
             <div className="flex items-start gap-3 p-4">
               <div className="mt-0.5 h-8 w-8 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
                 <X className="h-4 w-4 text-red-600" />
               </div>
               <div>
-                <h2 className="text-base font-medium text-slate-900 mb-1">Enrollment Rejected</h2>
+                <h2 className="text-base font-medium text-slate-900 mb-1">
+                  Enrollment Rejected
+                </h2>
                 <p className="text-sm text-slate-600 mb-2">
-                  Your enrollment request for this course was not approved. Please contact the instructor for more information or try another course.
+                  Your enrollment request for this course was not approved.
+                  Please contact the instructor for more information or try
+                  another course.
                 </p>
               </div>
             </div>
@@ -199,10 +238,13 @@ export default function CourseOverview({
                 <CheckCircle className="h-4 w-4 text-emerald-600" />
               </div>
               <div>
-                <h2 className="text-base font-medium text-slate-900 mb-1">Demo Access</h2>
+                <h2 className="text-base font-medium text-slate-900 mb-1">
+                  Demo Access
+                </h2>
                 <p className="text-sm text-slate-600 mb-2">
-                  You have access to {unlockedLessonsCount} of {totalLessonsCount} lessons in this course.
-                  Subscribe to unlock all content.
+                  You have access to {unlockedLessonsCount} of{" "}
+                  {totalLessonsCount} lessons in this course. Subscribe to
+                  unlock all content.
                 </p>
                 <Link href="/pricing">
                   <Button
@@ -217,7 +259,7 @@ export default function CourseOverview({
             </div>
           </div>
         )}
-        
+
         {/* Navigation tabs */}
         <div className="border-b border-slate-200 mb-6">
           <div className="flex space-x-6">
@@ -235,7 +277,7 @@ export default function CourseOverview({
             </button>
           </div>
         </div>
-        
+
         {/* Two column layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main content column */}
@@ -243,7 +285,9 @@ export default function CourseOverview({
             {/* What you'll learn section */}
             <div className="bg-white border border-slate-200 rounded-md overflow-hidden">
               <div className="border-b border-slate-200 px-4 py-3 bg-slate-50">
-                <h2 className="text-base font-medium text-slate-900">What you&apos;ll learn</h2>
+                <h2 className="text-base font-medium text-slate-900">
+                  What you&apos;ll learn
+                </h2>
               </div>
               <div className="p-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -256,16 +300,18 @@ export default function CourseOverview({
                 </div>
               </div>
             </div>
-            
+
             {/* Popular lessons section */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <h2 className="text-base font-medium text-slate-900">Start learning</h2>
+                <h2 className="text-base font-medium text-slate-900">
+                  Start learning
+                </h2>
               </div>
-              
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {course.lessons?.slice(0, 2).map((lesson: Lesson) => (
-                  <Link 
+                  <Link
                     key={lesson.id}
                     href={`/viewer/${courseSlug}/lesson/${lesson.id}`}
                     className="group p-4 bg-white border border-slate-200 rounded-md hover:border-emerald-300 hover:shadow-sm transition-all"
@@ -279,7 +325,8 @@ export default function CourseOverview({
                           {lesson.title}
                         </h3>
                         <p className="text-sm text-slate-500 line-clamp-2">
-                          {lesson.description || "Start watching this lesson now."}
+                          {lesson.description ||
+                            "Start watching this lesson now."}
                         </p>
                       </div>
                     </div>
@@ -287,16 +334,20 @@ export default function CourseOverview({
                 ))}
               </div>
             </div>
-            
+
             {/* Course structure */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <h2 className="text-base font-medium text-slate-900">Course curriculum</h2>
-                <span className="text-sm text-slate-500">{totalLessonsCount} lessons • 6 hrs total</span>
+                <h2 className="text-base font-medium text-slate-900">
+                  Course curriculum
+                </h2>
+                <span className="text-sm text-slate-500">
+                  {totalLessonsCount} lessons • 6 hrs total
+                </span>
               </div>
-              
+
               {/* Module 1 */}
-              <CourseStructureSection 
+              <CourseStructureSection
                 title="Developer's Mindset"
                 description="How to Think Like a Programmer and Solve Problems"
                 availableLessons={2}
@@ -304,9 +355,9 @@ export default function CourseOverview({
                 courseSlug={courseSlug}
                 firstLessonId={course.lessons?.[0]?.id}
               />
-              
+
               {/* Module 2 */}
-              <CourseStructureSection 
+              <CourseStructureSection
                 title="Web Development Basics"
                 description="Learn the fundamental building blocks of modern web development"
                 availableLessons={0}
@@ -314,9 +365,9 @@ export default function CourseOverview({
                 courseSlug={courseSlug}
                 isLocked={true}
               />
-              
+
               {/* Module 3 */}
-              <CourseStructureSection 
+              <CourseStructureSection
                 title="Advanced Techniques"
                 description="Master complex patterns and optimize your applications"
                 availableLessons={0}
@@ -325,18 +376,20 @@ export default function CourseOverview({
                 isLocked={true}
               />
             </div>
-            
+
             {/* Instructor section */}
             <div className="bg-white border border-slate-200 rounded-md overflow-hidden">
               <div className="border-b border-slate-200 px-4 py-3 bg-slate-50">
-                <h2 className="text-base font-medium text-slate-900">Your Instructor</h2>
+                <h2 className="text-base font-medium text-slate-900">
+                  Your Instructor
+                </h2>
               </div>
               <div className="p-4">
                 <div className="flex items-start gap-4">
                   <div className="flex-shrink-0">
                     <div className="h-16 w-16 rounded-full overflow-hidden">
-                      <Image 
-                        src={instructorData.avatar} 
+                      <Image
+                        src={instructorData.avatar}
                         alt={instructorData.name}
                         width={64}
                         height={64}
@@ -345,22 +398,32 @@ export default function CourseOverview({
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-base font-medium text-slate-900">{instructorData.name}</h3>
-                    <p className="text-sm text-slate-600 mb-3">{instructorData.role}</p>
-                    
+                    <h3 className="text-base font-medium text-slate-900">
+                      {instructorData.name}
+                    </h3>
+                    <p className="text-sm text-slate-600 mb-3">
+                      {instructorData.role}
+                    </p>
+
                     <div className="flex gap-4 mb-3">
                       <div className="flex items-center gap-1.5">
                         <GraduationCap className="h-4 w-4 text-slate-500" />
-                        <span className="text-sm text-slate-700">{instructorData.courses} courses</span>
+                        <span className="text-sm text-slate-700">
+                          {instructorData.courses} courses
+                        </span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <Users className="h-4 w-4 text-slate-500" />
-                        <span className="text-sm text-slate-700">{instructorData.students.toLocaleString()} students</span>
+                        <span className="text-sm text-slate-700">
+                          {instructorData.students.toLocaleString()} students
+                        </span>
                       </div>
                     </div>
-                    
-                    <p className="text-sm text-slate-700 mb-3">{instructorData.bio}</p>
-                    
+
+                    <p className="text-sm text-slate-700 mb-3">
+                      {instructorData.bio}
+                    </p>
+
                     <Button
                       type="outline"
                       size="small"
@@ -372,11 +435,13 @@ export default function CourseOverview({
                 </div>
               </div>
             </div>
-            
+
             {/* Reviews section */}
             <div className="bg-white border border-slate-200 rounded-md overflow-hidden">
               <div className="border-b border-slate-200 px-4 py-3 bg-slate-50 flex items-center justify-between">
-                <h2 className="text-base font-medium text-slate-900">Student reviews</h2>
+                <h2 className="text-base font-medium text-slate-900">
+                  Student reviews
+                </h2>
                 <Button
                   type="outline"
                   size="small"
@@ -386,13 +451,13 @@ export default function CourseOverview({
                 </Button>
               </div>
               <div className="divide-y divide-slate-100">
-                {reviews.map(review => (
+                {reviews.map((review) => (
                   <div key={review.id} className="p-4">
                     <div className="flex items-start gap-3">
                       <div className="flex-shrink-0">
                         <div className="h-8 w-8 rounded-full overflow-hidden">
-                          <Image 
-                            src={review.avatar} 
+                          <Image
+                            src={review.avatar}
                             alt={review.name}
                             width={32}
                             height={32}
@@ -402,41 +467,51 @@ export default function CourseOverview({
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-1">
-                          <h3 className="text-sm font-medium text-slate-900">{review.name}</h3>
-                          <span className="text-xs text-slate-500">{review.date}</span>
+                          <h3 className="text-sm font-medium text-slate-900">
+                            {review.name}
+                          </h3>
+                          <span className="text-xs text-slate-500">
+                            {review.date}
+                          </span>
                         </div>
                         <div className="flex mb-2">
                           {[1, 2, 3, 4, 5].map((star) => (
-                            <Star 
-                              key={star} 
-                              className={`h-3.5 w-3.5 ${star <= review.rating ? 'text-amber-400 fill-amber-400' : 'text-slate-200'}`} 
+                            <Star
+                              key={star}
+                              className={`h-3.5 w-3.5 ${star <= review.rating ? "text-amber-400 fill-amber-400" : "text-slate-200"}`}
                             />
                           ))}
                         </div>
-                        <p className="text-sm text-slate-700">{review.comment}</p>
+                        <p className="text-sm text-slate-700">
+                          {review.comment}
+                        </p>
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
-            
+
             {/* FAQ section */}
             <div className="bg-white border border-slate-200 rounded-md overflow-hidden">
               <div className="border-b border-slate-200 px-4 py-3 bg-slate-50">
-                <h2 className="text-base font-medium text-slate-900">Frequently Asked Questions</h2>
+                <h2 className="text-base font-medium text-slate-900">
+                  Frequently Asked Questions
+                </h2>
               </div>
               <div className="divide-y divide-slate-100">
                 {faqs.map((faq, index) => (
                   <div key={index} className="p-4">
-                    <h3 className="text-sm font-medium text-slate-900 mb-2">{faq.question}</h3>
+                    <h3 className="text-sm font-medium text-slate-900 mb-2">
+                      {faq.question}
+                    </h3>
                     <p className="text-sm text-slate-600">{faq.answer}</p>
                   </div>
                 ))}
               </div>
             </div>
           </div>
-          
+
           {/* Sidebar */}
           <div className="space-y-6 lg:relative">
             {/* Sticky container for sidebar content */}
@@ -447,7 +522,9 @@ export default function CourseOverview({
                   <div className="mb-4">
                     <div className="text-2xl font-medium text-slate-900">
                       <span className="mr-2">$49</span>
-                      <span className="line-through text-base text-slate-500">$129</span>
+                      <span className="line-through text-base text-slate-500">
+                        $129
+                      </span>
                     </div>
                     <div className="flex items-center gap-2 text-xs">
                       <span className="bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-medium">
@@ -458,7 +535,7 @@ export default function CourseOverview({
                       </span>
                     </div>
                   </div>
-                  
+
                   <div className="space-y-3 mb-4">
                     <Button
                       type="primary"
@@ -467,7 +544,7 @@ export default function CourseOverview({
                     >
                       Buy this course
                     </Button>
-                    
+
                     <Button
                       type="outline"
                       size="medium"
@@ -476,13 +553,15 @@ export default function CourseOverview({
                       Try free preview
                     </Button>
                   </div>
-                  
+
                   <div className="text-xs text-slate-500 text-center mb-4">
                     30-day money-back guarantee
                   </div>
-                  
+
                   <div className="space-y-2">
-                    <h3 className="text-sm font-medium text-slate-900">This course includes:</h3>
+                    <h3 className="text-sm font-medium text-slate-900">
+                      This course includes:
+                    </h3>
                     <div className="space-y-2">
                       <div className="flex items-center gap-2 text-sm text-slate-600">
                         <Play className="h-4 w-4 text-slate-400" />
@@ -508,15 +587,17 @@ export default function CourseOverview({
                   </div>
                 </div>
               </div>
-              
+
               {/* Related courses */}
               <div className="border border-slate-200 rounded-md overflow-hidden bg-white">
                 <div className="border-b border-slate-200 px-4 py-3 bg-slate-50">
-                  <h2 className="text-sm font-medium text-slate-900">Related Courses</h2>
+                  <h2 className="text-sm font-medium text-slate-900">
+                    Related Courses
+                  </h2>
                 </div>
                 <div className="divide-y divide-slate-100">
-                  {relatedCourses.map(course => (
-                    <Link 
+                  {relatedCourses.map((course) => (
+                    <Link
                       key={course.id}
                       href={`/viewer/${course.id}`}
                       className="block p-4 hover:bg-slate-50 transition-colors"
@@ -524,7 +605,7 @@ export default function CourseOverview({
                       <div className="flex gap-3">
                         <div className="flex-shrink-0 w-12 h-8 bg-slate-100 rounded overflow-hidden">
                           {course.imageUrl ? (
-                            <Image 
+                            <Image
                               src={course.imageUrl}
                               alt={course.title}
                               width={48}
@@ -538,15 +619,24 @@ export default function CourseOverview({
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h3 className="text-sm font-medium text-slate-900 line-clamp-1">{course.title}</h3>
-                          <p className="text-xs text-slate-500">By {course.instructor}</p>
+                          <h3 className="text-sm font-medium text-slate-900 line-clamp-1">
+                            {course.title}
+                          </h3>
+                          <p className="text-xs text-slate-500">
+                            By {course.instructor}
+                          </p>
                           <div className="flex items-center gap-1 mt-1">
                             <div className="flex">
                               {[1, 2, 3, 4, 5].map((star) => (
-                                <Star key={star} className="h-3 w-3 text-amber-400 fill-amber-400" />
+                                <Star
+                                  key={star}
+                                  className="h-3 w-3 text-amber-400 fill-amber-400"
+                                />
                               ))}
                             </div>
-                            <span className="text-xs text-slate-500">({course.students})</span>
+                            <span className="text-xs text-slate-500">
+                              ({course.students})
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -554,16 +644,24 @@ export default function CourseOverview({
                   ))}
                 </div>
               </div>
-              
+
               {/* Course tags */}
               <div className="border border-slate-200 rounded-md overflow-hidden bg-white">
                 <div className="border-b border-slate-200 px-4 py-3 bg-slate-50">
-                  <h2 className="text-sm font-medium text-slate-900">Course tags</h2>
+                  <h2 className="text-sm font-medium text-slate-900">
+                    Course tags
+                  </h2>
                 </div>
                 <div className="p-4">
                   <div className="flex flex-wrap gap-2">
-                    {["JavaScript", "React", "Web Development", "Frontend", "Performance"].map((tag, index) => (
-                      <Link 
+                    {[
+                      "JavaScript",
+                      "React",
+                      "Web Development",
+                      "Frontend",
+                      "Performance",
+                    ].map((tag, index) => (
+                      <Link
                         key={index}
                         href={`/courses/tag/${tag.toLowerCase()}`}
                         className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs rounded-full transition-colors"
@@ -599,7 +697,7 @@ function CourseStructureSection({
   totalLessons,
   courseSlug,
   firstLessonId,
-  isLocked = false
+  isLocked = false,
 }: CourseStructureSectionProps) {
   return (
     <div className="mb-3 bg-white border border-slate-200 rounded-md overflow-hidden">
@@ -610,9 +708,9 @@ function CourseStructureSection({
             {availableLessons} / {totalLessons} lessons
           </div>
         </div>
-        
+
         <p className="text-sm text-slate-600 mb-3">{description}</p>
-        
+
         {isLocked ? (
           <div className="flex items-center gap-2 p-2.5 bg-slate-50 border border-slate-200 rounded-md">
             <Lock className="h-4 w-4 text-slate-500" />
@@ -624,7 +722,7 @@ function CourseStructureSection({
           <div className="flex flex-wrap gap-2">
             {firstLessonId && (
               <Link href={`/viewer/${courseSlug}/lesson/${firstLessonId}`}>
-                <Button 
+                <Button
                   type="outline"
                   size="small"
                   iconRight={<ArrowRight className="h-3.5 w-3.5" />}

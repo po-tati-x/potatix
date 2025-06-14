@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { AlertTriangle } from 'lucide-react';
-import { Button } from '@/components/ui/potatix/Button';
+import { AlertTriangle } from "lucide-react";
+import { Button } from "@/components/ui/new-button";
 
 interface ErrorStateProps {
   title?: string;
@@ -10,11 +10,11 @@ interface ErrorStateProps {
   buttonAction?: () => void;
 }
 
-export default function ErrorState({ 
-  title = 'Error',
-  message, 
-  buttonText, 
-  buttonAction 
+export default function ErrorState({
+  title = "Error",
+  message,
+  buttonText,
+  buttonAction,
 }: ErrorStateProps) {
   return (
     <div className="flex items-center justify-center h-full w-full bg-slate-50">
@@ -24,16 +24,16 @@ export default function ErrorState({
           <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mb-6">
             <AlertTriangle className="h-8 w-8 text-red-500" />
           </div>
-          
+
           {/* Error title */}
           <h2 className="text-xl font-medium text-slate-900 mb-2">{title}</h2>
-          
+
           {/* Error message */}
           <p className="text-slate-600 mb-6">{message}</p>
-          
+
           {/* Action button if provided */}
           {buttonText && buttonAction && (
-            <Button 
+            <Button
               type="outline"
               onClick={buttonAction}
               className="min-w-[140px]"
@@ -45,4 +45,4 @@ export default function ErrorState({
       </div>
     </div>
   );
-} 
+}
