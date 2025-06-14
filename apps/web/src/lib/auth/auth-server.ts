@@ -23,7 +23,7 @@ if (!global.__potatixAuth) {
     db,
     authSecret: process.env.BETTER_AUTH_SECRET!,
     webUrl: process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
-    cookieDomain: process.env.AUTH_COOKIE_DOMAIN || '.potatix.com',
+    cookieDomain: process.env.AUTH_COOKIE_DOMAIN || '.ptx.com',
     plugins: [],
   });
 }
