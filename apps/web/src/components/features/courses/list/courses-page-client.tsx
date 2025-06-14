@@ -1,0 +1,85 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { PlusCircle } from "lucide-react";
+import { uniqueNamesGenerator, colors, animals } from "unique-names-generator";
+import type { Course } from "@/lib/shared/types/courses";
+
+import { Button } from "@/components/ui/new-button";
+import { CoursesGrid } from "./courses-grid";
+import { useCreateCourse } from "@/lib/client/hooks/use-courses";
+import type { CreateCourseData } from "@/lib/shared/types/courses";
+
+/**
+ * Client component that renders the main courses page layout.
+ * It includes the page header with a "New Course" button and the main grid of courses.
+ * State and actions are managed via context hooks, assuming providers are in the parent.
+ */
+export default function CoursesPageClient({ initialData }: { initialData?: Course[] } = {}) {
+  const router = useRouter();
+  const createCourseMutation = useCreateCourse();
+  const isCreatingCourse = createCourseMutation.isPending;
+
+  /**
+   * Handles the action of creating a new course.
+   * It generates a random name, calls the creation mutation, and navigates
+   * to the new course's edit page on success.
+   */
+  const handleCreateCourse = async () => {
+    if (isCreatingCourse) return;
+
+    const randomName = uniqueNamesGenerator({
+      dictionaries: [colors, animals],
+      style: "capital",
+      separator: " ",
+    });
+
+    const courseData: CreateCourseData = {
+      title: `${randomName} Course`,
+      description: "Click to edit course details",
+      price: 0,
+      status: "draft",
+    };
+
+    try {
+      const created = await createCourseMutation.mutateAsync(courseData);
+      if (created?.id) {
+        router.push(`/courses/${created.id}/edit`);
+      } else {
+        console.error("Course created, but no ID returned from API");
+      }
+    } catch (err) {
+      console.error("Failed to create course:", err);
+    }
+  };
+
+  return (
+    <div className="mx-auto max-w-5xl px-4 py-6">
+      <header className="mb-6 border-b border-slate-200 pb-5">
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+          <div>
+            <h1 className="text-xl font-medium text-slate-900">My Courses</h1>
+            <p className="mt-1 max-w-2xl text-sm text-slate-600">
+              Create and manage your course content. Each course can contain
+              multiple lessons with videos.
+            </p>
+          </div>
+
+          <Button
+            type="primary"
+            size="small"
+            icon={<PlusCircle className="h-3.5 w-3.5" />}
+            onClick={handleCreateCourse}
+            disabled={isCreatingCourse}
+          >
+            {isCreatingCourse ? "Creating..." : "New Course"}
+          </Button>
+        </div>
+      </header>
+
+      <main>
+        <CoursesGrid initialData={initialData} />
+      </main>
+    </div>
+  );
+}
