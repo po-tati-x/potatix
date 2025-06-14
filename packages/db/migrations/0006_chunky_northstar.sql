@@ -1,1 +1,0 @@
-ALTER TABLE "lesson" ALTER COLUMN "moduleId" SET NOT NULL;
