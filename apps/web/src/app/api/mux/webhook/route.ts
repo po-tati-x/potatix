@@ -19,6 +19,12 @@ export async function POST(request: Request) {
       JSON.stringify(data).substring(0, 500),
     );
 
+    // Ensure database instance is available
+    if (!db) {
+      console.error('[Mux Webhook] Database instance is null');
+      return NextResponse.json({ error: 'Database not initialized' }, { status: 500 });
+    }
+
     // Debug SQL connection
     try {
       console.log(`[Mux Webhook] Testing database connection...`);
