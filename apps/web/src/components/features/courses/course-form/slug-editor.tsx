@@ -1,26 +1,28 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Button } from "@/components/ui/potatix/Button";
-import { FormField } from "@/components/ui/potatix/form-field";
+import { Button } from "@/components/ui/new-button";
+import { FormField } from "@/components/ui/form-field";
 import { Check, X, Edit, RefreshCcw, AlertCircle, Globe } from "lucide-react";
-import { uniqueNamesGenerator, colors, animals, Config } from 'unique-names-generator';
+import {
+  uniqueNamesGenerator,
+  colors,
+  animals,
+  Config,
+} from "unique-names-generator";
 
 interface SlugEditorProps {
   currentSlug: string;
   onUpdateSlug: (slug: string) => void;
 }
 
-export function SlugEditor({
-  currentSlug,
-  onUpdateSlug
-}: SlugEditorProps) {
+export function SlugEditor({ currentSlug, onUpdateSlug }: SlugEditorProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [slugValue, setSlugValue] = useState(currentSlug || "");
   const [originalSlug, setOriginalSlug] = useState(currentSlug || "");
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  
+
   // When title or currentSlug changes, update the state
   useEffect(() => {
     if (currentSlug) {
@@ -28,42 +30,42 @@ export function SlugEditor({
       setSlugValue(currentSlug);
     }
   }, [currentSlug]);
-  
+
   // Focus input when editing starts
   useEffect(() => {
     if (isEditing && inputRef.current) {
       inputRef.current.focus();
     }
   }, [isEditing]);
-  
+
   const handleEditStart = () => {
     setIsEditing(true);
     setError(null);
   };
-  
+
   const handleCancel = () => {
     setIsEditing(false);
     setSlugValue(originalSlug);
     setError(null);
   };
-  
+
   const handleSave = async () => {
     if (!slugValue.trim()) {
       setError("Slug cannot be empty");
       return;
     }
-    
+
     // Basic validation for slug format
     if (!/^[a-z0-9-]+$/.test(slugValue)) {
       setError("Slug can only contain lowercase letters, numbers, and hyphens");
       return;
     }
-    
+
     if (slugValue === originalSlug) {
       setIsEditing(false);
       return;
     }
-    
+
     // We'll let the parent component handle the actual API call and duplication check
     try {
       await onUpdateSlug(slugValue);
@@ -74,19 +76,19 @@ export function SlugEditor({
       console.error("Slug update error:", error);
     }
   };
-  
+
   const generateNewSlug = () => {
     // Configuration for unique name generator
     const nameConfig: Config = {
       dictionaries: [colors, animals],
-      separator: '-',
+      separator: "-",
       length: 2,
-      style: 'lowerCase'
+      style: "lowerCase",
     };
 
     // Generate a new random slug using color-animal format
     const randomSlug = uniqueNamesGenerator(nameConfig);
-    
+
     setSlugValue(randomSlug);
     setError(null);
   };
@@ -99,7 +101,7 @@ export function SlugEditor({
           <h3 className="text-sm font-medium text-slate-900">Public URL</h3>
         </div>
         {!isEditing && (
-          <Button 
+          <Button
             type="outline"
             size="small"
             iconLeft={<Edit className="h-3.5 w-3.5" />}
@@ -122,7 +124,9 @@ export function SlugEditor({
                         ref={inputRef}
                         type="text"
                         value={slugValue}
-                        onChange={(e) => setSlugValue(e.target.value.toLowerCase())}
+                        onChange={(e) =>
+                          setSlugValue(e.target.value.toLowerCase())
+                        }
                         className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm pr-[110px] font-mono ${
                           error ? "border-red-300" : "border-slate-300"
                         }`}
@@ -135,7 +139,7 @@ export function SlugEditor({
                   </FormField>
                 </div>
               </div>
-              
+
               {error && (
                 <div className="flex items-center gap-1.5 text-red-600 text-xs">
                   <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
@@ -143,7 +147,7 @@ export function SlugEditor({
                 </div>
               )}
             </div>
-            
+
             <div className="flex items-center gap-3 flex-wrap">
               <Button
                 type="primary"
@@ -153,7 +157,7 @@ export function SlugEditor({
               >
                 Save
               </Button>
-              
+
               <Button
                 type="outline"
                 size="small"
@@ -162,7 +166,7 @@ export function SlugEditor({
               >
                 Cancel
               </Button>
-              
+
               <Button
                 type="outline"
                 size="small"
@@ -173,7 +177,7 @@ export function SlugEditor({
                 Generate
               </Button>
             </div>
-            
+
             <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-md">
               <AlertCircle className="h-4 w-4 text-amber-600 flex-shrink-0" />
               <p className="text-xs text-amber-700">
@@ -181,34 +185,40 @@ export function SlugEditor({
               </p>
             </div>
           </div>
-        ) : (
-          currentSlug ? (
-            <div className="bg-slate-50 border border-slate-200 rounded-md px-3 py-2.5 flex items-center gap-2 overflow-hidden">
-              <div className="flex-grow min-w-0">
-                <div className="flex items-center gap-0">
-                  <span className="text-sm text-emerald-600 font-medium font-mono truncate">{currentSlug}</span>
-                  <span className="text-sm text-slate-500 whitespace-nowrap">.potatix.com</span>
-                </div>
-                <div className="text-xs text-slate-500 mt-0.5">Your public course URL</div>
+        ) : currentSlug ? (
+          <div className="bg-slate-50 border border-slate-200 rounded-md px-3 py-2.5 flex items-center gap-2 overflow-hidden">
+            <div className="flex-grow min-w-0">
+              <div className="flex items-center gap-0">
+                <span className="text-sm text-emerald-600 font-medium font-mono truncate">
+                  {currentSlug}
+                </span>
+                <span className="text-sm text-slate-500 whitespace-nowrap">
+                  .potatix.com
+                </span>
               </div>
-              <a 
-                href={`https://${currentSlug}.potatix.com`} 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="text-emerald-600 hover:text-emerald-700 p-1 rounded-md hover:bg-emerald-50 transition-colors"
-                title="Visit site"
-              >
-                <Globe className="h-4 w-4" />
-              </a>
+              <div className="text-xs text-slate-500 mt-0.5">
+                Your public course URL
+              </div>
             </div>
-          ) : (
-            <div className="bg-slate-50 border border-slate-200 border-dashed rounded-md px-3 py-3 text-center">
-              <div className="text-slate-500 text-sm mb-1">No custom URL set</div>
-              <div className="text-xs text-slate-400">Click &quot;Edit URL&quot; to create one</div>
+            <a
+              href={`https://${currentSlug}.potatix.com`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-emerald-600 hover:text-emerald-700 p-1 rounded-md hover:bg-emerald-50 transition-colors"
+              title="Visit site"
+            >
+              <Globe className="h-4 w-4" />
+            </a>
+          </div>
+        ) : (
+          <div className="bg-slate-50 border border-slate-200 border-dashed rounded-md px-3 py-3 text-center">
+            <div className="text-slate-500 text-sm mb-1">No custom URL set</div>
+            <div className="text-xs text-slate-400">
+              Click &quot;Edit URL&quot; to create one
             </div>
-          )
+          </div>
         )}
       </div>
     </div>
   );
-} 
+}

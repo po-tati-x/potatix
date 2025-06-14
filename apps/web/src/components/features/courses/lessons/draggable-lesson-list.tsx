@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import {
   DragDropContext,
   Droppable,
@@ -7,12 +8,48 @@ import {
   DropResult,
   DraggableProvidedDragHandleProps,
 } from "@hello-pangea/dnd";
-import { useReorderLessons } from "@/lib/api/courses";
-import { UILesson } from "@/lib/stores/courses";
+import { useReorderLessons } from "@/lib/client/hooks/use-courses";
+
+// Consistent UILesson interface
+export interface UILesson {
+  id: string;
+  title: string;
+  description?: string;
+  moduleId: string;
+  courseId: string;
+  order: number;
+  createdAt: string | Date; // Support both string and Date for compatibility
+  updatedAt: string | Date; // Support both string and Date for compatibility
+  
+  // UI state properties
+  expanded?: boolean;
+  uploading?: boolean;
+  fileUrl?: string;
+  file?: File;
+  
+  // Other lesson properties
+  videoId?: string;
+  uploadStatus?: string;
+  duration?: number;
+  transcriptData?: {
+    chapters: Array<{
+      id: string;
+      title: string;
+      description: string;
+      timestamp: number;
+    }>;
+    textLength: number;
+    duration: number;
+    processedAt: string;
+  };
+  
+  [key: string]: unknown; // Allow for other properties
+}
 
 // Type for the core drag and drop functionality only
 interface DraggableLessonListProps {
   courseId: string;
+  moduleId: string;
   lessons: UILesson[];
   emptyState: React.ReactNode;
   renderLesson: (
@@ -30,6 +67,7 @@ interface DraggableLessonListProps {
  */
 export function DraggableLessonList({
   courseId,
+  moduleId,
   lessons,
   emptyState,
   renderLesson,
@@ -40,22 +78,12 @@ export function DraggableLessonList({
   const { mutate: reorderLessons } = useReorderLessons();
 
   const handleDragEnd = (result: DropResult) => {
-    console.log("[DEBUG] Drag ended with result:", result);
-    
-    if (!result.destination) {
-      console.log("[DEBUG] No destination, skipping reorder");
-      return;
-    }
+    if (!result.destination) return;
 
     const sourceIndex = result.source.index;
     const destIndex = result.destination.index;
 
-    if (sourceIndex === destIndex) {
-      console.log("[DEBUG] Source and destination indices are the same, skipping reorder");
-      return;
-    }
-
-    console.log(`[DEBUG] Moving lesson from index ${sourceIndex} to index ${destIndex}`);
+    if (sourceIndex === destIndex) return;
     
     const reorderedItems = Array.from(lessons);
     const [removed] = reorderedItems.splice(sourceIndex, 1);
@@ -66,55 +94,21 @@ export function DraggableLessonList({
       onReorder(reorderedItems);
     }
 
-    // Extract only API lesson properties and update order
-    const updatedLessons = reorderedItems.map((lesson, index) => ({
-      id: lesson.id,
-      order: index,
-    }));
+    // Get just the IDs for reordering
+    const orderedIds = reorderedItems.map(lesson => lesson.id);
 
-    // This is the request payload - make sure it matches the API schema
-    const requestPayload = {
-      lessons: updatedLessons
-    };
-
-    console.log("[DEBUG] Sending reorder request with data:", {
-      courseId,
-      requestPayload
-    });
-
-    // Make direct fetch call to the API endpoint to debug
-    fetch(`/api/courses/${courseId}/lessons/reorder`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(requestPayload)
-    })
-    .then(res => {
-      console.log(`[DEBUG] Direct fetch response status: ${res.status}`);
-      if (!res.ok) {
-        throw new Error(`API returned status ${res.status}`);
-      }
-      return res.json();
-    })
-    .then(data => {
-      console.log("[DEBUG] Direct fetch succeeded:", data);
-    })
-    .catch(err => {
-      console.error("[DEBUG] Direct fetch failed:", err);
-      alert(`Failed to reorder lessons: ${err.message}`);
-    });
-
-    // Also use React Query mutation as before
+    // Make the API call with the format expected by the server
     reorderLessons({
       courseId,
-      lessons: updatedLessons,
+      moduleId,
+      orderedIds
     }, {
       onSuccess: (data) => {
-        console.log("[DEBUG] React Query mutation succeeded:", data);
+        console.log("[DEBUG] Lesson reordering succeeded:", data);
       },
       onError: (error) => {
-        console.error("[DEBUG] React Query mutation failed:", error);
+        console.error("[DEBUG] Lesson reordering failed:", error);
+        alert(`Failed to reorder lessons: ${error}`);
       }
     });
   };

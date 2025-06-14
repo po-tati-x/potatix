@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import {
   DragDropContext,
   Droppable,
@@ -7,8 +8,22 @@ import {
   DropResult,
   DraggableProvidedDragHandleProps,
 } from "@hello-pangea/dnd";
-import { useReorderModules } from "@/lib/api/courses";
-import { UIModule } from "@/lib/stores/courses";
+import { useReorderModules } from "@/lib/client/hooks/use-courses";
+import type { UILesson } from "./draggable-lesson-list";
+
+// Import UIModule interface with complete type definition
+export interface UIModule {
+  id: string;
+  title: string;
+  description?: string;
+  order: number;
+  courseId: string;
+  createdAt: string | Date; // Support both string and Date for compatibility
+  updatedAt: string | Date; // Support both string and Date for compatibility
+  expanded?: boolean;
+  lessons?: UILesson[]; // Lessons within module
+  [key: string]: unknown; // Allow for other properties
+}
 
 // Type for the core drag and drop functionality only
 interface DraggableModuleListProps {
@@ -56,16 +71,13 @@ export function DraggableModuleList({
       onReorder(reorderedItems);
     }
 
-    // Extract only API module properties and update order
-    const updatedModules = reorderedItems.map((module, index) => ({
-      id: module.id,
-      order: index,
-    }));
+    // Get just the IDs for reordering
+    const orderedIds = reorderedItems.map(module => module.id);
 
-    // Make the API call
+    // Make the API call with the format expected by the server
     reorderModules({
       courseId,
-      modules: updatedModules,
+      orderedIds
     }, {
       onSuccess: (data) => {
         console.log("[DEBUG] Module reordering succeeded:", data);
