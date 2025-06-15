@@ -25,6 +25,7 @@ export default async function LessonViewerPage({ params }: { params: Promise<{ s
   }
 
   const nextLesson: Lesson | null = currentIndex + 1 < lessons.length ? lessons[currentIndex + 1] : null;
+  const prevLesson: Lesson | null = currentIndex - 1 >= 0 ? lessons[currentIndex - 1] : null;
 
   return (
     <LessonViewer
@@ -32,6 +33,7 @@ export default async function LessonViewerPage({ params }: { params: Promise<{ s
       currentIndex={currentIndex}
       totalLessons={lessons.length}
       nextLesson={nextLesson}
+      prevLesson={prevLesson}
       courseSlug={courseSlug}
     />
   );

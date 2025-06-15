@@ -25,6 +25,7 @@ interface LessonViewerProps {
   currentIndex: number;
   totalLessons: number;
   nextLesson: Lesson | null;
+  prevLesson: Lesson | null;
   courseSlug: string;
 }
 
@@ -41,6 +42,7 @@ function LessonViewerInner({
   currentIndex,
   totalLessons,
   nextLesson,
+  prevLesson,
   courseSlug,
 }: LessonViewerProps) {
   // Chat panel visibility state
@@ -212,6 +214,7 @@ function LessonViewerInner({
               totalLessons={totalLessons}
               progress={courseProgress}
               nextLesson={nextLesson}
+              prevLesson={prevLesson}
               courseSlug={courseSlug}
             />
 

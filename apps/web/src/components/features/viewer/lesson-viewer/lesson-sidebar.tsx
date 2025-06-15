@@ -11,6 +11,7 @@ interface LessonSidebarProps {
   totalLessons: number;
   progress: number;
   nextLesson: Lesson | null;
+  prevLesson: Lesson | null;
   courseSlug: string;
 }
 
@@ -20,21 +21,22 @@ export const LessonSidebar = memo(
     totalLessons,
     progress,
     nextLesson,
+    prevLesson,
     courseSlug,
   }: LessonSidebarProps) => {
     const router = useRouter();
     const hasNext = !!nextLesson;
-    const hasPrev = currentIndex > 0;
+    const hasPrev = !!prevLesson;
 
     const handlePrev = () => {
-      if (hasPrev) {
-        router.push(`/viewer/${courseSlug}/lessons/${currentIndex}`);
+      if (hasPrev && prevLesson) {
+        router.push(`/viewer/${courseSlug}/lesson/${prevLesson.id}`);
       }
     };
 
     const handleNext = () => {
       if (hasNext && nextLesson) {
-        router.push(`/viewer/${courseSlug}/${nextLesson.id}`);
+        router.push(`/viewer/${courseSlug}/lesson/${nextLesson.id}`);
       }
     };
 
