@@ -301,7 +301,7 @@ function LessonViewerInner({
                     iconRight={<ChevronRight className="h-3.5 w-3.5" />}
                     className="sm:flex-shrink-0"
                     onClick={() =>
-                      router.push(`/viewer/${courseSlug}/${nextLesson.id}`)
+                      router.push(`/viewer/${courseSlug}/lesson/${nextLesson.id}`)
                     }
                   >
                     Next Lesson

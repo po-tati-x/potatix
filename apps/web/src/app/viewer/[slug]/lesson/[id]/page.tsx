@@ -12,7 +12,13 @@ export default async function LessonViewerPage({ params }: { params: Promise<{ s
     notFound();
   }
 
-  const lessons = course.lessons as unknown as Lesson[];
+  // Flatten lessons following module/lesson order
+  const modules = (course.modules ?? []) as unknown as Array<{ order: number; lessons: Lesson[] }>;
+
+  const lessons: Lesson[] = modules
+    .sort((a, b) => a.order - b.order)
+    .flatMap((mod) => (mod.lessons ?? []).sort((l1, l2) => l1.order - l2.order));
+
   const currentIndex = lessons.findIndex((l) => l.id === lessonId);
   if (currentIndex === -1) {
     notFound();
