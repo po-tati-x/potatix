@@ -8,16 +8,19 @@ export default async function LessonViewerPage({ params }: { params: Promise<{ s
 
   // Fetch course (includes lessons)
   const course = await courseService.getCourseBySlug(courseSlug, true);
-  if (!course || !course.lessons) {
+  if (!course || !course.lessons) { 
     notFound();
   }
 
   // Flatten lessons following module/lesson order
   const modules = (course.modules ?? []) as unknown as Array<{ order: number; lessons: Lesson[] }>;
 
-  const lessons: Lesson[] = modules
+  const flattenedLessons: Lesson[] = modules
     .sort((a, b) => a.order - b.order)
     .flatMap((mod) => (mod.lessons ?? []).sort((l1, l2) => l1.order - l2.order));
+
+  // Exclude lessons that do not have a video
+  const lessons: Lesson[] = flattenedLessons.filter((l) => l.videoId);
 
   const currentIndex = lessons.findIndex((l) => l.id === lessonId);
   if (currentIndex === -1) {
@@ -25,10 +28,6 @@ export default async function LessonViewerPage({ params }: { params: Promise<{ s
   }
 
   const lesson: Lesson = lessons[currentIndex];
-  if (!lesson.videoId) {
-    // Demo restriction – lesson without video unavailable
-    notFound();
-  }
 
   const nextLesson: Lesson | null = currentIndex + 1 < lessons.length ? lessons[currentIndex + 1] : null;
   const prevLesson: Lesson | null = currentIndex - 1 >= 0 ? lessons[currentIndex - 1] : null;
