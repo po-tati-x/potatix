@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/new-button";
 import { VideoProvider, useVideoStore } from "./video-context";
 import { useRouter } from "next/navigation";
 import { videoEventBus, VideoEventType } from "@/lib/shared/utils/video-event-bus";
+import { getLessonPath } from "@/lib/shared/utils/navigation";
 
 // Import our components
 import { VideoPlayer } from "./video-player";
@@ -300,9 +301,9 @@ function LessonViewerInner({
                     size="small"
                     iconRight={<ChevronRight className="h-3.5 w-3.5" />}
                     className="sm:flex-shrink-0"
-                    onClick={() =>
-                      router.push(`/viewer/${courseSlug}/lesson/${nextLesson.id}`)
-                    }
+                    onClick={() => {
+                      router.push(getLessonPath(courseSlug, nextLesson.id));
+                    }}
                   >
                     Next Lesson
                   </Button>

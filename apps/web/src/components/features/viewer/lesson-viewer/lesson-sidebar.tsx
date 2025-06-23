@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/new-button";
 import { useRouter } from "next/navigation";
 import { Lesson } from "@/lib/shared/types/courses";
+import { getLessonPath } from "@/lib/shared/utils/navigation";
 
 interface LessonSidebarProps {
   currentIndex: number;
@@ -29,15 +30,15 @@ export const LessonSidebar = memo(
     const hasPrev = !!prevLesson;
 
     const handlePrev = () => {
-      if (hasPrev && prevLesson) {
-        router.push(`/viewer/${courseSlug}/lesson/${prevLesson.id}`);
-      }
+      if (!hasPrev || !prevLesson) return;
+
+      router.push(getLessonPath(courseSlug, prevLesson.id));
     };
 
     const handleNext = () => {
-      if (hasNext && nextLesson) {
-        router.push(`/viewer/${courseSlug}/lesson/${nextLesson.id}`);
-      }
+      if (!hasNext || !nextLesson) return;
+
+      router.push(getLessonPath(courseSlug, nextLesson.id));
     };
 
     return (
