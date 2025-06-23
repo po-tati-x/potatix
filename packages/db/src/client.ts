@@ -1,7 +1,7 @@
-import { drizzle, NodePgDatabase } from "drizzle-orm/node-postgres";
-import { Pool } from "pg";
+import { drizzle, NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { Pool } from 'pg';
 
-import * as schema from "./schema";
+import * as schema from './schema';
 
 export interface DatabaseClientOptions {
   databaseUrl?: string;
@@ -12,7 +12,7 @@ export type DatabaseInstance = NodePgDatabase<typeof schema>;
 
 export const createDb = (opts?: DatabaseClientOptions): DatabaseInstance => {
   if (!opts?.databaseUrl) {
-    throw new Error("Database URL is required");
+    throw new Error('Database URL is required');
   }
 
   // Create a connection pool with proper configuration
@@ -20,8 +20,8 @@ export const createDb = (opts?: DatabaseClientOptions): DatabaseInstance => {
     connectionString: opts.databaseUrl,
     max: opts.max || 10,
     ssl: {
-      rejectUnauthorized: false // Required for Supabase connections
-    }
+      rejectUnauthorized: false, // Required for Supabase connections
+    },
   });
 
   // Add error handler to prevent app crashes on connection issues
@@ -31,6 +31,6 @@ export const createDb = (opts?: DatabaseClientOptions): DatabaseInstance => {
 
   return drizzle(pool, {
     schema,
-    casing: "snake_case",
+    casing: 'snake_case',
   });
 };

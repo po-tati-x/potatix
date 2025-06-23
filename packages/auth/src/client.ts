@@ -1,4 +1,4 @@
-import { createAuthClient as createBetterAuthClient } from "better-auth/react";
+import { createAuthClient as createBetterAuthClient } from 'better-auth/react';
 
 export interface AuthClientOptions {
   apiBaseUrl: string;

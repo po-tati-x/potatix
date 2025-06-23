@@ -1,7 +1,7 @@
-import { type BetterAuthOptions, betterAuth } from "better-auth";
+import { type BetterAuthOptions, betterAuth } from 'better-auth';
 
-import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import type { DatabaseInstance } from "@potatix/db/client";
+import { drizzleAdapter } from 'better-auth/adapters/drizzle';
+import type { DatabaseInstance } from '@potatix/db/client';
 
 export interface AuthOptions {
   webUrl: string;
@@ -19,7 +19,7 @@ export type AuthInstance = ReturnType<typeof createAuth>;
 export const getBaseOptions = (db: DatabaseInstance) =>
   ({
     database: drizzleAdapter(db, {
-      provider: "pg",
+      provider: 'pg',
     }),
 
     /**
@@ -29,17 +29,23 @@ export const getBaseOptions = (db: DatabaseInstance) =>
     // plugins: [],
   }) satisfies BetterAuthOptions;
 
-export const createAuth = ({ webUrl, db, authSecret, plugins = [], cookieDomain }: AuthOptions) => {
+export const createAuth = ({
+  webUrl,
+  db,
+  authSecret,
+  plugins = [],
+  cookieDomain,
+}: AuthOptions) => {
   const urlProtocol = (() => {
     try {
       return new URL(webUrl).protocol;
     } catch {
-      return "http:";
+      return 'http:';
     }
   })();
   const secureFlag = process.env.COOKIE_SECURE
-    ? process.env.COOKIE_SECURE === "true"
-    : urlProtocol === "https:";
+    ? process.env.COOKIE_SECURE === 'true'
+    : urlProtocol === 'https:';
 
   return betterAuth({
     ...getBaseOptions(db),
@@ -55,7 +61,7 @@ export const createAuth = ({ webUrl, db, authSecret, plugins = [], cookieDomain 
 
       // If a cookieDomain is specified, broaden trust to all its sub-domains
       if (cookieDomain) {
-        const domain = cookieDomain.replace(/^\./, ""); // strip leading dot if present
+        const domain = cookieDomain.replace(/^\./, ''); // strip leading dot if present
         origins.add(`*.${domain}`); // protocol-agnostic wildcard
 
         // NOTE: Better-Auth does not support wildcard-with-port yet. In dev we disable CSRF instead.
@@ -83,12 +89,12 @@ export const createAuth = ({ webUrl, db, authSecret, plugins = [], cookieDomain 
           }
         : undefined,
       defaultCookieAttributes: {
-        path: "/",
-        sameSite: "lax",
+        path: '/',
+        sameSite: 'lax',
         secure: secureFlag,
       },
       // Disable CSRF only in local dev where we rely on non-standard ports (e.g. :8888)
-      disableCSRFCheck: process.env.NODE_ENV !== "production",
+      disableCSRFCheck: process.env.NODE_ENV !== 'production',
     },
     plugins, // Add plugins support
   });

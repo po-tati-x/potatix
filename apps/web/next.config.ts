@@ -2,8 +2,6 @@ import path from "path";
 import dotenv from "dotenv";
 import type { NextConfig } from "next";
 
-// Load environment variables from the root .env.local file.
-// Next.js executes this file in a CJS context, so __dirname is available.
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 
 const nextConfig: NextConfig = {
