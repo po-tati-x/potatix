@@ -12,7 +12,7 @@
     "./base": "./base.js",
     "./react": "./react.js"
   },
-  "prettier": "@repo/prettier-config",
+  "prettier": "@potatix/prettier-config",
   "devDependencies": {
     "@potatix/prettier-config": "workspace:*",
     "@potatix/typescript-config": "workspace:*",
@@ -30,6 +30,5 @@
     "globals": "^16.2.0",
     "typescript-eslint": "^8.34.0"
   },
-  "dependencies": {
-  }
+  "dependencies": {}
 }

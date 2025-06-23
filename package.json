@@ -3,7 +3,6 @@
   "type": "module",
   "scripts": {
     "auth:schema:generate": "turbo run auth:schema:generate",
-    "postauth:schema:generate": "echo NOTE: you will also need to fix styles and db:push your new schema",
     "build": "turbo run build",
     "clean": "turbo run clean",
     "db:push": "turbo -F @potatix/db push",
@@ -21,11 +20,17 @@
     "ui-add": "turbo run ui-add -F @potatix/ui --"
   },
   "workspaces": [
-    "apps/*",
-    "packages/*",
-    "tools/*"
+    "apps/web",
+
+    "packages/db",
+    "packages/auth",
+    
+    "tools/eslint",
+    "tools/prettier",
+    "tools/tailwind",
+    "tools/typescript"
   ],
-  "packageManager": "bun@1.2.10",
+  "packageManager": "bun@1.2.17",
   "prettier": "@potatix/prettier-config",
   "devDependencies": {
     "@potatix/prettier-config": "workspace:*",

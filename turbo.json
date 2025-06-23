@@ -37,7 +37,8 @@
       "interactive": true
     },
     "start": {
-      "dependsOn": ["^build"]
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"]
     },
     "studio": {
       "cache": false,

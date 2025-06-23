@@ -6,7 +6,7 @@
     "check-types": "tsc --noEmit",
     "dev": "next dev --turbopack --port 8888",
     "build": "next build",
-    "start": "next start -p $PORT",
+    "start": "next start --turbopack --port 8888",
     "lint": "next lint"
   },
   "dependencies": {
