@@ -1,8 +1,0 @@
-# Ignore development stuff
-.git
-.cache
-node_modules
-*.log
-dist
-**/.vscode
-**/coverage 
