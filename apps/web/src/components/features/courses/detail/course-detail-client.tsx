@@ -429,15 +429,11 @@ export default function CourseDetailClient({ courseId }: { courseId: string }) {
                   icon={<ExternalLink className="h-4 w-4" />}
                   className="w-full"
                   onClick={() => {
-                    if (course.slug) {
                       window.open(
                         `https://${course.slug}.potatix.com`,
                         "_blank",
                         "noopener,noreferrer",
-                      );
-                    } else {
-                      router.push(`/courses/${courseId}/preview`);
-                    }
+                      )
                   }}
                 >
                   Preview Course
