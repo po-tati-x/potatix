@@ -8,7 +8,10 @@ export const dynamic = "force-dynamic";
 
 // Convert timestamp format to seconds
 function convertTimeToSeconds(timeString: string): number {
-  const [hours, minutes, seconds] = timeString.split(":").map(parseFloat);
+  const [hours = 0, minutes = 0, seconds = 0] = timeString
+    .split(":")
+    .map((part) => parseFloat(part));
+
   return hours * 3600 + minutes * 60 + seconds;
 }
 
@@ -70,7 +73,7 @@ export async function GET(request: NextRequest) {
 
       if (match) {
         // New timestamp found, create new segment
-        const startTime = match[1];
+        const startTime = match[1] ?? "00:00:00.000";
         const seconds = convertTimeToSeconds(startTime);
 
         if (currentSegment && currentSegment.text.trim()) {
