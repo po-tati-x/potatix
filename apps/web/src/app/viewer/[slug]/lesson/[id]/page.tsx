@@ -27,10 +27,10 @@ export default async function LessonViewerPage({ params }: { params: Promise<{ s
     notFound();
   }
 
-  const lesson: Lesson = lessons[currentIndex];
+  const lesson: Lesson = lessons[currentIndex]!;
 
-  const nextLesson: Lesson | null = currentIndex + 1 < lessons.length ? lessons[currentIndex + 1] : null;
-  const prevLesson: Lesson | null = currentIndex - 1 >= 0 ? lessons[currentIndex - 1] : null;
+  const nextLesson: Lesson | null = currentIndex + 1 < lessons.length ? lessons[currentIndex + 1]! : null;
+  const prevLesson: Lesson | null = currentIndex - 1 >= 0 ? lessons[currentIndex - 1]! : null;
 
   return (
     <LessonViewer

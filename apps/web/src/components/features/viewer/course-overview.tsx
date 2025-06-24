@@ -17,7 +17,7 @@ import {
   X,
 } from "lucide-react";
 import Image from "next/image";
-import { Course, Lesson } from "@/lib/shared/types/courses";
+import type { Course, Lesson } from "@/lib/shared/types/courses";
 import Link from "next/link";
 import { Button } from "@/components/ui/new-button";
 

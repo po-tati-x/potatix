@@ -4,10 +4,11 @@ import { useState, useRef, useEffect } from 'react';
 import { ChevronDown, ChevronRight, Edit, Check, X, Plus, Trash2, GripVertical, ArrowUp, ArrowDown, Loader2 } from 'lucide-react';
 import { useUpdateModule, useDeleteModule, useCreateLesson } from "@/lib/client/hooks/use-courses";
 import { LessonEditor } from '@/components/features/courses/lessons/lesson-editor';
-import { DraggableLessonList, UILesson } from '@/components/features/courses/lessons/draggable-lesson-list';
+import { DraggableLessonList } from '@/components/features/courses/lessons/draggable-lesson-list';
+import type { UILesson } from '@/components/features/courses/lessons/draggable-lesson-list';
 import { useQueryClient } from '@tanstack/react-query';
 import type { Module } from '@/lib/shared/types/courses';
-import { DraggableProvidedDragHandleProps } from "@hello-pangea/dnd";
+import type { DraggableProvidedDragHandleProps } from "@hello-pangea/dnd";
 
 interface CourseModuleEditorProps {
   courseId: string;

@@ -1,5 +1,5 @@
 // Superpage types
-import { DraggableProvided, DropResult } from '@hello-pangea/dnd';
+import type { DraggableProvided, DropResult } from '@hello-pangea/dnd';
 
 export type LinkIconType = 'Link' | 'Instagram' | 'Twitter' | 'Youtube' | 'Github' | 'Facebook' | 'Mail' | 'FileText';
 

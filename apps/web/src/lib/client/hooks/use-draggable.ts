@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
-import { DropResult } from '@hello-pangea/dnd';
-import { UIModule, UILesson } from '@/lib/shared/types/ui';
+import type { DropResult } from '@hello-pangea/dnd';
+import type { UIModule, UILesson } from '@/lib/shared/types/ui';
 
 /**
  * Type for item reordering functions
@@ -37,6 +37,7 @@ export function useDraggable<T extends { id: string }>(
   const defaultReorderFn: ReorderFunction<T> = useCallback((list, sourceIndex, destIndex) => {
     const reorderedItems = Array.from(list);
     const [removed] = reorderedItems.splice(sourceIndex, 1);
+    if (!removed) return reorderedItems;
     reorderedItems.splice(destIndex, 0, removed);
     return reorderedItems;
   }, []);

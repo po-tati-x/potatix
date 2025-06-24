@@ -106,7 +106,8 @@ export const lessonService = {
       })
       .returning();
     
-    return { id: newLesson[0].id, lesson: newLesson[0] };
+    const created = newLesson[0]!; // ensure non-undefined after insert
+    return { id: created.id, lesson: created };
   },
   
   async updateLesson(lessonId: string, data: LessonUpdateInput) {
@@ -180,7 +181,8 @@ export const lessonService = {
       return { owned: false, error: "Lesson not found", status: 404 };
     }
     
-    return { owned: true, lesson: lessons[0] };
+    const lesson = lessons[0]!; // non-null assertion after existence check
+    return { owned: true, lesson };
   },
   
   async reorderLessons(moduleId: string, lessonIds: string[]) {

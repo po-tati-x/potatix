@@ -1,6 +1,7 @@
 'use client';
 
-import { Component, ReactNode, useCallback, useState } from 'react';
+import { Component, useCallback, useState } from 'react';
+import type { ReactNode } from 'react';
 
 interface Props {
   children: ReactNode;

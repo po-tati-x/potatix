@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { env } from "./env";
 
 /**
  * Extract subdomain from host
@@ -6,7 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 function getSubdomain(host: string, baseDomain: string): string | null {
   if (!host) return null;
 
-  const hostWithoutPort = host.split(":")[0];
+  const hostWithoutPort = host.split(":")[0]!;
 
   // Main domain or www
   if (
@@ -102,8 +103,8 @@ function authMiddleware(
  */
 export default function middleware(request: NextRequest) {
   const host = request.headers.get("host") ?? "";
-  const baseDomain = process.env.NEXT_PUBLIC_APP_URL
-    ? new URL(process.env.NEXT_PUBLIC_APP_URL).hostname
+  const baseDomain = env.NEXT_PUBLIC_APP_URL
+    ? new URL(env.NEXT_PUBLIC_APP_URL).hostname
     : "localhost";
 
   const courseSlug = getSubdomain(host, baseDomain);

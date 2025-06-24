@@ -62,6 +62,7 @@ export function CourseContentSection({
 
     const reordered = [...uiModules];
     const [item] = reordered.splice(index, 1);
+    if (!item) return;
     reordered.splice(newIndex, 0, item);
     setLocalModules(reordered);
 

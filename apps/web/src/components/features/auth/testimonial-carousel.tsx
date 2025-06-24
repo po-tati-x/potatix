@@ -59,7 +59,7 @@ export default function TestimonialCarousel() {
     return () => clearInterval(interval);
   }, []);
 
-  const testimonial = testimonials[currentIndex];
+  const testimonial = testimonials[currentIndex] ?? testimonials[0]!;
 
   return (
     <BlurFade

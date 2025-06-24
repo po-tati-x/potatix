@@ -1,3 +1,5 @@
+import { env } from '../../../env';
+
 /**
  * Utility functions for working with Mux videos
  */
@@ -10,7 +12,7 @@ export async function getMuxAssetId(playbackId: string): Promise<string | null> 
   
   try {
     const muxToken = Buffer.from(
-      `${process.env.MUX_TOKEN_ID}:${process.env.MUX_TOKEN_SECRET}`
+      `${env.MUX_TOKEN_ID}:${env.MUX_TOKEN_SECRET}`
     ).toString('base64');
     
     const playbackResponse = await fetch(
@@ -46,7 +48,7 @@ export async function deleteMuxAsset(assetId: string): Promise<boolean> {
   
   try {
     const muxToken = Buffer.from(
-      `${process.env.MUX_TOKEN_ID}:${process.env.MUX_TOKEN_SECRET}`
+      `${env.MUX_TOKEN_ID}:${env.MUX_TOKEN_SECRET}`
     ).toString('base64');
     
     const response = await fetch(
@@ -78,7 +80,7 @@ export async function deleteMuxAsset(assetId: string): Promise<boolean> {
  */
 function getMuxAuthToken(): string {
   return Buffer.from(
-    `${process.env.MUX_TOKEN_ID}:${process.env.MUX_TOKEN_SECRET}`
+    `${env.MUX_TOKEN_ID}:${env.MUX_TOKEN_SECRET}`
   ).toString('base64');
 }
 

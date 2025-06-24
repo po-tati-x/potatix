@@ -1,13 +1,14 @@
 'use client';
 
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { ChevronLeft, UserCircle } from 'lucide-react';
 import { cn } from '@/lib/shared/utils/cn';
-import { NavItem, NavSection, useNavigationConfig } from './sidebar-navigation';
+import { useNavigationConfig } from './sidebar-navigation';
+import type { NavItem, NavSection } from './sidebar-navigation';
 import { useProfile } from '@/lib/client/hooks/use-profile';
 
 interface SidebarProps {

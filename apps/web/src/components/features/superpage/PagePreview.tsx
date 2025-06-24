@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import { User } from 'lucide-react';
-import { PagePreviewProps } from './types';
+import type { PagePreviewProps } from './types';
 
 export function PagePreview({ profile, activeTheme, iconOptions }: PagePreviewProps) {
   return (

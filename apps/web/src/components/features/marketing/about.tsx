@@ -286,7 +286,7 @@ const About = () => {
     const scrollLeft = containerRef.current.scrollLeft;
     const cardWidth = containerRef.current.offsetWidth;
     const newIndex = Math.round(scrollLeft / cardWidth);
-    if (newIndex !== swipeIndex) {
+    if (newIndex !== swipeIndex && features[newIndex]) {
       setSwipeIndex(newIndex);
       setActiveFeature(features[newIndex].id);
     }

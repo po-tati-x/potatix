@@ -1,6 +1,7 @@
 'use client';
 
-import React, { createContext, useContext, ReactNode } from 'react';
+import { createContext, useContext } from 'react';
+import type { ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { dashboardKeys } from '@/lib/shared/constants/query-keys';
 import type { CourseProgressData, RevenueData, StatsData } from '@/components/features/dashboard/types';

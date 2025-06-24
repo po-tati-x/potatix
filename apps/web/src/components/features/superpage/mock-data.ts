@@ -1,4 +1,4 @@
-import { ProfileData } from './types';
+import type { ProfileData } from './types';
 
 // Mock data for the user's superpage
 export const MOCK_PROFILE: ProfileData = {

@@ -1,11 +1,12 @@
 "use client";
 
+import { Loader2 } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { Suspense, useEffect } from "react";
+
 import AuthForm from "@/components/features/auth/auth-form";
 import SocialLogin from "@/components/features/auth/social-login";
-import { Suspense, useEffect } from "react";
 import { useSession } from "@/lib/auth/auth";
-import { Loader2 } from "lucide-react";
 
 function SignupContent() {
   const router = useRouter();

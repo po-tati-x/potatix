@@ -10,7 +10,7 @@ import { CourseContentSection } from "@/components/features/courses/course-form/
 import { CourseCoverImage } from "@/components/features/courses/course-form/course-cover-image";
 import { CourseStats } from "@/components/features/courses/course-form/course-stats";
 import { SlugEditor } from "@/components/features/courses/course-form/slug-editor";
-import { Course, CreateCourseData, CourseModule, Lesson } from "@/lib/shared/types/courses";
+import type { Course, CreateCourseData, CourseModule, Lesson } from "@/lib/shared/types/courses";
 import { useCourse, useUpdateCourse, useUploadCourseImage } from "@/lib/client/hooks/use-courses";
 
 interface Props {

@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/new-button";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Course } from "@/lib/shared/types/courses";
+import type { Course } from "@/lib/shared/types/courses";
 import { formatPrice, formatNumber } from "@/lib/shared/utils/format";
 import { useCourses } from "@/lib/client/providers/dashboard-context";
 

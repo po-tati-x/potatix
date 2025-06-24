@@ -4,7 +4,7 @@ import { DollarSign, TrendingUp, TrendingDown, AlertCircle, BarChart3 } from 'lu
 import { formatCurrency } from '@/lib/shared/utils/format';
 import { useRevenueInsightsData } from "@/lib/client/hooks/use-dashboard-adapter";
 import { Skeleton } from '@/components/ui/skeleton';
-import { TopPerformingCourse } from './types';
+import type { TopPerformingCourse } from './types';
 
 export function RevenueInsightsPanel() {
   const { revenueData, courses, isLoading, error } = useRevenueInsightsData();

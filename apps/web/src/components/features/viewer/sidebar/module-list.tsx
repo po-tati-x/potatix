@@ -1,6 +1,6 @@
 'use client';
 
-import { Course, Lesson, CourseModule } from '@/lib/shared/types/courses';
+import type { Course, Lesson, CourseModule } from '@/lib/shared/types/courses';
 import { useMemo } from 'react';
 import LessonItem from './lesson-item';
 

@@ -74,10 +74,11 @@ export function VideoChapters({ lessonId, videoId }: VideoChaptersProps) {
     
     // Find the current chapter based on timestamp
     for (let i = chapters.length - 1; i >= 0; i--) {
-      if (currentTime >= chapters[i].timestamp) {
-        // Only update if it's different
-        if (activeChapterId !== chapters[i].id) {
-          setActiveChapterId(chapters[i].id);
+      const chapter = chapters[i];
+      if (!chapter) continue;
+      if (currentTime >= chapter.timestamp) {
+        if (activeChapterId !== chapter.id) {
+          setActiveChapterId(chapter.id);
         }
         break;
       }

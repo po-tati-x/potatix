@@ -1,6 +1,7 @@
 'use client';
 
-import { MessageSquare, Gift, Bell, LucideIcon } from 'lucide-react';
+import { MessageSquare, Gift, Bell } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 interface UtilityButtonProps {
   icon: LucideIcon;

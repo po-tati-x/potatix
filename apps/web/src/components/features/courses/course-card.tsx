@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { BookOpen, ExternalLink, BookText, Clock } from 'lucide-react';
-import { Course } from '@/lib/shared/types/courses';
+import type { Course } from '@/lib/shared/types/courses';
 import { formatMonthDay } from '@/lib/shared/utils/format';
 
 interface CourseCardProps {

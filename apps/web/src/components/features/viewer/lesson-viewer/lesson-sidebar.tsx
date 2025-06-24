@@ -4,7 +4,7 @@ import { memo } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/new-button";
 import { useRouter } from "next/navigation";
-import { Lesson } from "@/lib/shared/types/courses";
+import type { Lesson } from "@/lib/shared/types/courses";
 import { getLessonPath } from "@/lib/shared/utils/navigation";
 
 interface LessonSidebarProps {

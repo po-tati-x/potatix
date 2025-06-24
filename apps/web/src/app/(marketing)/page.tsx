@@ -1,7 +1,7 @@
-import Hero from "@/components/features/marketing/hero";
-import Features from "@/components/features/marketing/features";
-import Pricing from "@/components/features/marketing/pricing";   
 import FAQ from "@/components/features/marketing/faq";
+import Features from "@/components/features/marketing/features";
+import Hero from "@/components/features/marketing/hero";
+import Pricing from "@/components/features/marketing/pricing";
 
 export default function LandingPage() {
   return (

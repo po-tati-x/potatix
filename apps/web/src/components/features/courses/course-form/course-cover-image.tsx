@@ -54,8 +54,9 @@ export function CourseCoverImage({
               className="hidden"
               accept="image/*"
               onChange={(e) => {
-                if (e.target.files?.length) {
-                  onImageChange(e.target.files[0]);
+                const file = e.target.files?.[0];
+                if (file) {
+                  onImageChange(file);
                 }
               }}
             />

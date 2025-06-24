@@ -3,14 +3,11 @@
 import { cn } from '@/lib/shared/utils/cn';
 import { usePathname } from 'next/navigation';
 import {
-  ComponentType,
   createContext,
-  Dispatch,
-  ReactNode,
-  SetStateAction,
   useEffect,
   useState,
 } from 'react';
+import type { ComponentType, Dispatch, SetStateAction, ReactNode } from 'react';
 
 type SideNavContext = {
   isOpen: boolean;

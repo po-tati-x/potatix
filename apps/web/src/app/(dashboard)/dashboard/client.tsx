@@ -1,14 +1,16 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { DashboardHeader } from '@/components/features/dashboard/dashboard-header';
-import { StatsGrid } from '@/components/features/dashboard/stats-grid';
-import { CoursesPanel } from '@/components/features/dashboard/courses-panel';
-import { ProfileCard } from '@/components/features/dashboard/profile-card';
-import { CourseProgressTracking } from '@/components/features/dashboard/course-progress-tracking';
-import { RevenueInsightsPanel } from '@/components/features/dashboard/revenue-insights-panel';
-import { DashboardContextProvider } from '@/lib/client/providers/dashboard-context';
+
 import type { DashboardPayload } from '@/lib/client/providers/dashboard-context';
+
+import { CourseProgressTracking } from '@/components/features/dashboard/course-progress-tracking';
+import { CoursesPanel } from '@/components/features/dashboard/courses-panel';
+import { DashboardHeader } from '@/components/features/dashboard/dashboard-header';
+import { ProfileCard } from '@/components/features/dashboard/profile-card';
+import { RevenueInsightsPanel } from '@/components/features/dashboard/revenue-insights-panel';
+import { StatsGrid } from '@/components/features/dashboard/stats-grid';
+import { DashboardContextProvider } from '@/lib/client/providers/dashboard-context';
 
 // Client component that handles interactivity and additional data fetching
 export function DashboardClient({ initialData }: { initialData?: DashboardPayload } = {}) {

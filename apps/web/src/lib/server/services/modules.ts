@@ -57,9 +57,8 @@ export const moduleService = {
       .orderBy(desc(courseSchema.courseModule.order))
       .limit(1);
     
-    const nextOrder = existingModules.length > 0 
-      ? (existingModules[0].order || 0) + 1 
-      : 0;
+    const current = existingModules[0];
+    const nextOrder = current ? (current.order || 0) + 1 : 0;
     
     // Create module
     const newModule = await database
@@ -75,7 +74,8 @@ export const moduleService = {
       })
       .returning();
     
-    return newModule[0];
+    const created = newModule[0]!;
+    return created;
   },
   
   async updateModule(moduleId: string, data: ModuleUpdateInput) {
@@ -90,7 +90,8 @@ export const moduleService = {
       .where(eq(courseSchema.courseModule.id, moduleId))
       .returning();
     
-    return updatedModule[0];
+    const updated = updatedModule[0]!;
+    return updated;
   },
   
   async deleteModule(moduleId: string) {
@@ -123,7 +124,7 @@ export const moduleService = {
       
       if (otherModules.length > 0) {
         // Reassign lessons to another module
-        const targetModuleId = otherModules[0].id;
+        const targetModuleId = otherModules[0]!.id;
         
         await database
           .update(courseSchema.lesson)

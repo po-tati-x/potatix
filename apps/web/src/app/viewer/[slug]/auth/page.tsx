@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 
-const BASE_URL = new URL(process.env.NEXT_PUBLIC_APP_URL ?? "https://potatix.com");
+import { env } from "@/env";
+
+const BASE_URL = new URL(env.NEXT_PUBLIC_APP_URL ?? "https://potatix.com");
 
 export default async function CourseAuthRedirect({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;

@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { SectionWrapper } from "./section-wrapper";
 import { ProfileImage } from "./profile-image";
 import { FormField } from "./form-field";
-import { ProfileSectionProps } from "./types";
+import type { ProfileSectionProps } from "./types";
 
 import { useUpdateProfile } from "@/lib/client/hooks/use-profile";
 

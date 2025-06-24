@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useDashboardData } from './use-dashboard';
-import { CourseProgressData, RevenueData as UiRevenueData, TopPerformingCourse } from '@/components/features/dashboard/types';
+import type { CourseProgressData, RevenueData as UiRevenueData, TopPerformingCourse } from '@/components/features/dashboard/types';
 import type { Course } from '@/lib/shared/types/courses';
 
 // Minimal API shape until backend types are strict

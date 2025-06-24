@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import Modal from "@/components/ui/Modal";
 import { Button } from "@/components/ui/new-button";
-import { Module, Lesson } from "@/lib/shared/types/courses";
+import type { Module, Lesson } from "@/lib/shared/types/courses";
 import { useCourseDetail } from "@/components/providers/courses/course-detail-context";
 
 // Status badge component

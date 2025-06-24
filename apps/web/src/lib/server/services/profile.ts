@@ -23,7 +23,7 @@ export const profileService = {
       return null;
     }
 
-    const user = users[0];
+    const user = users[0]!;
     
     // Try to get profile data from userProfile table if it exists
     let profileData = null;

@@ -5,9 +5,8 @@ import {
   DragDropContext,
   Droppable,
   Draggable,
-  DropResult,
-  DraggableProvidedDragHandleProps,
 } from "@hello-pangea/dnd";
+import type { DropResult, DraggableProvidedDragHandleProps } from "@hello-pangea/dnd";
 import { useReorderLessons } from "@/lib/client/hooks/use-courses";
 
 // Consistent UILesson interface
@@ -87,6 +86,7 @@ export function DraggableLessonList({
     
     const reorderedItems = Array.from(lessons);
     const [removed] = reorderedItems.splice(sourceIndex, 1);
+    if (!removed) return;
     reorderedItems.splice(destIndex, 0, removed);
 
     // If there's a parent component that wants to know about reordering, tell it

@@ -1,8 +1,9 @@
-import path from "path";
-import dotenv from "dotenv";
+import { config as loadEnv } from "dotenv-flow";
+import { join } from "path";
 import type { NextConfig } from "next";
 
-dotenv.config({ path: path.resolve(__dirname, "../../.env") });
+// Load environment variables from monorepo root
+loadEnv({ path: join(__dirname, "../..") });
 
 const nextConfig: NextConfig = {
   /* config options here */
@@ -16,8 +17,7 @@ const nextConfig: NextConfig = {
       },
       { protocol: "https", hostname: "images.unsplash.com" },
       { protocol: "https", hostname: "storage.potatix.com" },
-      { protocol: "https", hostname: "image.mux.com" },
-      { protocol: "https", hostname: "potatix.com" },
+      { protocol: "https", hostname: "image.mux.com" }
     ],
   },
   async headers() {
@@ -60,7 +60,7 @@ const nextConfig: NextConfig = {
   },
   devIndicators: false,
   // Webpack config for monorepo packages
-  transpilePackages: ['@potatix/ui', '@potatix/db', '@potatix/auth'],
+  transpilePackages: ['@potatix/db', '@potatix/auth'],
   // This is required for subdomain routing in development
   allowedDevOrigins: ['potatix.com', '*.potatix.com'],
 };

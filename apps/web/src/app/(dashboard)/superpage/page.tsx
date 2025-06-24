@@ -1,8 +1,10 @@
 'use client';
 
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { DropResult } from '@hello-pangea/dnd';
+import { useState } from 'react';
+
+import type { ThemeId, ThemeOption } from '@/components/features/superpage';
+import type { DropResult } from '@hello-pangea/dnd';
 
 // Import superpage components
 import {
@@ -15,7 +17,6 @@ import {
   ICON_OPTIONS,
   THEME_OPTIONS,
   MOCK_PROFILE,
-  ThemeId
 } from '@/components/features/superpage';
 
 export default function SuperpagePage() {
@@ -26,7 +27,9 @@ export default function SuperpagePage() {
   const [activeTab, setActiveTab] = useState('links');
   
   // Get active theme
-  const activeTheme = THEME_OPTIONS.find(theme => theme.id === profile.theme) || THEME_OPTIONS[0];
+  const activeTheme = (
+    THEME_OPTIONS.find(theme => theme.id === profile.theme) || THEME_OPTIONS[0]
+  ) as ThemeOption;
 
   // Handle form field changes
   const handleProfileChange = (field: string, value: string) => {
@@ -84,7 +87,7 @@ export default function SuperpagePage() {
 
     const newLinks = Array.from(profile.links);
     const [removed] = newLinks.splice(sourceIndex, 1);
-    newLinks.splice(destIndex, 0, removed);
+    newLinks.splice(destIndex, 0, removed!);
 
     setProfile({
       ...profile,

@@ -200,7 +200,7 @@ export default function CourseLayout({ children, params }: CourseLayoutProps) {
           >
             <CourseSidebar
               course={course}
-              currentLessonId={pathname.split("/lesson/")[1]}
+              currentLessonId={(pathname.split("/lesson/")[1] ?? "") as string}
               courseSlug={courseSlug}
               isAuthenticated={isAuthenticated}
               isEnrolled={isEnrolled}

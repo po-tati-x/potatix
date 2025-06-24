@@ -3,6 +3,8 @@
  * Replacement for the deleted middleware logger
  */
 
+import { env } from '../../../env';
+
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
 type LogParams =
@@ -16,7 +18,7 @@ type LogParams =
   | readonly LogParams[];
 
 // Environment-aware logging
-const SHOW_LOGS = process.env.NODE_ENV === 'development' || process.env.LOG_SERVICES === 'true';
+const SHOW_LOGS = env.NODE_ENV === 'development' || env.LOG_SERVICES === 'true';
 
 class ServerLogger {
   private prefix: string;

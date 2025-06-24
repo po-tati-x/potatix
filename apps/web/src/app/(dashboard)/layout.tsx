@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { AppSidebar } from '@/components/features/app-sidebar/app-sidebar';
 import { MainNav } from '@/components/features/app-sidebar/main-nav';
 

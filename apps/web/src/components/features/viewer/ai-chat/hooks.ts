@@ -7,15 +7,17 @@ import { VideoEventType, videoEventBus } from '@/lib/shared/utils/video-event-bu
 export function useTimestampNavigation(lessonId: string) {
   // Convert timestamp string [MM:SS] to seconds
   const parseTimestamp = useCallback((timeStr: string): number => {
-    // Remove the brackets and split by colon
-    const cleanTime = timeStr.replace(/[\[\]]/g, '');
-    const [minutes, seconds] = cleanTime.split(':').map(num => parseInt(num, 10));
-    
-    if (isNaN(minutes) || isNaN(seconds)) {
+    const cleanTime = timeStr.replace(/[[\]]/g, '');
+    const [minStr = '0', secStr = '0'] = cleanTime.split(':');
+
+    const minutes = parseInt(minStr, 10);
+    const seconds = parseInt(secStr, 10);
+
+    if (Number.isNaN(minutes) || Number.isNaN(seconds)) {
       return 0;
     }
-    
-    return (minutes * 60) + seconds;
+
+    return minutes * 60 + seconds;
   }, []);
   
   // Handle jump to timestamp using the event bus

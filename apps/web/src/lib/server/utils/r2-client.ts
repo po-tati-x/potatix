@@ -1,18 +1,19 @@
 import { S3Client } from '@aws-sdk/client-s3';
 import { PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { env } from '../../../env';
 
 // Initialize S3 client for Cloudflare R2
 const s3Client = new S3Client({
   region: 'auto',
-  endpoint: `https://${process.env.CLOUDFLARE_R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  endpoint: `https://${env.CLOUDFLARE_R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
   credentials: {
-    accessKeyId: process.env.CLOUDFLARE_R2_ACCESS_KEY || '',
-    secretAccessKey: process.env.CLOUDFLARE_R2_SECRET_KEY || '',
+    accessKeyId: env.CLOUDFLARE_R2_ACCESS_KEY,
+    secretAccessKey: env.CLOUDFLARE_R2_SECRET_KEY,
   },
 });
 
-const BUCKET_NAME = process.env.CLOUDFLARE_R2_BUCKET_NAME || '';
-const PUBLIC_URL = process.env.CLOUDFLARE_R2_PUBLIC_URL || '';
+const BUCKET_NAME = env.CLOUDFLARE_R2_BUCKET_NAME;
+const PUBLIC_URL = env.CLOUDFLARE_R2_PUBLIC_URL;
 
 export async function uploadFile(file: Buffer, key: string, contentType: string): Promise<string> {
   try {

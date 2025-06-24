@@ -2,7 +2,7 @@ import { User } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/new-button";
 import { ThemeSelector } from "./ThemeSelector";
-import { AppearanceTabProps } from "./types";
+import type { AppearanceTabProps } from "./types";
 
 export function AppearanceTab({
   profile,

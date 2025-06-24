@@ -1,8 +1,10 @@
 "use client";
 
-import React, { createContext, useContext, useMemo, useState, ReactNode, useCallback } from "react";
+import { createContext, useContext, useMemo, useState, useCallback } from "react";
+import type { ReactNode } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { courseApi, Course } from "@/lib/client/api/courses";
+import { courseApi } from "@/lib/client/api/courses";
+import type { Course } from "@/lib/client/api/courses";
 import { courseKeys } from "@/lib/shared/constants/query-keys";
 import { formatMonthDay } from "@/lib/shared/utils/format";
 

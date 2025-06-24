@@ -107,16 +107,14 @@ export const dashboardProgressService = {
 
         // Get the title of the bottleneck lesson
         let bottleneckLesson = "N/A";
-        if (bottleneckResult.length > 0) {
+        if (bottleneckResult.length > 0 && bottleneckResult[0]?.lessonId) {
           const lessonResult = await db
-            .select({
-              title: courseSchema.lesson.title,
-            })
+            .select({ title: courseSchema.lesson.title })
             .from(courseSchema.lesson)
             .where(eq(courseSchema.lesson.id, bottleneckResult[0].lessonId))
             .limit(1);
 
-          bottleneckLesson = lessonResult[0]?.title || "N/A";
+          bottleneckLesson = lessonResult[0]?.title ?? "N/A";
         }
 
         // 5. Calculate dropout rate

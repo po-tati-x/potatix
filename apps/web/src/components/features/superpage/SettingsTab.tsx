@@ -1,6 +1,6 @@
 import { ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/new-button";
-import { SettingsTabProps } from "./types";
+import type { SettingsTabProps } from "./types";
 
 export function SettingsTab({ onOpenPublicPage }: SettingsTabProps) {
   return (

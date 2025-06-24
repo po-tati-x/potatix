@@ -80,7 +80,7 @@ export const userService = {
         throw new ServiceError("User not found", "USER_NOT_FOUND", 404);
       }
 
-      const core = users[0];
+      const core = users[0]!;
 
       // Grab extended profile (bio, etc.)
       const profiles = await db
@@ -170,7 +170,7 @@ export const userService = {
         .where(eq(authSchema.user.id, userId))
         .limit(1);
 
-      const core = finalUser[0];
+      const core = finalUser[0]!;
 
       // Fetch profile for bio
       const profileRowArr = await db
@@ -179,7 +179,7 @@ export const userService = {
         .where(eq(profileSchema.userProfile.userId, userId))
         .limit(1);
 
-      const profileRow = profileRowArr[0] || {};
+      const profileRow = (profileRowArr[0] as { bio?: string | null } | undefined) ?? {};
 
       return {
         id: core.id,

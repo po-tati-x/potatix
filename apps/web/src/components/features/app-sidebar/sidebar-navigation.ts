@@ -5,8 +5,8 @@ import {
   BookOpen,
   Cog,
   Smile,
-  LucideIcon,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 export interface NavItem {
   name: string;

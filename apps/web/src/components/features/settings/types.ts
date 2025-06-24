@@ -1,4 +1,4 @@
-import { UserProfile } from "@/lib/shared/types/profile";
+import type { UserProfile } from "@/lib/shared/types/profile";
 
 /**
  * Props for ProfileSection component

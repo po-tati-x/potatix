@@ -1,8 +1,9 @@
-import Header from "@/components/features/marketing/layout/navbar";
+import { Roboto_Flex } from "next/font/google";
+
 import Footer from "@/components/features/marketing/layout/footer";
+import Header from "@/components/features/marketing/layout/navbar";
 import { BottomBlur } from "@/components/ui/bottom-blur";
 import { TopBlur } from "@/components/ui/top-blur";
-import { Roboto_Flex } from "next/font/google";
 
 const roboto = Roboto_Flex({
   subsets: ["latin"],

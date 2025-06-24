@@ -1,4 +1,4 @@
-import { ThemeSelectorProps } from './types';
+import type { ThemeSelectorProps } from './types';
 
 export function ThemeSelector({ 
   activeThemeId, 

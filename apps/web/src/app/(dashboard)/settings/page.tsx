@@ -1,8 +1,8 @@
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
+import SettingsClient from '@/components/features/settings/settings-client';
 import { auth } from '@/lib/auth/auth-server';
 import { profileService } from '@/lib/server/services/profile';
-import SettingsClient from '@/components/features/settings/settings-client';
 
 export default async function SettingsPage() {
   const hdr = await headers();

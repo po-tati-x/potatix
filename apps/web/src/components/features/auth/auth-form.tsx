@@ -79,9 +79,9 @@ export default function AuthForm({
       if (isSignUp) {
         // Handle sign up
         const response = await signUp.email({
-          name: values.name || values.email.split("@")[0],
-          email: values.email,
-          password: values.password,
+          name: (values.name || (values.email ?? "").split("@")[0]) as string,
+          email: values.email!,
+          password: values.password!,
           callbackURL: callbackUrl,
         });
 
@@ -94,8 +94,8 @@ export default function AuthForm({
       } else {
         // Handle sign in
         const response = await signIn.email({
-          email: values.email,
-          password: values.password,
+          email: values.email!,
+          password: values.password!,
           callbackURL: callbackUrl,
           rememberMe: true,
         });

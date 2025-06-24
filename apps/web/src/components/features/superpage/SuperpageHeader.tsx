@@ -1,6 +1,6 @@
 import { ArrowLeft, Eye, EyeOff, Loader2, Save } from "lucide-react";
 import { Button } from "@/components/ui/new-button";
-import { SuperpageHeaderProps } from "./types";
+import type { SuperpageHeaderProps } from "./types";
 
 export function SuperpageHeader({
   showPreview,

@@ -2,13 +2,13 @@ import {
   useQuery,
   useMutation,
   useQueryClient,
-  UseQueryResult,
-  UseMutationResult,
 } from "@tanstack/react-query";
+import type { UseQueryResult, UseMutationResult } from "@tanstack/react-query";
 import { signOut } from "@/lib/auth/auth";
 import { dashboardKeys } from "@/lib/shared/constants/query-keys";
 import { useCallback } from "react";
-import { dashboardApi, DashboardData } from "../api/dashboard";
+import { dashboardApi } from "../api/dashboard";
+import type { DashboardData } from "../api/dashboard";
 
 interface DashboardQueryOptions {
   initialData?: DashboardData;

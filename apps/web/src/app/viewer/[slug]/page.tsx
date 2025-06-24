@@ -1,11 +1,13 @@
+import type { Course } from "@/lib/shared/types/courses";
 import { courseService } from "@/lib/server/services/courses";
 import CourseOverview from "@/components/features/viewer/course-overview";
-import { notFound, redirect } from "next/navigation";
 import { headers } from "next/headers";
-import type { Course } from "@/lib/shared/types/courses";
+import { notFound, redirect } from "next/navigation";
+
+import { env } from "@/env";
 
 // Central application origin (proto + host + optional port)
-const APP_ORIGIN = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? "https://potatix.com";
+const APP_ORIGIN = env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? "https://potatix.com";
 
 // Server-side component – fetch course once, hand straight to the client UI
 export default async function CourseViewerPage({ params }: { params: Promise<{ slug: string }> }) {

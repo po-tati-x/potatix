@@ -1,9 +1,12 @@
-import { DashboardClient } from "./client";
-import { dashboardService } from '@/lib/server/services/dashboard';
-import { auth } from '@/lib/auth/auth-server';
-import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
+import { redirect } from 'next/navigation';
+
 import type { DashboardPayload } from '@/lib/client/providers/dashboard-context';
+
+import { auth } from '@/lib/auth/auth-server';
+import { dashboardService } from '@/lib/server/services/dashboard';
+
+import { DashboardClient } from './client';
 
 export default async function DashboardPage() {
   const headerList = await headers();

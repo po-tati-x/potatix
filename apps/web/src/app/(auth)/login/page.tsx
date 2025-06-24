@@ -1,11 +1,12 @@
 "use client";
 
-import { useSearchParams, useRouter } from "next/navigation";
-import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import Link from "next/link";
+import { useSearchParams, useRouter } from "next/navigation";
+import { Suspense, useEffect } from "react";
+
 import AuthForm from "@/components/features/auth/auth-form";
 import SocialLogin from "@/components/features/auth/social-login";
-import { Suspense, useEffect } from "react";
 import { useSession } from "@/lib/auth/auth";
 
 function LoginContent() {

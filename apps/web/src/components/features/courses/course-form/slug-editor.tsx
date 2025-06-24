@@ -8,8 +8,8 @@ import {
   uniqueNamesGenerator,
   colors,
   animals,
-  Config,
 } from "unique-names-generator";
+import type { Config } from "unique-names-generator";
 
 interface SlugEditorProps {
   currentSlug: string;

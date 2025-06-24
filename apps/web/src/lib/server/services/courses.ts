@@ -214,7 +214,7 @@ export const courseService = {
 
     if (!courses.length) return null;
 
-    const course = courses[0];
+    const course = courses[0]!;
 
     // Fetch modules
     const modules = await moduleService.getModulesByCourseId(course.id);

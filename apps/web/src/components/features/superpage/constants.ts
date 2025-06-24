@@ -8,7 +8,7 @@ import {
   Mail,
   FileText
 } from 'lucide-react';
-import { ThemeOption, LinkIconType } from './types';
+import type { ThemeOption, LinkIconType } from './types';
 
 // Available icons for links
 export const ICON_OPTIONS: Record<LinkIconType, React.FC<{ className?: string }>> = {

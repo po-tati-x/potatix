@@ -1,5 +1,5 @@
 import { Eye, EyeOff, GripVertical, Trash2 } from 'lucide-react';
-import { LinkEditorProps } from './types';
+import type { LinkEditorProps } from './types';
 
 export function LinkEditor({ 
   link, 

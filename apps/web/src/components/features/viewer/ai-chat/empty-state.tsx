@@ -1,7 +1,7 @@
 'use client';
 
-import { Bot, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { Bot, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface ChatPromptProps {
@@ -48,7 +48,10 @@ export const EmptyState = ({ setInput, focusInput, lessonId, courseId, lessonTit
           const data = await resp.json();
           if (!cancelled) setPrompts(data.prompts as string[]);
         }
-      } catch {}
+      } catch (error) {
+        // Network failures are non-critical; fall back to static prompts.
+        console.error('Failed to fetch AI chat prompts', error);
+      }
       if (!cancelled) setLoading(false);
     })();
     return () => { cancelled = true; };

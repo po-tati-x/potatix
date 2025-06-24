@@ -1,5 +1,7 @@
-import { useQuery, useMutation, useQueryClient, UseMutationResult, UseQueryResult } from "@tanstack/react-query";
-import { enrollmentApi, Enrollment } from "../api/enrollments";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import type { UseMutationResult, UseQueryResult } from "@tanstack/react-query";
+import { enrollmentApi } from "../api/enrollments";
+import type { Enrollment } from "../api/enrollments";
 import { courseKeys } from "@/lib/shared/constants/query-keys";
 
 export function useStudents(courseId: string): UseQueryResult<Enrollment[], Error> {

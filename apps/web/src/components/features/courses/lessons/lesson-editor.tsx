@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { ChevronDown, ChevronRight, Trash2, GripVertical } from "lucide-react";
-import { DraggableProvidedDragHandleProps } from "@hello-pangea/dnd";
-import { UILesson } from './draggable-lesson-list';
+import type { DraggableProvidedDragHandleProps } from "@hello-pangea/dnd";
+import type { UILesson } from './draggable-lesson-list';
 import { FormField } from "../../../ui/form-field";
 import { VideoUploader } from "../media/video-uploader";
 import { VideoPreview } from "../media/video-preview";

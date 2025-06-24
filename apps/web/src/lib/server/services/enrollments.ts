@@ -57,18 +57,19 @@ export const enrollmentService = {
       .limit(1);
     
     if (existingEnrollment.length > 0) {
+      const existing = existingEnrollment[0]!;
       // If already enrolled but not active, update the status
-      if (existingEnrollment[0].status !== "active") {
+      if (existing.status !== "active") {
         await database
           .update(courseSchema.courseEnrollment)
           .set({
             status: "active",
             updatedAt: new Date(),
           })
-          .where(eq(courseSchema.courseEnrollment.id, existingEnrollment[0].id));
+          .where(eq(courseSchema.courseEnrollment.id, existing.id));
       }
       
-      return { id: existingEnrollment[0].id, enrollment: existingEnrollment[0], alreadyEnrolled: true };
+      return { id: existing.id, enrollment: existing, alreadyEnrolled: true };
     }
     
     // Insert new enrollment
@@ -84,7 +85,8 @@ export const enrollmentService = {
       })
       .returning();
     
-    return { id: newEnrollment[0].id, enrollment: newEnrollment[0], alreadyEnrolled: false };
+    const created = newEnrollment[0]!; // ensure non-undefined after insert
+    return { id: created.id, enrollment: created, alreadyEnrolled: false };
   },
   
   async updateEnrollment(enrollmentId: string, data: EnrollmentUpdateInput) {

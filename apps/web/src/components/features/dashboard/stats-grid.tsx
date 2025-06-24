@@ -2,7 +2,7 @@
 
 import { ArrowUp, ArrowDown } from "lucide-react";
 import { formatCurrency, formatNumber } from "@/lib/shared/utils/format";
-import { StatsData } from "@/components/features/dashboard/types";
+import type { StatsData } from "@/components/features/dashboard/types";
 import { useStats } from "@/lib/client/providers/dashboard-context";
 import { withDataHandling } from "./shared/with-data-handling";
 

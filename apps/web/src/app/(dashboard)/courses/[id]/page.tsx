@@ -1,10 +1,12 @@
-import { redirect } from "next/navigation";
 import { headers } from "next/headers";
-import { auth } from "@/lib/auth/auth-server";
-import { courseService } from "@/lib/server/services/courses";
+import { redirect } from "next/navigation";
+
 import type { Course } from "@/lib/shared/types/courses";
+
 import CourseDetailClient from "@/components/features/courses/detail/course-detail-client";
 import { CourseDetailProvider } from "@/components/providers/courses/course-detail-context";
+import { auth } from "@/lib/auth/auth-server";
+import { courseService } from "@/lib/server/services/courses";
 
 export default async function CourseDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: courseId } = await params;

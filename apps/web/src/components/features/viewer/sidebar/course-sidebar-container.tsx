@@ -1,6 +1,6 @@
 "use client";
 
-import { Course, Lesson } from '@/lib/shared/types/courses';
+import type { Course, Lesson } from '@/lib/shared/types/courses';
 import { PanelLeftClose, PanelLeft, Book } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/new-button";
