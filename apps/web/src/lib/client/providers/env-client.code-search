@@ -1,0 +1,6 @@
+# Query: env-client
+
+1 result - 1 file
+
+apps/web/src/lib/client/providers/posthog.tsx:
+  8: import { clientEnv } from '@/env-client'
