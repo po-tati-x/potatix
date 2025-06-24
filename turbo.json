@@ -42,8 +42,8 @@
       "cache": false
     },
     "start": {
-      "dependsOn": ["build"],
-      "outputs": ["dist/**"]
+      "persistent": true,
+      "cache": false
     },
     "studio": {
       "cache": false,
