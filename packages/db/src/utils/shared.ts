@@ -10,8 +10,7 @@ export const timestamps = {
 };
 
 /**
- * Reusable server-only guard to prevent client-side imports
- * Use this instead of copy-pasting the same check everywhere
+ * Guard to prevent server-only modules from leaking into the browser bundle
  */
 export function serverOnly(moduleName: string): void {
   if (
@@ -22,4 +21,4 @@ export function serverOnly(moduleName: string): void {
       `Server-only module "${moduleName}" cannot be imported in browser context`,
     );
   }
-}
+} 

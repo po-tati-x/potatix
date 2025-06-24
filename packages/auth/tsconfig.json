@@ -1,13 +1,11 @@
 {
-  "extends": "@potatix/typescript-config/internal-package.json",
+  "extends": "@potatix/tsconfig/lib",
   "include": ["src"],
   "exclude": ["node_modules"],
   "compilerOptions": {
     "lib": ["dom", "ES2022"],
-    "composite": false,
-    "emitDeclarationOnly": false,
-    "declarationMap": false,
-    "declaration": false,
-    "baseUrl": "."
-  }
+    "baseUrl": ".",
+    "outDir": "dist"
+  },
+  "references": [{ "path": "../db" }]
 }

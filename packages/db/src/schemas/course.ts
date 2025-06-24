@@ -223,3 +223,15 @@ export const lessonProgressRelations = relations(lessonProgress, ({ one }) => ({
     references: [user.id],
   }),
 }));
+
+// ---------------------------------------------------------------------------
+// Grouped schema export for external usage
+// ---------------------------------------------------------------------------
+
+export const courseSchema = {
+  course,
+  courseModule,
+  lesson,
+  courseEnrollment,
+  lessonProgress,
+}; 

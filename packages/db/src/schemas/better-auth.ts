@@ -59,3 +59,14 @@ export const verification = pgTable('verification', {
     () => /* @__PURE__ */ new Date(),
   ),
 });
+
+// ---------------------------------------------------------------------------
+// Grouped auth schema export
+// ---------------------------------------------------------------------------
+
+export const authSchema = {
+  user,
+  session,
+  account,
+  verification,
+}; 

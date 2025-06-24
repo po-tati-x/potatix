@@ -5,26 +5,23 @@
   "exports": {
     ".": {
       "types": "./dist/src/index.d.ts",
-      "default": "./src/index.ts"
+      "default": "./dist/src/index.js"
     },
     "./client": {
       "types": "./dist/src/client.d.ts",
-      "default": "./src/client.ts"
-    },
-    "./schema": {
-      "types": "./dist/src/schema.d.ts",
-      "default": "./src/schema.ts"
+      "default": "./dist/src/client.js"
     }
   },
   "scripts": {
     "build": "tsc --build",
     "clean": "git clean -xdf .cache .turbo dist node_modules",
-    "dev": "tsc --build tsconfig.package.json",
-    "format": "prettier --check . --ignore-path ../../.gitignore",
-    "lint": "eslint",
-    "push": "pnpm env:run drizzle-kit push",
-    "studio": "pnpm env:run drizzle-kit studio",
-    "typecheck": "tsc --build --noEmit --emitDeclarationOnly false"
+    "dev": "tsc -b --watch",
+    "format": "prettier --check . --ignore-path ../../.gitignore --cache --cache-location .cache/.prettiercache",
+    "lint": "eslint . --cache --cache-location .cache/.eslintcache",
+    "push": "drizzle-kit push",
+    "studio": "drizzle-kit studio",
+    "typecheck": "tsc --build --noEmit --emitDeclarationOnly false",
+    "test": "echo 'noop test'"
   },
   "prettier": "@potatix/prettier-config",
   "dependencies": {
@@ -34,15 +31,9 @@
     "valibot": "^1.1.0"
   },
   "devDependencies": {
-    "@potatix/eslint-config": "workspace:*",
-    "@potatix/prettier-config": "workspace:*",
-    "@potatix/typescript-config": "workspace:*",
-    "@types/node": "^24.0.1",
     "@types/pg": "^8.15.4",
-    "dotenv-cli": "^8.0.0",
+    "dotenv-flow": "^4.1.0",
     "drizzle-kit": "^0.31.1",
-    "eslint": "^9.28.0",
-    "shx": "^0.4.0",
-    "typescript": "^5.8.3"
+    "shx": "^0.4.0"
   }
 }

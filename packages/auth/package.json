@@ -1,32 +1,32 @@
 {
   "name": "@potatix/auth",
-  "version": "0.1.0",
   "private": true,
   "type": "module",
   "exports": {
-    "./client": "./src/client.ts",
-    "./server": "./src/server.ts"
+    "./client": {
+      "types": "./dist/src/client.d.ts",
+      "default": "./dist/src/client.js"
+    },
+    "./server": {
+      "types": "./dist/src/server.d.ts",
+      "default": "./dist/src/server.js"
+    }
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc --build",
     "clean": "git clean -xdf .cache .turbo dist node_modules",
-    "dev": "tsc",
-    "format": "prettier --check . --ignore-path ../../.gitignore",
-    "auth:schema:generate": "bunx @better-auth/cli generate --config ./src/cli-config.ts --output ../db/src/schemas/auth.ts",
-    "lint": "eslint",
-    "typecheck": "tsc --noEmit"
+    "dev": "tsc -b --watch",
+    "format": "prettier --check . --ignore-path ../../.gitignore --cache --cache-location .cache/.prettiercache",
+    "auth:schema:generate": "bunx @better-auth/cli generate --config ./src/cli-config.ts --output ../db/src/schemas/better-auth.ts",
+    "lint": "eslint . --cache --cache-location .cache/.eslintcache",
+    "typecheck": "tsc --noEmit",
+    "test": "echo 'noop test'"
   },
   "prettier": "@potatix/prettier-config",
   "dependencies": {
     "@potatix/db": "workspace:*",
-    "better-auth": "^1.2.9"
+    "better-auth": "^1.2.10"
   },
   "devDependencies": {
-    "@potatix/eslint-config": "workspace:*",
-    "@potatix/prettier-config": "workspace:*",
-    "@potatix/typescript-config": "workspace:*",
-    "@types/node": "^24.0.1",
-    "eslint": "^9.28.0",
-    "typescript": "^5.8.3"
   }
 }

@@ -1,8 +1,0 @@
-{
-  "extends": "@potatix/typescript-config/base.json",
-  "include": ["drizzle.config.ts"],
-  "exclude": ["node_modules"],
-  "compilerOptions": {
-    "types": ["node"]
-  }
-}

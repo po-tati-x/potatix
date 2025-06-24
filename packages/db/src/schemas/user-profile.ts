@@ -30,3 +30,11 @@ export const userProfileRelations = relations(userProfile, ({ one }) => ({
     references: [user.id],
   }),
 }));
+
+// ---------------------------------------------------------------------------
+// Grouped profile schema export
+// ---------------------------------------------------------------------------
+
+export const profileSchema = {
+  userProfile,
+}; 

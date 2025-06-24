@@ -4,15 +4,6 @@ export { alias } from 'drizzle-orm/pg-core';
 export * from './schema';
 export * from './client';
 
-import * as authSchemaImport from './schemas/better-auth';
-import * as courseSchemaImport from './schemas/course';
-import * as profileSchemaImport from './schemas/user-profile';
-
-// Export schema modules
-export const authSchema = authSchemaImport;
-export const courseSchema = courseSchemaImport;
-export const profileSchema = profileSchemaImport;
-
 // Singleton DB instance
 import { createDb, type DatabaseInstance } from './client';
 
