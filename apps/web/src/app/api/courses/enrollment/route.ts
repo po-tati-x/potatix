@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
   const course = await courseService.getCourseBySlug(slug, true);
   if (!course) return createErrorResponse("Course not found", 404);
 
-  const result = await enrollmentService.checkEnrollment(auth.userId, course.id);
+  const result = await enrollmentService.checkEnrollment(auth.userId, course.id!);
   return NextResponse.json({ isEnrolled: result.enrolled, enrollment: result.enrollment ?? null });
 }
 
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
 
   const { enrollment, alreadyEnrolled } = await enrollmentService.createEnrollment({
     userId: auth.userId,
-    courseId: course.id,
+    courseId: course.id!,
   });
 
   return NextResponse.json({ alreadyEnrolled, enrollment }, { status: 201 });

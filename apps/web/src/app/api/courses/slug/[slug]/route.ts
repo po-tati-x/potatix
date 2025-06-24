@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { apiAuth, createErrorResponse, AuthResult } from "@/lib/auth/api-auth";
+import { apiAuth, createErrorResponse } from "@/lib/auth/api-auth";
+import type { AuthResult } from "@/lib/auth/api-auth";
 import { courseService } from "@/lib/server/services/courses";
 
 // Type guard to check if auth result has userId

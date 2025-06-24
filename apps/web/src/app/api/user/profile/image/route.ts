@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { nanoid } from "nanoid";
-import { apiAuth, createErrorResponse, AuthResult } from "@/lib/auth/api-auth";
+import { apiAuth, createErrorResponse } from "@/lib/auth/api-auth";
+import type { AuthResult } from "@/lib/auth/api-auth";
 import { uploadFile, deleteFile, extractKeyFromUrl } from "@/lib/server/utils/r2-client";
 import { db, authSchema } from "@potatix/db";
 import { eq } from "drizzle-orm";
@@ -72,7 +73,7 @@ export async function POST(request: NextRequest) {
       return createErrorResponse("User not found", 404);
     }
 
-    const userData = users[0];
+    const userData = users[0]!;
 
     // Delete old image if it exists
     if (userData.image) {
@@ -137,7 +138,7 @@ export async function DELETE(request: NextRequest) {
       return createErrorResponse("User not found", 404);
     }
 
-    const userData = users[0];
+    const userData = users[0]!;
 
     // If no image, nothing to delete
     if (!userData.image) {

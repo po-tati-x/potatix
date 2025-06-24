@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { apiAuth, createErrorResponse, AuthResult } from "@/lib/auth/api-auth";
+import { apiAuth, createErrorResponse } from "@/lib/auth/api-auth";
+import type { AuthResult } from "@/lib/auth/api-auth";
 import { db as _db, courseSchema } from "@potatix/db";
 import { eq } from "drizzle-orm";
 import { slugify } from "@/lib/shared/utils/courses";

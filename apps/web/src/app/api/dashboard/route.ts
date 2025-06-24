@@ -6,7 +6,7 @@ import { dashboardService } from "@/lib/server/services/dashboard";
  * Consolidated API endpoint for fetching ALL dashboard data in a single request
  * Uses the dashboard service for all business logic
  */
-export async function GET(request: NextRequest) {
+export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
     // Authenticate the user first
     const session = await auth.api.getSession({

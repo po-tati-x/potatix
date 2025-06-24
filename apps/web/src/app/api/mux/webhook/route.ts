@@ -114,11 +114,14 @@ export async function POST(request: Request) {
           );
 
           if (processingLessons.length > 0) {
-            // Use the most recently updated lesson
-            lessonCheck = [processingLessons[0]];
-            console.log(
-              `[Mux Webhook] Using most recently updated lesson: ${lessonCheck[0].id} (${lessonCheck[0].title})`,
-            );
+            // Use the most recently updated lesson (pick first since ordered by updatedAt desc)
+            const first = processingLessons[0]!;
+            lessonCheck = [{
+              id: first.id,
+              title: first.title,
+              videoId: first.videoId,
+              uploadStatus: first.uploadStatus,
+            }];
           }
         }
 
@@ -132,10 +135,10 @@ export async function POST(request: Request) {
           );
         }
 
-        const targetLessonId = lessonCheck[0].id;
+        const targetLessonId = lessonCheck[0]!.id;
         console.log(
           `[Mux Webhook] Found lesson: ${targetLessonId}`,
-          JSON.stringify(lessonCheck[0]),
+          JSON.stringify(lessonCheck[0]!),
         );
 
         // Update lesson with videoId using raw SQL for better logging

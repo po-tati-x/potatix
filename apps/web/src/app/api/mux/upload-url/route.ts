@@ -1,11 +1,12 @@
-import { NextResponse } from "next/server";
 import Mux from "@mux/mux-node";
+import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth/auth-server";
+import { env } from "@/env";
 
 // Initialize Mux client
 const mux = new Mux({
-  tokenId: process.env.MUX_TOKEN_ID as string,
-  tokenSecret: process.env.MUX_TOKEN_SECRET as string,
+  tokenId: env.MUX_TOKEN_ID,
+  tokenSecret: env.MUX_TOKEN_SECRET,
 });
 
 // Helper to authenticate user
@@ -50,7 +51,7 @@ export async function POST(request: Request) {
 
     // Create a direct upload URL
     const upload = await mux.video.uploads.create({
-      cors_origin: process.env.NEXT_PUBLIC_APP_URL || "*",
+      cors_origin: env.NEXT_PUBLIC_APP_URL || "*",
       new_asset_settings: {
         playback_policy: ["public"],
         passthrough: JSON.stringify({ lessonId }),

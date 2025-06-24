@@ -1,11 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
 import { courseSchema, authSchema, profileSchema, getDb } from "@potatix/db";
-import { auth } from "@/lib/auth/auth-server";
 import { eq, and, count, sql, gte, lt, inArray, desc } from "drizzle-orm";
 import { subMonths, startOfDay } from "date-fns";
+import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/lib/auth/auth-server";
+import { env } from "@/env";
 
 // Create a connection to the database
-const db = getDb(process.env.DATABASE_URL);
+const db = getDb(env.DATABASE_URL);
 
 /**
  * API endpoint for refreshing specific sections of dashboard data
@@ -84,7 +85,7 @@ async function fetchUserProfile(userId: string) {
       return null;
     }
 
-    const user = users[0];
+    const user = users[0]!;
     
     // Get extended profile data from user_profile table
     const profiles = await db
@@ -419,18 +420,19 @@ async function fetchCourseProgress(userId: string) {
         )
         .limit(1);
 
-      // Get the title of the bottleneck lesson
+      // Get the title of the bottleneck lesson (if any)
       let bottleneckLesson = "N/A";
       if (bottleneckResult.length > 0) {
-        const lessonResult = await db
-          .select({
-            title: courseSchema.lesson.title,
-          })
-          .from(courseSchema.lesson)
-          .where(eq(courseSchema.lesson.id, bottleneckResult[0].lessonId))
-          .limit(1);
+        const targetLessonId = bottleneckResult[0]?.lessonId;
+        if (targetLessonId) {
+          const lessonResult = await db
+            .select({ title: courseSchema.lesson.title })
+            .from(courseSchema.lesson)
+            .where(eq(courseSchema.lesson.id, targetLessonId))
+            .limit(1);
 
-        bottleneckLesson = lessonResult[0]?.title || "N/A";
+          bottleneckLesson = lessonResult[0]?.title ?? "N/A";
+        }
       }
 
       // 5. Calculate dropout rate

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { apiAuth, createErrorResponse, AuthResult } from "@/lib/auth/api-auth";
+import { apiAuth, createErrorResponse } from "@/lib/auth/api-auth";
+import type { AuthResult } from "@/lib/auth/api-auth";
 import { lessonService } from "@/lib/server/services/lessons";
-import { LessonUpdateInput } from "@/lib/server/services/lessons";
+import type { LessonUpdateInput } from "@/lib/server/services/lessons";
 
 // Type guard to check if auth result has userId
 function hasUserId(auth: AuthResult): auth is { userId: string } {
