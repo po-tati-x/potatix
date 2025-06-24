@@ -6,10 +6,9 @@ import turboConfig from 'eslint-config-turbo/flat';
 import eslintPluginImport from 'eslint-plugin-import';
 import turboPlugin from 'eslint-plugin-turbo';
 import tseslint from 'typescript-eslint';
-import onlyWarn from 'eslint-plugin-only-warn';
 
 export const restrictEnvAccess = tseslint.config(
-  { ignores: ['**/env.ts', 'dist/**'] },
+  { ignores: ['**/env.ts', '**/env-client.ts', 'dist/**'] },
   {
     files: ['**/*.js', '**/*.ts', '**/*.tsx'],
     rules: {
@@ -41,6 +40,7 @@ export default tseslint.config([
   js.configs.recommended,
   eslintConfigPrettier,
   ...tseslint.configs.recommended,
+  ...restrictEnvAccess,
   {
     plugins: {
       turbo: turboPlugin,
@@ -51,38 +51,22 @@ export default tseslint.config([
   },
   {
     plugins: {
-      onlyWarn,
-    },
-  },
-  {
-    plugins: {
       import: eslintPluginImport,
     },
     rules: {
-      'import/no-cycle': 'warn',
-      'import/order': [
-        'warn',
-        {
-          groups: [
-            'builtin',
-            'external',
-            'type',
-            'internal',
-            'parent',
-            'sibling',
-            'index',
-            'object',
-          ],
-          alphabetize: {
-            order: 'asc',
-          },
-        },
-      ],
+      'import/no-cycle': 'warn'
     },
   },
   {
     rules: {
       semi: ['error', 'always'],
+    },
+  },
+  {
+    files: ['**/drizzle.config.ts'],
+    rules: {
+      'no-restricted-properties': 'off',
+      'no-restricted-imports': 'off',
     },
   },
 ]);

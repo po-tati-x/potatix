@@ -3,8 +3,7 @@
   "ui": "tui",
   "tasks": {
     "dev": {
-      "dependsOn": ["^dev"],
-      "persistent": false,
+      "persistent": true,
       "cache": false
     },
     "clean": {
@@ -13,48 +12,44 @@
     "build": {
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "outputs": ["dist/**"]
+      "outputs": [
+        "dist/**",
+        ".next/**"
+      ]
     },
     "auth:schema:generate": {
       "cache": false,
-      "interactive": true
+      "interactive": true,
+      "outputs": ["../schema/src/schemas/**"]
     },
     "format": {
       "outputs": [".cache/.prettiercache"],
-      "outputLogs": "new-only"
+      "outputLogs": "new-only",
+      "dependsOn": ["^format"]
     },
     "lint": {
-      "dependsOn": ["^build"],
-      "outputs": [".cache/.eslintcache"]
+      "outputs": [".cache/.eslintcache"],
+      "dependsOn": ["^lint"]
     },
     "typecheck": {
-      "dependsOn": ["^build"],
-      "outputs": [".cache/tsbuildinfo.json"]
+      "outputs": [".cache/tsbuildinfo.json"],
+      "dependsOn": ["^typecheck"]
+    },
+    "test": {
+      "outputs": ["coverage/**"]
     },
     "push": {
-      "env": ["DB_POSTGRES_URL"],
-      "cache": false,
-      "interactive": true
+      "cache": false
     },
     "start": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["build"],
       "outputs": ["dist/**"]
     },
     "studio": {
       "cache": false,
       "persistent": true
-    },
-    "ui-add": {
-      "cache": false,
-      "interactive": true
-    },
-    "env:copy-example": {
-      "cache": false
-    },
-    "env:remove": {
-      "cache": false
     }
   },
-  "globalEnv": [],
+  "globalEnv": ["DB_*"],
   "globalPassThroughEnv": ["NODE_ENV", "CI", "npm_lifecycle_event"]
 }

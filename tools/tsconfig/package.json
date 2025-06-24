@@ -1,0 +1,12 @@
+{
+  "name": "@potatix/tsconfig",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./base.json",
+    "./base": "./base.json",
+    "./lib": "./lib.json",
+    "./app": "./app.json",
+    "./vite": "./vite.json"
+  }
+}

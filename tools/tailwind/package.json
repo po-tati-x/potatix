@@ -1,22 +1,8 @@
 {
-  "name": "@potatix/tailwind-config",
+  "name": "@potatix/tailwind-preset",
+  "private": true,
   "type": "module",
-  "scripts": {
-    "clean": "git clean -xdf .cache .turbo node_modules",
-    "format": "prettier --check . --ignore-path ../../.gitignore",
-    "lint": "eslint"
-  },
-  "exports": {
-    "./style.css": "./style.css"
-  },
-  "prettier": "@potatix/prettier-config",
-  "dependencies": {
-    "eslint": "^9.28.0",
-    "tailwindcss": "^4.1.10",
-    "tailwindcss-animate": "^1.0.7"
-  },
-  "devDependencies": {
-    "@potatix/eslint-config": "workspace:*",
-    "@potatix/prettier-config": "workspace:*"
-  }
+  "exports": { ".": "./index.js", "./style.css": "./style.css" },
+  "peerDependencies": { "tailwindcss": "^4" },
+  "dependencies": { "tailwindcss-animate": "^1.0.7" }
 }

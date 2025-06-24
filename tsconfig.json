@@ -1,0 +1,12 @@
+{
+  "extends": "@potatix/tsconfig/base",
+  "files": [],
+  "references": [
+    { "path": "packages/auth" },
+    { "path": "packages/db" },
+    { "path": "apps/web" }
+  ],
+  "compilerOptions": {
+    "verbatimModuleSyntax": false
+  }
+} 

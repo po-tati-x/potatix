@@ -32,6 +32,7 @@ export default tseslint.config([
       'react/react-in-jsx-scope': 'off',
       'react/prop-types': 'off',
       'react/no-children-prop': 'off',
+      'react/no-unknown-property': ['error', { ignore: ['jsx', 'global'] }],
       '@typescript-eslint/no-explicit-any': 'off',
     },
   },

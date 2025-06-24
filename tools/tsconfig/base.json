@@ -4,7 +4,7 @@
     "skipLibCheck": true,
     "target": "ES2022",
     "lib": ["ES2022"],
-    "allowJs": true,
+    "allowJs": false,
     "resolveJsonModule": true,
     "moduleDetection": "force",
     "verbatimModuleSyntax": true,
@@ -13,15 +13,14 @@
     /** Keep TSC performant in monorepos */
     "incremental": true,
     "disableSourceOfProjectReferenceRedirect": true,
-    "tsBuildInfoFile": "${configDir}/.cache/tsbuildinfo.json",
 
     /** Strictness */
     "strict": true,
     "noUncheckedIndexedAccess": true,
-    "checkJs": true,
+    "checkJs": false,
 
     /** Transpile using Bundler (not tsc) */
-    "module": "es2022",
+    "module": "ESNext",
     "moduleResolution": "bundler",
     "noEmit": true
   },

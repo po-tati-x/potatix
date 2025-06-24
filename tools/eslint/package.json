@@ -1,34 +1,24 @@
 {
   "name": "@potatix/eslint-config",
-  "version": "0.0.0",
-  "type": "module",
   "private": true,
-  "scripts": {
-    "clean": "git clean -xdf .cache .turbo node_modules",
-    "format": "prettier --check . --ignore-path ../../.gitignore",
-    "typecheck": "tsc --noEmit"
-  },
+  "type": "module",
   "exports": {
-    "./base": "./base.js",
-    "./react": "./react.js"
+    ".": "./base.js",
+    "./react": "./react.js",
+    "./types": "./types.d.ts"
   },
-  "prettier": "@potatix/prettier-config",
-  "devDependencies": {
-    "@potatix/prettier-config": "workspace:*",
-    "@potatix/typescript-config": "workspace:*",
+  "peerDependencies": {
+    "eslint": ">=9",
+    "typescript": ">=5"
+  },
+  "dependencies": {
     "@eslint/js": "^9.28.0",
-    "@types/bun": "latest",
-    "@types/eslint-config-prettier": "^6.11.3",
-    "eslint": "^9.28.0",
     "eslint-config-prettier": "^10.1.5",
     "eslint-config-turbo": "^2.5.4",
     "eslint-plugin-import": "^2.31.0",
-    "eslint-plugin-only-warn": "^1.1.0",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-turbo": "^2.5.4",
-    "globals": "^16.2.0",
     "typescript-eslint": "^8.34.0"
-  },
-  "dependencies": {}
+  }
 }

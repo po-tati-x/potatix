@@ -1,9 +1,11 @@
-/** @typedef {import("prettier").Config} PrettierConfig */
-
-/** @type { PrettierConfig } */
+/** @type {import('prettier').Config} */
 const config = {
-  plugins: [],
+  plugins: ['prettier-plugin-tailwindcss'],
   singleQuote: true,
+  trailingComma: 'all',
+  arrowParens: 'avoid',
+  printWidth: 100,
+  tabWidth: 2,
 };
 
 export default config;

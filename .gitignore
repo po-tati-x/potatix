@@ -1,37 +1,23 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
-# dependencies
 /node_modules
-/.pnp
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
-/apps/web/node_modules
-/apps/web/.next
+
+# Bun cache
+.bun*
 
 # testing
 /coverage
 
-# next.js
-/.next/
+# next.js & Turborepo
+**/.next/
 /out/
-.turbo/
+**/.turbo/
 
 # production
 /build
 
 # misc
 .DS_Store
+**/.DS_Store
 *.pem
-
-# logs
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
 
 # local env files
 .env
@@ -42,7 +28,7 @@ yarn-error.log*
 .vercel
 
 # typescript
-*.tsbuildinfo
+**/*.tsbuildinfo
 next-env.d.ts
 
 # database
@@ -52,25 +38,13 @@ next-env.d.ts
 
 # editor
 .vscode
-.idea
-.cursorrules
-
-# temporary files
-o
-tmp/
-temp/
 
 # documentation - NEVER commit these private docs
 /docs/
-/documentation/
-
-# Turborepo
-.turbo
 
 # ignore nested package installs & builds
-node_modules/
 **/node_modules/
 **/dist/
 
-# added pattern to ignore package .cache folders
+# caches
 **/.cache/
