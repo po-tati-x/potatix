@@ -134,7 +134,7 @@ const ModuleItem = ({ module, index }: { module: Module; index: number }) => {
  * Client component for the course detail page.
  * Uses the CourseDetailContext for state management.
  */
-export default function CourseDetailClient({ courseId }: { courseId: string }) {
+export default function CourseDetailClient() {
   const router = useRouter();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   
@@ -200,7 +200,10 @@ export default function CourseDetailClient({ courseId }: { courseId: string }) {
   }
 
   const modules = course.modules || [];
-  const lessons = course.lessons || [];
+  // If API stopped shipping duplicate top-level lessons, derive count
+  const lessonsCount = Array.isArray(course.lessons)
+    ? course.lessons.length
+    : modules.reduce((sum, m) => sum + (m.lessons?.length ?? 0), 0);
   const hasModules = modules.length > 0;
 
   return (
@@ -281,7 +284,7 @@ export default function CourseDetailClient({ courseId }: { courseId: string }) {
                 type="outline"
                 size="small"
                 icon={<Edit className="h-3.5 w-3.5" />}
-                onClick={() => router.push(`/courses/${courseId}/edit`)}
+                onClick={() => router.push(`/courses/${course.slug}/edit`)}
               >
                 Edit
               </Button>
@@ -357,7 +360,7 @@ export default function CourseDetailClient({ courseId }: { courseId: string }) {
                     <Button
                       type="primary"
                       size="small"
-                      onClick={() => router.push(`/courses/${courseId}/edit`)}
+                      onClick={() => router.push(`/courses/${course.slug}/edit`)}
                     >
                       Add Content
                     </Button>
@@ -409,7 +412,7 @@ export default function CourseDetailClient({ courseId }: { courseId: string }) {
                   <div>
                     <p className="text-xs text-slate-500">Content</p>
                     <p className="text-sm text-slate-900">
-                      {modules.length} modules, {lessons.length} lessons
+                      {modules.length} modules, {lessonsCount} lessons
                     </p>
                   </div>
                 </div>
@@ -444,7 +447,7 @@ export default function CourseDetailClient({ courseId }: { courseId: string }) {
                   size="small"
                   icon={<Users className="h-4 w-4" />}
                   className="w-full"
-                  onClick={() => router.push(`/courses/${courseId}/students`)}
+                  onClick={() => router.push(`/courses/${course.slug}/students`)}
                 >
                   Manage Students
                 </Button>

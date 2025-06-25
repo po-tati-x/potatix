@@ -89,16 +89,16 @@ export function CoursesPanel() {
     router.push("/courses");
   };
 
-  const handleCourseClick = (courseId: string) => {
-    router.push(`/courses/${courseId}`);
+  const handleCourseClick = (slug: string) => {
+    router.push(`/courses/${slug}`);
   };
 
-  const handleStatsClick = (courseId: string) => {
-    router.push(`/courses/${courseId}/stats`);
+  const handleStatsClick = (slug: string) => {
+    router.push(`/courses/${slug}/stats`);
   };
 
-  const handleContinueClick = (courseId: string) => {
-    router.push(`/courses/${courseId}/edit`);
+  const handleContinueClick = (slug: string) => {
+    router.push(`/courses/${slug}/edit`);
   };
 
   // Data available - render courses
@@ -124,9 +124,9 @@ export function CoursesPanel() {
           <CourseCard
             key={course.id}
             course={course}
-            onCourseClick={() => handleCourseClick(course.id)}
-            onStatsClick={() => handleStatsClick(course.id)}
-            onContinueClick={() => handleContinueClick(course.id)}
+            onCourseClick={() => handleCourseClick(course.slug!)}
+            onStatsClick={() => handleStatsClick(course.slug!)}
+            onContinueClick={() => handleContinueClick(course.slug!)}
           />
         ))}
       </div>

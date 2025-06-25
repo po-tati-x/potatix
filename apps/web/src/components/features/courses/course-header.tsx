@@ -47,9 +47,7 @@ export function CourseHeader({
             </span>
           }
           className="text-slate-500 hover:text-slate-900 group"
-          onClick={() =>
-            router.push(courseId ? `/courses/${courseId}` : backHref)
-          }
+          onClick={() => router.push(backHref)}
         >
           {backButtonText}
         </Button>

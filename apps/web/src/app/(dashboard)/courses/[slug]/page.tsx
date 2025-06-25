@@ -8,17 +8,16 @@ import { CourseDetailProvider } from "@/components/providers/courses/course-deta
 import { auth } from "@/lib/auth/auth-server";
 import { courseService } from "@/lib/server/services/courses";
 
-export default async function CourseDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id: courseId } = await params;
+export default async function CourseDetailPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
 
   const headerList = await headers();
-  const session = await auth.api.getSession({ headers: headerList });
-
+  const session = await auth.api.getSession({ headers: new Headers(Object.fromEntries(headerList)) });
   if (!session || !session.user) {
     redirect("/login");
   }
 
-  const rawCourse = await courseService.getCourseWithDetails(courseId);
+  const rawCourse = await courseService.getCourseBySlug(slug, false);
 
   const course: Course | null = rawCourse
     ? ({ ...rawCourse, imageUrl: rawCourse.imageUrl ?? undefined } as unknown as Course)
@@ -29,8 +28,8 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
   }
 
   return (
-    <CourseDetailProvider courseId={courseId} initialData={course}>
-      <CourseDetailClient courseId={courseId} />
+    <CourseDetailProvider courseId={course.id} initialData={course}>
+      <CourseDetailClient />
     </CourseDetailProvider>
   );
 }

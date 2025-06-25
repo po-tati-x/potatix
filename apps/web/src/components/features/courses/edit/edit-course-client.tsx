@@ -104,7 +104,7 @@ export default function EditCourseClient({ courseId }: Props) {
     };
 
     updateCourse(updateData, {
-      onSuccess: () => router.push(`/courses/${courseId}`),
+      onSuccess: () => router.push(`/courses/${formData.slug}`),
       onError: (err) =>
         setError(err instanceof Error ? err.message : "Failed to save course"),
     });
@@ -132,7 +132,10 @@ export default function EditCourseClient({ courseId }: Props) {
           slug: newSlug,
         },
         {
-          onSuccess: () => setFormData((prev) => ({ ...prev, slug: newSlug })),
+          onSuccess: () => {
+            setFormData((prev) => ({ ...prev, slug: newSlug }));
+            router.replace(`/courses/${newSlug}/edit`);
+          },
           onError: () => setError("Failed to update URL. It may already be in use."),
         },
       );
@@ -188,7 +191,7 @@ export default function EditCourseClient({ courseId }: Props) {
     <div className="max-w-5xl mx-auto px-4 py-6">
       <CourseHeader
         courseId={courseId}
-        backHref={`/courses/${courseId}`}
+        backHref={formData.slug ? `/courses/${formData.slug}` : "/courses"}
         title="Edit Course"
         status={formData.status || "draft"}
         onStatusChange={(status) => updateField("status", status)}

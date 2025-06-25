@@ -95,7 +95,13 @@ export default function StudentsPageClient({ courseId }: Props) {
     <div className="max-w-5xl mx-auto px-4 py-6">
       {/* Back */}
       <div className="mb-6">
-        <Button type="text" size="tiny" icon={<ArrowLeft className="h-3 w-3"/>} onClick={()=>router.push(`/courses/${courseId}`)}>Back to course</Button>
+        <Button type="text" size="tiny" icon={<ArrowLeft className="h-3 w-3"/>} onClick={()=>{
+          if (course?.slug) {
+            router.push(`/courses/${course.slug}`);
+          } else {
+            router.push("/courses");
+          }
+        }}>Back to course</Button>
       </div>
 
       {/* Header */}

@@ -36,7 +36,7 @@ export function CourseCard({ course }: CourseCardProps) {
   const statusStyles = statusMap[status as keyof typeof statusMap];
     
   return (
-    <Link href={`/courses/${course.id}`} className="block group">
+    <Link href={`/courses/${course.slug!}`} className="block group">
       <div className="relative h-full border border-slate-200 rounded-lg overflow-hidden hover:border-slate-400 hover:shadow-sm transition-all duration-200 bg-white">
         {/* Course image or placeholder */}
         <div className="h-44 bg-slate-50 overflow-hidden relative">
