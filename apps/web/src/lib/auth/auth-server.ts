@@ -29,7 +29,7 @@ if (!global.__potatixAuth) {
       }
       return url;
     })(),
-    cookieDomain: env.AUTH_COOKIE_DOMAIN ?? '.ptx.com',
+    cookieDomain: env.AUTH_COOKIE_DOMAIN ?? '.potatix.com',
     socialProviders: {
       google: {
         clientId: env.GOOGLE_CLIENT_ID,
