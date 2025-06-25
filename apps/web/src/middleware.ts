@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { env } from "./env";
+import { clientEnv } from '@/env'
 
 // Hoisted constants – computed once at boot, not on every request
-const BASE_DOMAIN = env.NEXT_PUBLIC_APP_URL
-  ? new URL(env.NEXT_PUBLIC_APP_URL).hostname
+const BASE_DOMAIN = clientEnv.NEXT_PUBLIC_APP_URL
+  ? new URL(clientEnv.NEXT_PUBLIC_APP_URL).hostname
   : "localhost";
 
 // Paths that must never trigger auth or rewrites

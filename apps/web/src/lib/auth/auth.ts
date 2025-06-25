@@ -1,7 +1,7 @@
 "use client";
 
 import { createAuthClient } from "@potatix/auth/client";
-import { clientEnv } from "@/env-client";
+import { clientEnv } from "@/env";
 
 export const authClient = createAuthClient({
   // Use relative URL so requests go to current origin (supports sub-domains)
