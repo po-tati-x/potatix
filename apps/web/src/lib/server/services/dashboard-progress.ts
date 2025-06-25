@@ -1,5 +1,5 @@
-import { getDb, courseSchema } from "@potatix/db";
-import { eq, and, sql, count } from "drizzle-orm";
+import { getDb } from "@potatix/db";
+import { sql } from "drizzle-orm";
 import { CourseProgressData } from '@/components/features/dashboard/types';
 
 /**
@@ -11,157 +11,97 @@ export const dashboardProgressService = {
    */
   async getCourseProgress(userId: string): Promise<CourseProgressData[]> {
     const db = getDb();
-    // Get courses owned by this user
-    const courses = await db
-      .select({
-        id: courseSchema.course.id,
-        title: courseSchema.course.title,
-      })
-      .from(courseSchema.course)
-      .where(eq(courseSchema.course.userId, userId));
 
-    if (!courses.length) {
-      return [];
-    }
+    type ProgressRow = {
+      id: string;
+      title: string;
+      active_students: number;
+      completion_rate: number;
+      avg_engagement: number;
+      bottleneck_lesson: string | null;
+      dropoff_rate: number;
+    };
 
-    // Create progress data for each course
-    const progressData = await Promise.all(
-      courses.map(async (course) => {
-        // 1. Get active students count
-        const studentsResult = await db
-          .select({
-            count: count(),
-          })
-          .from(courseSchema.courseEnrollment)
-          .where(
-            and(
-              eq(courseSchema.courseEnrollment.courseId, course.id),
-              eq(courseSchema.courseEnrollment.status, "active"),
-            ),
-          );
-
-        const activeStudents = studentsResult[0]?.count || 0;
-
-        // 2. Calculate completion rate
-        const completionRateResult = await db
-          .select({
-            completionRate: sql`
-              CASE
-                WHEN COUNT(DISTINCT ${courseSchema.lessonProgress.userId}) = 0 THEN 0
-                ELSE (
-                  SUM(CASE WHEN ${courseSchema.lessonProgress.completed} IS NOT NULL THEN 1 ELSE 0 END)::float /
-                  (COUNT(DISTINCT ${courseSchema.lessonProgress.userId}) *
-                   (SELECT COUNT(*) FROM ${courseSchema.lesson} WHERE ${courseSchema.lesson.courseId} = ${course.id}))
-                ) * 100
-              END
-            `,
-          })
-          .from(courseSchema.lessonProgress)
-          .where(eq(courseSchema.lessonProgress.courseId, course.id));
-
-        const completionRateValue = completionRateResult[0]?.completionRate as number;
-        const completionRate = Math.round(completionRateValue || 0);
-
-        // 3. Calculate average engagement
-        const engagementResult = await db
-          .select({
-            avgEngagement: sql`
-              CASE
-                WHEN SUM(${courseSchema.lesson.duration}) = 0 THEN 0
-                ELSE (
-                  SUM(${courseSchema.lessonProgress.watchTimeSeconds})::float /
-                  SUM(${courseSchema.lesson.duration})
-                ) * 100
-              END
-            `,
-          })
-          .from(courseSchema.lessonProgress)
-          .innerJoin(
-            courseSchema.lesson,
-            eq(courseSchema.lessonProgress.lessonId, courseSchema.lesson.id),
+    const result = await db.execute(sql<ProgressRow>`
+      WITH lessons_per_course AS (
+        SELECT course_id, COUNT(*) AS lesson_count
+        FROM lesson
+        GROUP BY course_id
+      ),
+      student_enrollments AS (
+        SELECT course_id,
+               COUNT(DISTINCT user_id) FILTER (WHERE status = 'active') AS active_students
+        FROM course_enrollment
+        GROUP BY course_id
+      ),
+      completion_stats AS (
+        SELECT lp.course_id,
+               SUM(CASE WHEN lp.completed IS NOT NULL THEN 1 ELSE 0 END) AS completed_lessons,
+               COUNT(DISTINCT lp.user_id)                           AS progress_users
+        FROM lesson_progress lp
+        GROUP BY lp.course_id
+      ),
+      engagement_stats AS (
+        SELECT lp.course_id,
+               SUM(lp.watch_time_seconds) AS watch_time,
+               SUM(l.duration)           AS total_duration
+        FROM lesson_progress lp
+        JOIN lesson l ON l.id = lp.lesson_id
+        GROUP BY lp.course_id
+      ),
+      bottleneck AS (
+        SELECT lp.course_id,
+               lp.lesson_id,
+               COUNT(*) FILTER (WHERE lp.completed IS NOT NULL)::float / COUNT(DISTINCT lp.user_id) AS completion_rate
+        FROM lesson_progress lp
+        GROUP BY lp.course_id, lp.lesson_id
+      ),
+      bottleneck_ranked AS (
+        SELECT DISTINCT ON (course_id)
+               course_id,
+               lesson_id
+        FROM bottleneck
+        ORDER BY course_id, completion_rate ASC
+      )
+      SELECT
+        c.id,
+        c.title,
+        COALESCE(se.active_students, 0)                                           AS active_students,
+        CASE 
+          WHEN se.active_students = 0 OR lpc.lesson_count = 0 THEN 0
+          ELSE ROUND(
+            (cs.completed_lessons::float / (se.active_students * lpc.lesson_count)) * 100
           )
-          .where(eq(courseSchema.lessonProgress.courseId, course.id));
+        END                                                                      AS completion_rate,
+        CASE 
+          WHEN es.total_duration = 0 THEN 0
+          ELSE ROUND((es.watch_time::float / es.total_duration) * 100)
+        END                                                                      AS avg_engagement,
+        bl_l.title                                                               AS bottleneck_lesson,
+        CASE 
+          WHEN se.active_students = 0 THEN 0
+          ELSE ROUND(((se.active_students - cs.progress_users)::float / se.active_students) * 100)
+        END                                                                      AS dropoff_rate
+      FROM course c
+      LEFT JOIN lessons_per_course lpc ON lpc.course_id = c.id
+      LEFT JOIN student_enrollments se ON se.course_id = c.id
+      LEFT JOIN completion_stats cs ON cs.course_id = c.id
+      LEFT JOIN engagement_stats es ON es.course_id = c.id
+      LEFT JOIN bottleneck_ranked bl ON bl.course_id = c.id
+      LEFT JOIN lesson bl_l ON bl_l.id = bl.lesson_id
+      WHERE c.user_id = ${userId};
+    `);
 
-        const avgEngagementValue = engagementResult[0]?.avgEngagement as number;
-        const avgEngagement = Math.round(avgEngagementValue || 0);
+    const rows = result.rows as ProgressRow[];
 
-        // 4. Find bottleneck lesson
-        const bottleneckResult = await db
-          .select({
-            lessonId: courseSchema.lessonProgress.lessonId,
-            completionRate: sql`
-              SUM(CASE WHEN ${courseSchema.lessonProgress.completed} IS NOT NULL THEN 1 ELSE 0 END)::float /
-              COUNT(DISTINCT ${courseSchema.lessonProgress.userId}) * 100
-            `,
-          })
-          .from(courseSchema.lessonProgress)
-          .where(eq(courseSchema.lessonProgress.courseId, course.id))
-          .groupBy(courseSchema.lessonProgress.lessonId)
-          .orderBy(
-            sql`
-            SUM(CASE WHEN ${courseSchema.lessonProgress.completed} IS NOT NULL THEN 1 ELSE 0 END)::float /
-            COUNT(DISTINCT ${courseSchema.lessonProgress.userId}) * 100 ASC
-          `,
-          )
-          .limit(1);
-
-        // Get the title of the bottleneck lesson
-        let bottleneckLesson = "N/A";
-        if (bottleneckResult.length > 0 && bottleneckResult[0]?.lessonId) {
-          const lessonResult = await db
-            .select({ title: courseSchema.lesson.title })
-            .from(courseSchema.lesson)
-            .where(eq(courseSchema.lesson.id, bottleneckResult[0].lessonId))
-            .limit(1);
-
-          bottleneckLesson = lessonResult[0]?.title ?? "N/A";
-        }
-
-        // 5. Calculate dropout rate
-        const dropoutResult = await db
-          .select({
-            dropoutRate: sql`
-              CASE
-                WHEN COUNT(DISTINCT ${courseSchema.courseEnrollment.userId}) = 0 THEN 0
-                ELSE (
-                  COUNT(DISTINCT ${courseSchema.courseEnrollment.userId}) -
-                  COUNT(DISTINCT ${courseSchema.lessonProgress.userId})
-                )::float / COUNT(DISTINCT ${courseSchema.courseEnrollment.userId}) * 100
-              END
-            `,
-          })
-          .from(courseSchema.courseEnrollment)
-          .leftJoin(
-            courseSchema.lessonProgress,
-            and(
-              eq(
-                courseSchema.courseEnrollment.courseId,
-                courseSchema.lessonProgress.courseId,
-              ),
-              eq(
-                courseSchema.courseEnrollment.userId,
-                courseSchema.lessonProgress.userId,
-              ),
-            ),
-          )
-          .where(eq(courseSchema.courseEnrollment.courseId, course.id));
-
-        const dropoffRateValue = dropoutResult[0]?.dropoutRate as number;
-        const dropoffRate = Math.round(dropoffRateValue || 0);
-
-        // Return all metrics for this course
-        return {
-          id: course.id,
-          title: course.title,
-          activeStudents,
-          completionRate,
-          avgEngagement,
-          bottleneckLesson,
-          dropoffRate,
-        };
-      }),
-    );
-
-    return progressData;
+    return rows.map((r) => ({
+      id: r.id,
+      title: r.title,
+      activeStudents: r.active_students ?? 0,
+      completionRate: r.completion_rate ?? 0,
+      avgEngagement: r.avg_engagement ?? 0,
+      bottleneckLesson: r.bottleneck_lesson ?? 'N/A',
+      dropoffRate: r.dropoff_rate ?? 0,
+    }));
   }
 }; 
