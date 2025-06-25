@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-import { env } from "@/env";
+import { env } from "@/env.server";
 
 const BASE_URL = new URL(env.NEXT_PUBLIC_APP_URL ?? "https://potatix.com");
 

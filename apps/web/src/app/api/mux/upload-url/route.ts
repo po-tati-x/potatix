@@ -1,7 +1,7 @@
 import Mux from "@mux/mux-node";
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth/auth-server";
-import { env } from "@/env";
+import { env } from "@/env.server";
 
 // Initialize Mux client
 const mux = new Mux({

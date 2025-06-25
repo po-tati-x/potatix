@@ -3,7 +3,7 @@ import { eq, and, count, sql, gte, lt, inArray, desc } from "drizzle-orm";
 import { subMonths, startOfDay } from "date-fns";
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth/auth-server";
-import { env } from "@/env";
+import { env } from "@/env.server";
 
 // Create a connection to the database
 const db = getDb(env.DATABASE_URL);

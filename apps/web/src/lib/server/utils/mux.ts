@@ -1,4 +1,4 @@
-import { env } from '../../../env';
+import { env } from '@/env.server';
 
 /**
  * Utility functions for working with Mux videos

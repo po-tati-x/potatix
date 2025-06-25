@@ -4,7 +4,7 @@ import CourseOverview from "@/components/features/viewer/course-overview";
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 
-import { env } from "@/env";
+import { env } from "@/env.server";
 
 // Central application origin (proto + host + optional port)
 const APP_ORIGIN = env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? "https://potatix.com";

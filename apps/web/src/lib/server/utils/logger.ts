@@ -3,7 +3,7 @@
  * Replacement for the deleted middleware logger
  */
 
-import { env } from '../../../env';
+import { env } from '@/env.server';
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { clientEnv } from '@/env'
+import { clientEnv } from '@/env.client'
 
 // Hoisted constants – computed once at boot, not on every request
 const BASE_DOMAIN = clientEnv.NEXT_PUBLIC_APP_URL

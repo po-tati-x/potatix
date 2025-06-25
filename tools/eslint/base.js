@@ -8,7 +8,7 @@ import turboPlugin from 'eslint-plugin-turbo';
 import tseslint from 'typescript-eslint';
 
 export const restrictEnvAccess = tseslint.config(
-  { ignores: ['**/env.ts', '**/env-client.ts', 'dist/**'] },
+  { ignores: ['**/env.server.ts', '**/env.client.ts', 'dist/**'] },
   {
     files: ['**/*.js', '**/*.ts', '**/*.tsx'],
     rules: {

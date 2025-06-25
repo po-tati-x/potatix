@@ -1,6 +1,6 @@
 import { createAuth } from "@potatix/auth/server";
 import { getDb } from "@potatix/db";
-import { env } from "../../env";
+import { env } from "@/env.server";
 
 // Get database connection from singleton
 console.log("[Auth] Getting database instance...");
