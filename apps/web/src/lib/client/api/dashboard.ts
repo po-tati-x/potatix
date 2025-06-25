@@ -12,6 +12,7 @@ export interface DashboardData {
   progressData: unknown;
   revenueData: unknown;
   profile: unknown;
+  heroMetrics?: unknown;
 }
 
 /**

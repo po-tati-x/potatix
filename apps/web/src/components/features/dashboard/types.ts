@@ -71,4 +71,18 @@ export interface TopPerformingCourse {
   title: string;
   revenue: number;
   growth: number;
+}
+
+// Top-line hero metrics used in the dashboard header
+export interface HeroMetrics {
+  revenueToday: number;
+  revenueMTD: number;
+  revenueAll: number;
+  enrollmentsToday: number;
+  enrollmentsMTD: number;
+  enrollmentsAll: number;
+  activeStudents: number;
+  avgRating: number | null;
+  revenueTrend?: number[];
+  enrollmentTrend?: number[];
 } 

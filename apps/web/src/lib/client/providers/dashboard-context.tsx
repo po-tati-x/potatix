@@ -4,7 +4,7 @@ import { createContext, useContext } from 'react';
 import type { ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { dashboardKeys } from '@/lib/shared/constants/query-keys';
-import type { CourseProgressData, RevenueData, StatsData } from '@/components/features/dashboard/types';
+import type { CourseProgressData, RevenueData, StatsData, HeroMetrics } from '@/components/features/dashboard/types';
 import type { Course } from '@/lib/shared/types/courses';
 import type { UserProfile } from '@/lib/shared/types/profile';
 import { useDashboardData } from '@/lib/client/hooks/use-dashboard';
@@ -39,12 +39,17 @@ interface RevenueContext extends DashboardBaseContext {
   revenueData: RevenueData | undefined;
 }
 
+interface HeroMetricsContext extends DashboardBaseContext {
+  heroMetrics: HeroMetrics | undefined;
+}
+
 // Complete dashboard context that combines all slices
 type DashboardContextType = StatsContext & 
   ProfileContext & 
   CoursesContext & 
   ProgressContext & 
-  RevenueContext & {
+  RevenueContext &
+  HeroMetricsContext & {
     // Main data reference
     dashboardData: ApiDashboardData | undefined;
   };
@@ -94,6 +99,7 @@ export function DashboardContextProvider({ children, initialData }: DashboardCon
     courses: (dashboardData?.courses ?? []) as Course[],
     progressData: dashboardData?.progressData as CourseProgressData[] | undefined,
     revenueData: dashboardData?.revenueData as RevenueData | undefined,
+    heroMetrics: dashboardData?.heroMetrics as HeroMetrics | undefined,
     
     // Status
     isLoading,
@@ -143,4 +149,9 @@ export function useProgressData(): ProgressContext {
 export function useRevenueData(): RevenueContext {
   const { revenueData, isLoading, error, refreshDashboard } = useDashboardContext();
   return { revenueData, isLoading, error, refreshDashboard };
+}
+
+export function useHeroMetrics(): HeroMetricsContext {
+  const { heroMetrics, isLoading, error, refreshDashboard } = useDashboardContext();
+  return { heroMetrics, isLoading, error, refreshDashboard };
 } 
