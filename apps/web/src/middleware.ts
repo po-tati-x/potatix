@@ -90,8 +90,9 @@ export default function middleware(request: NextRequest) {
 
   // Auth gate – redirect to /login with callback
   if (!hasAuthCookie(request)) {
-    const loginURL = new URL("/login", request.url);
-    loginURL.searchParams.set("callbackUrl", request.url);
+    const origin = `https://${request.headers.get("host")}`;
+    const loginURL = new URL(`${origin}/login`);
+    loginURL.searchParams.set("callbackUrl", `${origin}${rewrittenPath}`);
     return NextResponse.redirect(loginURL);
   }
 
