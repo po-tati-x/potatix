@@ -1,5 +1,5 @@
 import { getDb, courseSchema } from "@potatix/db";
-import { eq, and, count, desc } from "drizzle-orm";
+import { eq, sql, desc } from "drizzle-orm";
 import { Course } from '@/lib/shared/types/courses';
 
 /**
@@ -11,7 +11,9 @@ export const dashboardCoursesService = {
    */
   async getUserCourses(userId: string): Promise<Course[]> {
     const db = getDb();
-    const courses = await db
+
+    // Single aggregated query – no N+1
+    const rows = await db
       .select({
         id: courseSchema.course.id,
         title: courseSchema.course.title,
@@ -22,72 +24,41 @@ export const dashboardCoursesService = {
         userId: courseSchema.course.userId,
         createdAt: courseSchema.course.createdAt,
         updatedAt: courseSchema.course.updatedAt,
+
+        lessonCount: sql<number>`COUNT(DISTINCT ${courseSchema.lesson.id})`,
+        moduleCount: sql<number>`COUNT(DISTINCT ${courseSchema.courseModule.id})`,
+        studentCount: sql<number>`COUNT(DISTINCT ${courseSchema.courseEnrollment.userId}) FILTER (WHERE ${courseSchema.courseEnrollment.status} = 'active')`,
       })
       .from(courseSchema.course)
+      .leftJoin(
+        courseSchema.lesson,
+        eq(courseSchema.lesson.courseId, courseSchema.course.id),
+      )
+      .leftJoin(
+        courseSchema.courseModule,
+        eq(courseSchema.courseModule.courseId, courseSchema.course.id),
+      )
+      .leftJoin(
+        courseSchema.courseEnrollment,
+        eq(courseSchema.courseEnrollment.courseId, courseSchema.course.id),
+      )
       .where(eq(courseSchema.course.userId, userId))
+      .groupBy(courseSchema.course.id)
       .orderBy(desc(courseSchema.course.updatedAt));
 
-    // Get lesson counts for each course
-    const courseIds = courses.map((course) => course.id);
-
-    // If no courses, return empty array
-    if (courseIds.length === 0) {
-      return [];
-    }
-
-    // For each course, get the number of lessons, modules, and student enrollments
-    const coursesWithCounts = await Promise.all(
-      courses.map(async (course) => {
-        // Count lessons
-        const lessonCount = await db
-          .select({
-            count: courseSchema.lesson.id,
-          })
-          .from(courseSchema.lesson)
-          .where(eq(courseSchema.lesson.courseId, course.id));
-
-        // Count modules
-        const moduleCount = await db
-          .select({
-            count: courseSchema.courseModule.id,
-          })
-          .from(courseSchema.courseModule)
-          .where(eq(courseSchema.courseModule.courseId, course.id));
-
-        // Count student enrollments (active only)
-        const enrollmentResult = await db
-          .select({
-            studentCount: count(),
-          })
-          .from(courseSchema.courseEnrollment)
-          .where(
-            and(
-              eq(courseSchema.courseEnrollment.courseId, course.id),
-              eq(courseSchema.courseEnrollment.status, "active"),
-            ),
-          );
-
-        const studentCount = enrollmentResult[0]?.studentCount || 0;
-
-        // Convert Date objects to ISO strings for API compatibility
-        // Ensure status is properly typed as one of the required values
-        const typedStatus = course.status === 'draft' || course.status === 'published' || course.status === 'archived'
+    const mapped: Course[] = rows.map((course) => ({
+      ...course,
+      description: course.description || undefined,
+      createdAt: course.createdAt.toISOString(),
+      updatedAt: course.updatedAt?.toISOString(),
+      status:
+        course.status === 'draft' ||
+        course.status === 'published' ||
+        course.status === 'archived'
           ? course.status
-          : 'draft'; // Default to draft if invalid status
+          : 'draft',
+    })) as Course[];
 
-        return {
-          ...course,
-          description: course.description || undefined, // Convert null to undefined for Course type
-          createdAt: course.createdAt.toISOString(),
-          updatedAt: course.updatedAt?.toISOString(),
-          status: typedStatus, // Ensure status is properly typed
-          lessonCount: lessonCount.length,
-          moduleCount: moduleCount.length,
-          studentCount: studentCount,
-        };
-      }),
-    );
-
-    return coursesWithCounts as Course[];
+    return mapped;
   }
 }; 
