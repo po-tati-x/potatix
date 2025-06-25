@@ -12,14 +12,14 @@ type BillingSectionProps = {
 const PLAN_DETAILS = {
   free: {
     name: "Free Plan",
-    features: ["Basic features", "5 projects", "1GB storage"],
+    features: ["Basic features", "5 courses", "1GB storage"],
   },
   pro: {
     name: "Pro Plan",
     features: [
       "All Free features",
       "Unlimited projects",
-      "10GB storage",
+      "100TB storage",
       "Priority support",
     ],
   },
