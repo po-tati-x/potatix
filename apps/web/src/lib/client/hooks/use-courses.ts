@@ -17,8 +17,9 @@ export function useCourses(options?: CoursesQueryOptions) {
     queryKey: courseKeys.all(),
     queryFn: courseApi.getAllCourses,
     initialData: options?.initialData,
-    enabled: options?.enabled ?? true,
-    staleTime: 5 * 60 * 1000,
+    enabled: options?.enabled ?? !options?.initialData,
+    staleTime: options?.initialData ? 5 * 60 * 1000 : 0,
+    refetchOnWindowFocus: !(options?.initialData),
   });
 }
 
