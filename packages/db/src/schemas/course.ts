@@ -5,6 +5,7 @@ import {
   timestamp,
   doublePrecision,
   json,
+  index,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { user } from './better-auth';
@@ -77,7 +78,9 @@ export const courseModule = pgTable('course_module', {
 
   // Timestamps
   ...timestamps,
-});
+}, (table) => ({
+  courseIdIdx: index('course_module_course_id_idx').on(table.courseId),
+}));
 
 /**
  * Lesson table - content units within a module
@@ -122,23 +125,43 @@ export const lesson = pgTable('lesson', {
 
   // Timestamps matching auth.ts style
   ...timestamps,
-});
+}, (table) => ({
+  courseIdIdx: index('lesson_course_id_idx').on(table.courseId),
+  moduleIdIdx: index('lesson_module_id_idx').on(table.moduleId),
+}));
 
 /**
  * CourseEnrollment table - tracks user enrollment in courses
  */
-export const courseEnrollment = pgTable('course_enrollment', {
-  id: text('id').primaryKey(),
-  userId: text('user_id')
-    .notNull()
-    .references(() => user.id, { onDelete: 'cascade' }),
-  courseId: text('course_id')
-    .notNull()
-    .references(() => course.id, { onDelete: 'cascade' }),
-  enrolledAt: timestamp('enrolled_at', { mode: 'date' }).defaultNow().notNull(),
-  status: text('status').default('active'),
-  ...timestamps,
-});
+export const courseEnrollment = pgTable(
+  'course_enrollment',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    courseId: text('course_id')
+      .notNull()
+      .references(() => course.id, { onDelete: 'cascade' }),
+    enrolledAt: timestamp('enrolled_at', { mode: 'date' })
+      .defaultNow()
+      .notNull(),
+    status: text('status').default('active'),
+    ...timestamps,
+  },
+  (table) => {
+    return {
+      courseStatusIdx: index('course_enrollment_course_status_idx').on(
+        table.courseId,
+        table.status,
+      ),
+      courseDateIdx: index('course_enrollment_course_date_idx').on(
+        table.courseId,
+        table.enrolledAt,
+      ),
+    };
+  },
+);
 
 /**
  * LessonProgress table - tracks user progress through lessons
