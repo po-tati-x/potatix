@@ -20,7 +20,7 @@ if (!global.__potatixAuth) {
   global.__potatixAuth = createAuth({
     db,
     authSecret: env.BETTER_AUTH_SECRET,
-    webUrl: env.BETTER_AUTH_URL ?? env.NEXT_PUBLIC_APP_URL,
+    webUrl: env.BETTER_AUTH_URL ?? env.NEXT_PUBLIC_APP_URL ?? "https://potatix.com",
     cookieDomain: env.AUTH_COOKIE_DOMAIN ?? '.ptx.com',
     plugins: [],
   });

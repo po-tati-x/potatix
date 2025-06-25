@@ -31,6 +31,8 @@ const ServerEnvSchema = object({
   NODE_ENV: string(),
   LOG_SERVICES: optional(string()),
   COOKIE_SECURE: optional(string()),
+  // Public base URL (optional)
+  NEXT_PUBLIC_APP_URL: optional(pipe(string(), url())),
 })
 
 // Client-side environment schema (only NEXT_PUBLIC_ vars)
