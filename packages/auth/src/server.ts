@@ -9,6 +9,11 @@ export interface AuthOptions {
   db: DatabaseInstance;
   plugins?: any[]; // Allow plugins to be passed
   cookieDomain?: string;
+  /**
+   * Social providers configuration forwarded to Better Auth `socialProviders` option.
+   * Use the same shape expected by Better Auth. Optional.
+   */
+  socialProviders?: Record<string, unknown>;
 }
 
 export type AuthInstance = ReturnType<typeof createAuth>;
@@ -35,6 +40,7 @@ export const createAuth = ({
   authSecret,
   plugins = [],
   cookieDomain,
+  socialProviders,
 }: AuthOptions) => {
   const urlProtocol = (() => {
     try {
@@ -50,6 +56,8 @@ export const createAuth = ({
   return betterAuth({
     ...getBaseOptions(db),
     secret: authSecret,
+    // Forward social providers configuration if provided
+    ...(socialProviders ? { socialProviders } : {}),
     // Allow wildcard sub-domains when a cookieDomain is provided (e.g. ".ptx.com")
     // Better-Auth supports wildcard patterns like "*.example.com", so we add them here
     // to avoid manually enumerating every preview/tenant sub-domain.

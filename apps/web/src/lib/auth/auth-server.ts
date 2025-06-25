@@ -22,8 +22,19 @@ if (!global.__potatixAuth) {
     authSecret: env.BETTER_AUTH_SECRET,
     webUrl: env.BETTER_AUTH_URL ?? env.NEXT_PUBLIC_APP_URL ?? "https://potatix.com",
     cookieDomain: env.AUTH_COOKIE_DOMAIN ?? '.ptx.com',
+    socialProviders: {
+      google: {
+        clientId: env.GOOGLE_CLIENT_ID,
+        clientSecret: env.GOOGLE_CLIENT_SECRET,
+      },
+      github: {
+        clientId: env.GITHUB_CLIENT_ID,
+        clientSecret: env.GITHUB_CLIENT_SECRET,
+        scopes: ["user:email"],
+      },
+    },
     plugins: [],
-  });
+  } as any);
 }
 
 export const auth = global.__potatixAuth; 
