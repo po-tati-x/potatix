@@ -1,5 +1,5 @@
 import { db, courseSchema } from "@potatix/db";
-import { eq, and, count, desc, inArray } from "drizzle-orm";
+import { eq, and, count, sql } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { slugify } from "../../shared/utils/courses";
 import { getMuxAssetId, deleteMuxAsset } from "@/lib/server/utils/mux";
@@ -66,61 +66,54 @@ export const courseService = {
 
   async getCourseWithDetails(courseId: string) {
     try {
-      // Get course
-      const course = await this.getCourseById(courseId);
+      // Fetch everything we need concurrently to avoid cumulative latency
+      const [course, enrollmentResult, modules, lessons] = await Promise.all([
+        this.getCourseById(courseId),
+        database
+          .select({ studentCount: count() })
+          .from(courseSchema.courseEnrollment)
+          .where(
+            and(
+              eq(courseSchema.courseEnrollment.courseId, courseId),
+              eq(courseSchema.courseEnrollment.status, "active"),
+            ),
+          ),
+        moduleService.getModulesByCourseId(courseId),
+        lessonService.getLessonsByCourseId(courseId),
+      ]);
 
       if (!course) return null;
 
-      // Get student count
-      const enrollmentResult = await database
-        .select({
-          studentCount: count(),
-        })
-        .from(courseSchema.courseEnrollment)
-        .where(
-          and(
-            eq(courseSchema.courseEnrollment.courseId, courseId),
-            eq(courseSchema.courseEnrollment.status, "active"),
-          ),
-        );
-
       const studentCount = enrollmentResult[0]?.studentCount || 0;
 
-      // Get modules
-      const modules = await moduleService.getModulesByCourseId(courseId);
-
-      // Get lessons
-      const lessons = await lessonService.getLessonsByCourseId(courseId);
-
-      // Group lessons by module
+      // Build modules array with nested lessons (sorted) in-memory once
       const modulesWithLessons = modules.map((module) => {
-        const moduleLessons = lessons.filter(
-          (lesson) => lesson.moduleId === module.id,
-        );
+        const moduleLessons = lessons
+          .filter((lesson) => lesson.moduleId === module.id)
+          .sort((a, b) => a.order - b.order);
 
         return {
           ...module,
-          lessons: moduleLessons.sort((a, b) => a.order - b.order),
-        };
-      });
-
-      return {
-        ...course,
-        description: course.description || undefined,
-        createdAt: course.createdAt.toISOString(),
-        updatedAt: course.updatedAt?.toISOString(),
-        status: (course.status as 'draft' | 'published' | 'archived') ?? 'draft',
-        modules: modulesWithLessons.map((m) => ({
-          ...m,
-          createdAt: m.createdAt.toISOString(),
-          updatedAt: m.updatedAt.toISOString(),
-          lessons: m.lessons.map((l) => ({
+          createdAt: module.createdAt.toISOString(),
+          updatedAt: module.updatedAt.toISOString(),
+          lessons: moduleLessons.map((l) => ({
             ...l,
             description: l.description || undefined,
             createdAt: l.createdAt.toISOString(),
             updatedAt: l.updatedAt.toISOString(),
           })),
-        })),
+        };
+      });
+
+      return {
+        ...course,
+        // Normalise optional description to undefined for client convenience
+        description: course.description || undefined,
+        status: (course.status as 'draft' | 'published' | 'archived') ?? 'draft',
+        // Convert dates only once – JSON.stringify will handle ISO conversion
+        createdAt: course.createdAt.toISOString(),
+        updatedAt: course.updatedAt?.toISOString(),
+        modules: modulesWithLessons,
         lessons: lessons.map((l) => ({
           ...l,
           description: l.description || undefined,
@@ -128,78 +121,92 @@ export const courseService = {
           updatedAt: l.updatedAt.toISOString(),
         })),
         studentCount,
-      };
+        lessonCount: lessons.length,
+      } as const;
     } catch (error) {
-      courseLogger.error(
-        `Failed to get course details: ${courseId}`,
-        error as Error,
-      );
+      courseLogger.error(`Failed to get course details: ${courseId}`, error as Error);
       return null;
     }
   },
 
   async getCoursesByUserId(userId: string) {
-    const courses = await database
-      .select({
-        id: courseSchema.course.id,
-        title: courseSchema.course.title,
-        description: courseSchema.course.description,
-        price: courseSchema.course.price,
-        status: courseSchema.course.status,
-        imageUrl: courseSchema.course.imageUrl,
-        userId: courseSchema.course.userId,
-        createdAt: courseSchema.course.createdAt,
-        updatedAt: courseSchema.course.updatedAt,
-        slug: courseSchema.course.slug,
-      })
-      .from(courseSchema.course)
-      .where(eq(courseSchema.course.userId, userId))
-      .orderBy(desc(courseSchema.course.updatedAt));
+    try {
+      // Scalar sub-queries avoid the join-multiplication problem while keeping the
+      // call single-round-trip.
+      const resultRows = (
+        await database.execute(sql/* sql */`
+          SELECT
+            c.id,
+            c.title,
+            c.description,
+            c.price,
+            c.status,
+            c.image_url  AS "imageUrl",
+            c.user_id    AS "userId",
+            c.created_at AS "createdAt",
+            c.updated_at AS "updatedAt",
+            c.slug,
+            /* counts */
+            (
+              SELECT COUNT(*)
+              FROM lesson l
+              WHERE l.course_id = c.id
+            ) AS "lessonCount",
+            (
+              SELECT COUNT(*)
+              FROM course_module m
+              WHERE m.course_id = c.id
+            ) AS "moduleCount",
+            (
+              SELECT COUNT(*)
+              FROM course_enrollment e
+              WHERE e.course_id = c.id
+                AND e.status = 'active'
+            ) AS "studentCount"
+          FROM course c
+          WHERE c.user_id = ${userId}
+          ORDER BY c.updated_at DESC;
+        `)
+      ).rows as Array<{
+        id: string;
+        title: string;
+        description: string | null;
+        price: number;
+        status: string;
+        imageUrl: string | null;
+        userId: string;
+        createdAt: Date;
+        updatedAt: Date | null;
+        slug: string | null;
+        lessonCount: number;
+        moduleCount: number;
+        studentCount: number;
+      }>;
 
-    if (courses.length === 0) return [];
+      if (!resultRows.length) return [];
 
-    const courseIds = courses.map((c) => c.id);
+      return resultRows.map((course) => {
+        const created = typeof course.createdAt === 'string'
+          ? new Date(course.createdAt)
+          : course.createdAt;
+        const updated = course.updatedAt
+          ? typeof course.updatedAt === 'string'
+            ? new Date(course.updatedAt)
+            : course.updatedAt
+          : null;
 
-    // Fetch counts in bulk – three queries only
-    const [lessonCounts, moduleCounts, enrollmentCounts] = await Promise.all([
-      database!
-        .select({ courseId: courseSchema.lesson.courseId, count: count() })
-        .from(courseSchema.lesson)
-        .where(inArray(courseSchema.lesson.courseId, courseIds))
-        .groupBy(courseSchema.lesson.courseId),
-      database!
-        .select({ courseId: courseSchema.courseModule.courseId, count: count() })
-        .from(courseSchema.courseModule)
-        .where(inArray(courseSchema.courseModule.courseId, courseIds))
-        .groupBy(courseSchema.courseModule.courseId),
-      database!
-        .select({ courseId: courseSchema.courseEnrollment.courseId, studentCount: count() })
-        .from(courseSchema.courseEnrollment)
-        .where(
-          and(
-            inArray(courseSchema.courseEnrollment.courseId, courseIds),
-            eq(courseSchema.courseEnrollment.status, "active"),
-          ),
-        )
-        .groupBy(courseSchema.courseEnrollment.courseId),
-    ]);
-
-    // Build maps for quick lookup
-    const lessonMap = Object.fromEntries(lessonCounts.map((l) => [l.courseId, l.count]));
-    const moduleMap = Object.fromEntries(moduleCounts.map((m) => [m.courseId, m.count]));
-    const enrollmentMap = Object.fromEntries(enrollmentCounts.map((e) => [e.courseId, e.studentCount]));
-
-    return courses.map((course) => ({
-      ...course,
-      // Ensure types align with shared Course interface
-      description: course.description || undefined,
-      createdAt: course.createdAt.toISOString(),
-      updatedAt: course.updatedAt?.toISOString(),
-      status: (course.status as 'draft' | 'published' | 'archived') ?? 'draft',
-      lessonCount: lessonMap[course.id] ?? 0,
-      moduleCount: moduleMap[course.id] ?? 0,
-      studentCount: enrollmentMap[course.id] ?? 0,
-    }));
+        return {
+          ...course,
+          description: course.description || undefined,
+          createdAt: created.toISOString(),
+          updatedAt: updated?.toISOString(),
+          status: (course.status as 'draft' | 'published' | 'archived') ?? 'draft',
+        };
+      });
+    } catch (error) {
+      courseLogger.error('Failed to get courses by user', error as Error);
+      return [];
+    }
   },
 
   async getCourseBySlug(slug: string, publishedOnly = true) {
