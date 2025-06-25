@@ -20,7 +20,15 @@ if (!global.__potatixAuth) {
   global.__potatixAuth = createAuth({
     db,
     authSecret: env.BETTER_AUTH_SECRET,
-    webUrl: env.BETTER_AUTH_URL ?? env.NEXT_PUBLIC_APP_URL ?? "https://potatix.com",
+    webUrl: (() => {
+      const url = env.BETTER_AUTH_URL ?? env.NEXT_PUBLIC_APP_URL;
+      if (!url) {
+        throw new Error(
+          "[Auth] BETTER_AUTH_URL or NEXT_PUBLIC_APP_URL must be defined – refusing to default to https://potatix.com"
+        );
+      }
+      return url;
+    })(),
     cookieDomain: env.AUTH_COOKIE_DOMAIN ?? '.ptx.com',
     socialProviders: {
       google: {
