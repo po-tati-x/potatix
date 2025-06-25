@@ -78,8 +78,13 @@ function rewriteViewerPath(pathname: string, courseSlug: string): string {
  * Unified middleware – handles sub-domain rewrites and auth gatekeeping.
  */
 export default function middleware(request: NextRequest) {
-  const courseSlug = getSubdomain(request.headers.get("host") ?? "");
+  // Determine effective host & protocol accounting for reverse proxies
+  const forwardedHost = request.headers.get("x-forwarded-host");
+  const hostHeader = forwardedHost ?? request.headers.get("host") ?? "";
+  const courseSlug = getSubdomain(hostHeader);
 
+  const protoHeader = request.headers.get("x-forwarded-proto") ?? "https";
+  
   const originalPath = request.nextUrl.pathname;
   const rewrittenPath = courseSlug
     ? rewriteViewerPath(originalPath, courseSlug)
@@ -90,7 +95,7 @@ export default function middleware(request: NextRequest) {
 
   // Auth gate – redirect to /login with callback
   if (!hasAuthCookie(request)) {
-    const origin = `https://${request.headers.get("host")}`;
+    const origin = `${protoHeader}://${hostHeader}`;
     const loginURL = new URL(`${origin}/login`);
     loginURL.searchParams.set("callbackUrl", `${origin}${rewrittenPath}`);
     return NextResponse.redirect(loginURL);
