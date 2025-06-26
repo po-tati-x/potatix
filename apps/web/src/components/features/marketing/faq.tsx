@@ -1,13 +1,10 @@
-"use client";
-
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { MessageCircle, ChevronRight } from "lucide-react";
-import { useState } from "react";
+import { MessageCircle } from "lucide-react";
 
 interface FAQItem {
   question: string;
@@ -113,38 +110,23 @@ function HighlightedAnswer({ text }: { text: string }) {
 }
 
 function FAQAccordion({ items }: { items: FAQItem[] }) {
-  const [openItem, setOpenItem] = useState<string | null>(null);
-
   return (
-    <div className="bg-white rounded-md border border-slate-200 shadow-sm hover:shadow-md transition-all">
-      <Accordion
-        type="single"
-        collapsible
-        className="w-full"
-        value={openItem || undefined}
-        onValueChange={(value) => setOpenItem(value)}
-      >
-        {items.map((item, index) => (
-          <AccordionItem
-            key={index}
-            value={`item-${index}`}
-            className={`${index === items.length - 1 ? "" : "border-b border-slate-200"} group transition-all`}
-          >
-            <AccordionTrigger className="text-sm lg:text-base font-medium text-slate-800 py-4 px-5 hover:text-emerald-600 transition-colors data-[state=open]:text-emerald-600 data-[state=open]:bg-slate-50/80">
-              <div className="flex items-center">
-                <ChevronRight
-                  className={`mr-2 h-4 w-4 shrink-0 text-emerald-500 transition-transform duration-200 group-data-[state=open]:rotate-90 opacity-0 group-hover:opacity-100 ${openItem === `item-${index}` ? "opacity-100" : ""}`}
-                />
-                {item.question}
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="text-xs sm:text-sm leading-relaxed text-slate-600 px-5 pb-4 pt-1">
-              <HighlightedAnswer text={item.answer} />
-            </AccordionContent>
-          </AccordionItem>
-        ))}
-      </Accordion>
-    </div>
+    <Accordion type="single" collapsible className="w-full">
+      {items.map((item, index) => (
+        <AccordionItem
+          key={index}
+          value={`item-${index}`}
+          className={index !== items.length - 1 ? "border-b border-slate-200" : undefined}
+        >
+          <AccordionTrigger className="text-base lg:text-base font-medium text-slate-800 py-4 px-0 sm:px-2 hover:text-emerald-600 transition-colors data-[state=open]:text-emerald-600">
+            {item.question}
+          </AccordionTrigger>
+          <AccordionContent className="text-xs sm:text-sm leading-relaxed text-slate-600 pb-4 pt-1">
+            <HighlightedAnswer text={item.answer} />
+          </AccordionContent>
+        </AccordionItem>
+      ))}
+    </Accordion>
   );
 }
 
@@ -156,20 +138,20 @@ export default function FAQ() {
       aria-label="Frequently asked questions"
     >
       <div className="relative mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-        <div className="text-left w-full max-w-xl mb-8 sm:mb-12">
-          <div className="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-700">
+        <div className="text-center md:text-left w-full max-w-xl mx-auto md:mx-0 mb-10 sm:mb-12">
+          <div className="inline-flex items-center mb-4 px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-medium">
             <MessageCircle className="w-3.5 h-3.5 mr-1.5" />
             Common Questions
           </div>
 
-          <h2 className="font-roboto mt-6 text-2xl sm:text-3xl lg:text-4xl tracking-tight text-slate-900 leading-tight">
+          <h2 className="font-roboto mt-0 lg:mt-6 mb-5 text-3xl sm:text-3xl lg:text-4xl tracking-tight text-slate-900 leading-tight">
             Straight{" "}
             <span className="bg-gradient-to-r from-emerald-600 to-emerald-500 bg-clip-text text-transparent">
               Answers
             </span>
           </h2>
 
-          <p className="mt-4 text-sm md:text-base text-slate-600 max-w-2xl">
+          <p className="mt-5 text-base md:text-base text-slate-600 max-w-2xl mx-auto lg:mx-0">
             No marketing fluff. Here&apos;s what creators actually want to know.
           </p>
         </div>
