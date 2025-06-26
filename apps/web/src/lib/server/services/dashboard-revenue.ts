@@ -59,21 +59,25 @@ export const dashboardRevenueService = {
       let totalStudents = 0;
 
       const courseRevenueData = rows.map((row) => {
-        const revenue = row.total_enrollments * (row.price || 0);
-        const revenueCurrent = row.month_enrollments * (row.price || 0);
-        const revenuePrev = row.prev_enrollments * (row.price || 0);
+        // Ensure numeric types – Postgres may return bigint counts as strings
+        const totalEnrollments = Number(row.total_enrollments) || 0;
+        const monthEnrollments = Number(row.month_enrollments) || 0;
+        const prevEnrollments = Number(row.prev_enrollments) || 0;
+
+        const price = row.price || 0;
+
+        const revenue = totalEnrollments * price;
+        const revenueCurrent = monthEnrollments * price;
+        const revenuePrev = prevEnrollments * price;
 
         totalRevenue += revenue;
         currentMonthRevenue += revenueCurrent;
         previousMonthRevenue += revenuePrev;
-        totalStudents += row.total_enrollments;
+        totalStudents += totalEnrollments;
 
-        const growth = row.prev_enrollments
-          ? Math.round(
-              ((row.month_enrollments - row.prev_enrollments) / row.prev_enrollments) *
-                100,
-            )
-          : row.month_enrollments > 0
+        const growth = prevEnrollments
+          ? Math.round(((monthEnrollments - prevEnrollments) / prevEnrollments) * 100)
+          : monthEnrollments > 0
             ? 100
             : 0;
 
