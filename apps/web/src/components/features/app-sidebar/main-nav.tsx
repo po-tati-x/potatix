@@ -2,12 +2,10 @@
 
 import { cn } from '@/lib/shared/utils/cn';
 import { usePathname } from 'next/navigation';
-import {
-  createContext,
-  useEffect,
-  useState,
-} from 'react';
+import { createContext, useEffect, useState } from 'react';
 import type { ComponentType, Dispatch, SetStateAction, ReactNode } from 'react';
+import { useIsMobile } from '@/lib/client/hooks/use-is-mobile';
+import { useScrollLock } from '@/lib/client/hooks/use-scroll-lock';
 
 type SideNavContext = {
   isOpen: boolean;
@@ -22,7 +20,8 @@ export const SideNavContext = createContext<SideNavContext>({
 interface MainNavProps {
   children: ReactNode;
   sidebar: ComponentType<{
-    slug: string;
+    slug?: string;
+    currentPath?: string;
     toolContent?: ReactNode;
     newsContent?: ReactNode;
     bottom?: ReactNode;
@@ -41,21 +40,12 @@ export function MainNav({
 }: MainNavProps) {
   const pathname = usePathname();
   
-  // Mobile detection
-  const [isMobile, setIsMobile] = useState(false);
-  useEffect(() => {
-    const checkIfMobile = () => setIsMobile(window.innerWidth < 768);
-    checkIfMobile();
-    window.addEventListener('resize', checkIfMobile);
-    return () => window.removeEventListener('resize', checkIfMobile);
-  }, []);
+  const isMobile = useIsMobile();
 
   const [isOpen, setIsOpen] = useState(false);
 
   // Prevent body scroll when side nav is open on mobile
-  useEffect(() => {
-    document.body.style.overflow = isOpen && isMobile ? 'hidden' : 'auto';
-  }, [isOpen, isMobile]);
+  useScrollLock(isOpen && isMobile);
 
   // Close side nav when pathname changes
   useEffect(() => {
@@ -96,7 +86,6 @@ export function MainNav({
             />
           </div>
           <Sidebar 
-            slug="dashboard" 
             toolContent={toolContent} 
             newsContent={newsContent}
             bottom={bottom}

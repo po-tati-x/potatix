@@ -17,6 +17,7 @@ export interface NavItem {
 }
 
 export interface NavSection {
+  id: string;
   name?: string;
   items: NavItem[];
 }
@@ -33,6 +34,7 @@ export type NavigationArea = 'default' | 'workspaceSettings' | 'userSettings';
 const DEFAULT_NAVIGATION: AreaConfig = {
   sections: [
     {
+      id: 'main',
       items: [
         {
           name: 'Dashboard',
@@ -65,6 +67,7 @@ const USER_SETTINGS_NAVIGATION: AreaConfig = {
   backHref: '/dashboard',
   sections: [
     {
+      id: 'account',
       name: 'Account',
       items: [
         {
@@ -90,6 +93,7 @@ function getWorkspaceSettingsNavigation(slug: string): AreaConfig {
     backHref: `/${slug}`,
     sections: [
       {
+        id: 'workspace',
         name: 'Workspace',
         items: [
           {
