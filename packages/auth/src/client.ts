@@ -1,12 +1,16 @@
 import { createAuthClient as createBetterAuthClient } from 'better-auth/react';
 
 export interface AuthClientOptions {
-  apiBaseUrl: string;
+  /**
+   * Base URL of the Better-Auth server. Pass an empty string to use the current origin.
+   * Mirrors the `baseURL` option name used by Better-Auth itself.
+   */
+  baseURL?: string;
 }
 
-export const createAuthClient = ({ apiBaseUrl }: AuthClientOptions) =>
+export const createAuthClient = ({ baseURL = "" }: AuthClientOptions = {}) =>
   createBetterAuthClient({
-    baseURL: apiBaseUrl,
+    baseURL,
 
     /**
      * Only uncomment the line below if you are using plugins, so that
