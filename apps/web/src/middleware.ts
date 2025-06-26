@@ -35,8 +35,7 @@ function hasAuthCookie(request: NextRequest): boolean {
   // Better Auth may emit either "better-auth.session-token" or "better-auth.session_token"
   // depending on upstream changes. Accept both plus the raw "session_token" for safety.
   const cookieNames = [
-    "__Secure-better-auth.session-token",
-    "better-auth.session-token",
+    "__Secure-better-auth.session_token",
     "better-auth.session_token",
     "session_token",
   ];
