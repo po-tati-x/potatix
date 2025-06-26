@@ -3,9 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/new-button";
 import { X } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import axios from "axios";
 
 interface EnrollmentStatusProps {
   isEnrolled?: boolean;
@@ -26,50 +24,25 @@ export default function EnrollmentStatus({
   courseProgress = 0,
   onEnroll,
 }: EnrollmentStatusProps) {
-  const router = useRouter();
   const [loading, setIsLoading] = useState(false);
 
   // Handle enrollment or auth redirect
   const handleEnroll = async () => {
-    if (isEnrolling) return;
+    if (isEnrolling || !onEnroll) return;
 
-    // If not authenticated, redirect to auth page
+    // If user is not authenticated, just trigger parent handler (opens auth modal)
     if (!isAuthenticated) {
-      router.push(`/auth`);
+      await onEnroll();
       return;
     }
 
-    // If we have an external handler, use it
-    if (onEnroll) {
-      try {
-        await onEnroll();
-      } catch (error) {
-        console.error("Failed to enroll in course:", error);
-        toast.error("Failed to enroll in course. Please try again.");
-      }
-      return;
-    }
-
-    // Fallback to direct API call if no handler provided
+    // Authenticated – show loading indicator while actual enrollment happens
     setIsLoading(true);
-
     try {
-      const response = await axios.post("/api/courses/enrollment");
-
-      // Check enrollment status
-      if (response.data.enrollment.status === "pending") {
-        toast.success(
-          "Enrollment request submitted. Waiting for instructor approval.",
-        );
-      } else {
-        toast.success("Successfully enrolled in this course!");
-      }
-
-      // Refresh the page to update enrollment status
-      window.location.reload();
+      await onEnroll();
     } catch (error) {
-      console.error("Failed to enroll in course:", error);
-      toast.error("Failed to enroll in course. Please try again.");
+      console.error("[Enrollment] failed:", error);
+      toast.error("Failed to enroll. Please try again.");
     } finally {
       setIsLoading(false);
     }

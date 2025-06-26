@@ -9,6 +9,8 @@ import CourseSidebar from "@/components/features/viewer/sidebar/course-sidebar-c
 import { Menu, X } from "lucide-react";
 import { authClient } from "@/lib/auth/auth";
 import axios from "axios";
+import Modal from "@/components/ui/Modal";
+import LoginScreen from "@/components/features/auth/login-screen";
 
 interface CourseLayoutProps {
   children: React.ReactNode;
@@ -31,6 +33,7 @@ export default function CourseLayout({ children, params }: CourseLayoutProps) {
 
   // Auth / enrollment state
   const [isAuthenticated, setAuthenticated] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const [enrollmentStatus, setEnrollmentStatus] = useState<"active" | "pending" | "rejected" | null>(null);
   const [isEnrollmentLoading, setEnrollmentLoading] = useState(false);
   const [isEnrolling, setEnrolling] = useState(false);
@@ -95,7 +98,7 @@ export default function CourseLayout({ children, params }: CourseLayoutProps) {
     if (isEnrolling) return;
 
     if (!isAuthenticated) {
-      router.push(`/viewer/${courseSlug}/auth`);
+      setShowAuthModal(true);
       return;
     }
 
@@ -218,6 +221,14 @@ export default function CourseLayout({ children, params }: CourseLayoutProps) {
           {children}
         </div>
       </div>
+
+      {showAuthModal && (
+        <Modal size="md" onClose={() => setShowAuthModal(false)}>
+          <div className="p-6">
+            <LoginScreen defaultCallbackUrl={`/viewer/${courseSlug}`} />
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }
