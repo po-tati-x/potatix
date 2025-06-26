@@ -6,52 +6,6 @@ const BASE_DOMAIN = clientEnv.NEXT_PUBLIC_APP_URL
   ? new URL(clientEnv.NEXT_PUBLIC_APP_URL).hostname
   : "localhost";
 
-// Paths that must never trigger auth or rewrites
-const PUBLIC_PATHS: readonly string[] = [
-  "/",
-  "/robots.txt",
-  "/sitemap.xml",
-  "/favicon.ico",
-  "/manifest.json",
-  "/signin",
-  "/login",
-  "/signup",
-  "/api/auth",
-];
-
-/**
- * Determines whether the incoming request path is considered public.
- */
-function isPublicPath(pathname: string): boolean {
-  // Direct match or sub-path under a public path
-  if (PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
-    return true;
-  }
-
-  // Handle rewritten viewer paths like /viewer/:slug/login etc.
-  const viewerMatch = pathname.match(/^\/viewer\/[^/]+\/(.+)$/);
-  if (viewerMatch) {
-    const innerPath = `/${viewerMatch[1]}`;
-    return PUBLIC_PATHS.some((p) => innerPath === p || innerPath.startsWith(`${p}/`));
-  }
-
-  return false;
-}
-
-/**
- * Check for presence of either Better Auth cookie variant.
- */
-function hasAuthCookie(request: NextRequest): boolean {
-  // Better Auth may emit either "better-auth.session-token" or "better-auth.session_token"
-  // depending on upstream changes. Accept both plus the raw "session_token" for safety.
-  const cookieNames = [
-    "__Secure-better-auth.session_token",
-    "better-auth.session_token",
-    "session_token",
-  ];
-  return cookieNames.some((name) => request.cookies.has(name));
-}
-
 /**
  * Extract sub-domain (course slug) for potatix.* or *.localhost.
  */
@@ -96,26 +50,13 @@ export default function middleware(request: NextRequest) {
   const forwardedHost = request.headers.get("x-forwarded-host");
   const hostHeader = forwardedHost ?? request.headers.get("host") ?? "";
   const courseSlug = getSubdomain(hostHeader);
-
-  const protoHeader = request.headers.get("x-forwarded-proto") ?? "https";
   
   const originalPath = request.nextUrl.pathname;
   const rewrittenPath = courseSlug
     ? rewriteViewerPath(originalPath, courseSlug)
     : originalPath;
 
-  // Public paths short-circuit ASAP
-  if (isPublicPath(rewrittenPath)) return NextResponse.next();
-
-  // Auth gate – redirect to /login with callback
-  if (!hasAuthCookie(request)) {
-    const origin = `${protoHeader}://${hostHeader}`;
-    const loginURL = new URL(`${origin}/login`);
-    loginURL.searchParams.set("callbackUrl", `${origin}${rewrittenPath}`);
-    return NextResponse.redirect(loginURL);
-  }
-
-  // Perform the actual rewrite if necessary
+  // If we produced a rewritten viewer path, hand it off to Next.
   if (rewrittenPath !== originalPath) {
     const url = request.nextUrl.clone();
     url.pathname = rewrittenPath;
