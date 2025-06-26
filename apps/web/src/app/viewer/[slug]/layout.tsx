@@ -7,7 +7,7 @@ import LoadingState from "@/components/features/viewer/loading-state";
 import ErrorState from "@/components/features/viewer/error-state";
 import CourseSidebar from "@/components/features/viewer/sidebar/course-sidebar-container";
 import { Menu, X } from "lucide-react";
-import { authClient } from "@/lib/auth/auth";
+import { useSession } from "@/lib/auth/auth";
 import axios from "axios";
 import Modal from "@/components/ui/Modal";
 import LoginScreen from "@/components/features/auth/login-screen";
@@ -31,8 +31,9 @@ export default function CourseLayout({ children, params }: CourseLayoutProps) {
   const toggleMobileSidebar = () => setMobileSidebarOpen((s) => !s);
   const toggleSidebarCollapsed = () => setSidebarCollapsed((s) => !s);
 
-  // Auth / enrollment state
-  const [isAuthenticated, setAuthenticated] = useState(false);
+  // Auth / enrollment state (derive from session hook so it updates automatically)
+  const { data: session, isPending: sessionLoading } = useSession();
+  const isAuthenticated = !!session?.user;
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [enrollmentStatus, setEnrollmentStatus] = useState<"active" | "pending" | "rejected" | null>(null);
   const [isEnrollmentLoading, setEnrollmentLoading] = useState(false);
@@ -46,21 +47,6 @@ export default function CourseLayout({ children, params }: CourseLayoutProps) {
     isLoading: courseLoading,
     error: courseError,
   } = useCourseBySlug(courseSlug);
-
-  // Check authentication status
-  useEffect(() => {
-    async function checkAuth() {
-      try {
-        const { data: session } = await authClient.getSession();
-        setAuthenticated(!!session?.user);
-      } catch (error) {
-        console.error("Failed to check authentication status:", error);
-        setAuthenticated(false);
-      }
-    }
-
-    checkAuth();
-  }, []);
 
   // Check enrollment status when authenticated
   useEffect(() => {
@@ -142,6 +128,13 @@ export default function CourseLayout({ children, params }: CourseLayoutProps) {
     courseLoading,
     isEnrollmentLoading,
   ]);
+
+  // Close auth modal automatically when authentication succeeds
+  useEffect(() => {
+    if (isAuthenticated) {
+      setShowAuthModal(false);
+    }
+  }, [isAuthenticated]);
 
   // Loading state
   if (courseLoading || isEnrollmentLoading) {
@@ -225,7 +218,7 @@ export default function CourseLayout({ children, params }: CourseLayoutProps) {
       {showAuthModal && (
         <Modal size="md" onClose={() => setShowAuthModal(false)}>
           <div className="p-6">
-            <LoginScreen defaultCallbackUrl={`/viewer/${courseSlug}`} />
+            <LoginScreen defaultCallbackUrl={pathname} />
           </div>
         </Modal>
       )}
