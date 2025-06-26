@@ -10,10 +10,10 @@ interface SocialLink {
   label: string;
 }
 
-interface FooterLink {
-  href: string;
-  label: string;
-}
+// interface FooterLink {
+//   href: string;
+//   label: string;
+// }
 
 const SOCIAL_LINKS: SocialLink[] = [
   { href: "mailto:au@potatix.com", icon: Mail, label: "Email" }
