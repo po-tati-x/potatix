@@ -23,9 +23,19 @@ const PUBLIC_PATHS: readonly string[] = [
  * Determines whether the incoming request path is considered public.
  */
 function isPublicPath(pathname: string): boolean {
-  return PUBLIC_PATHS.some(
-    (publicPath) => pathname === publicPath || pathname.startsWith(`${publicPath}/`)
-  );
+  // Direct match or sub-path under a public path
+  if (PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
+    return true;
+  }
+
+  // Handle rewritten viewer paths like /viewer/:slug/login etc.
+  const viewerMatch = pathname.match(/^\/viewer\/[^/]+\/(.+)$/);
+  if (viewerMatch) {
+    const innerPath = `/${viewerMatch[1]}`;
+    return PUBLIC_PATHS.some((p) => innerPath === p || innerPath.startsWith(`${p}/`));
+  }
+
+  return false;
 }
 
 /**
