@@ -8,7 +8,7 @@ export interface AuthOptions {
   authSecret: string;
   db: DatabaseInstance;
   plugins?: any[]; // Allow plugins to be passed
-  cookieDomain?: string;
+  cookieDomain: string;
   /**
    * Social providers configuration forwarded to Better Auth `socialProviders` option.
    * Use the same shape expected by Better Auth. Optional.
@@ -53,6 +53,8 @@ export const createAuth = ({
     ? process.env.COOKIE_SECURE === 'true'
     : urlProtocol === 'https:';
 
+  const sanitizedDomain = cookieDomain.replace(/^\./, "");
+
   return betterAuth({
     ...getBaseOptions(db),
     secret: authSecret,
@@ -68,21 +70,16 @@ export const createAuth = ({
       origins.add(new URL(webUrl).origin);
 
       // If a cookieDomain is specified, broaden trust to all its sub-domains
-      if (cookieDomain) {
-        const domain = cookieDomain.replace(/^\./, ''); // strip leading dot if present
-        origins.add(`*.${domain}`); // protocol-agnostic wildcard
+      if (sanitizedDomain) {
+        origins.add(`*.${sanitizedDomain}`); // protocol-agnostic wildcard
 
         // NOTE: Better-Auth does not support wildcard-with-port yet. In dev we disable CSRF instead.
       }
 
       return [...origins];
     })(),
-    session: {
-      cookieCache: {
-        enabled: true,
-        maxAge: 5 * 60,
-      },
-    },
+    // No in-memory cookie cache – rely entirely on browser cookies
+    // (Better Auth defaults are fine; session config omitted.)
     emailAndPassword: {
       enabled: true,
       autoSignIn: true,
@@ -90,12 +87,10 @@ export const createAuth = ({
     },
     // Ensure auth cookies are sent on every route, not just /api/auth
     advanced: {
-      crossSubDomainCookies: cookieDomain
-        ? {
-            enabled: true,
-            domain: cookieDomain,
-          }
-        : undefined,
+      crossSubDomainCookies: {
+        enabled: true,
+        domain: sanitizedDomain,
+      },
       defaultCookieAttributes: {
         path: '/',
         sameSite: 'lax',
