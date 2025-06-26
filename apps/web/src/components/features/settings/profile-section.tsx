@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Check, Loader2, User, XCircle } from "lucide-react";
 import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
 
 import { SectionWrapper } from "./section-wrapper";
 import { ProfileImage } from "./profile-image";
@@ -91,22 +92,23 @@ export function ProfileSection({ userData, onImageUpdate, loading }: ProfileSect
         )}
 
         <FormField label="Full Name" required>
-          <input
+          <Input
             type="text"
             name="name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
+            required
+            placeholder="Your full name"
           />
         </FormField>
 
         <FormField label="Email" description="Email cannot be changed">
-          <input
+          <Input
             type="email"
             name="email"
             defaultValue={userData.email}
             disabled
-            className="w-full px-3 py-2 border border-slate-300 rounded-md bg-slate-50 text-slate-500 cursor-not-allowed text-sm"
+            className="bg-slate-50 text-slate-500 cursor-not-allowed"
           />
         </FormField>
       </div>

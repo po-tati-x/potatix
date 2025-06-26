@@ -5,12 +5,15 @@ import { toast } from "sonner";
 import { useUpdateCourse } from "@/lib/client/hooks/use-courses";
 import { FormField } from "@/components/ui/form-field";
 import { Button } from "@/components/ui/new-button";
+import { Input } from "@/components/ui/input";
+import type { CreateCourseData } from "@/lib/shared/types/courses";
 
 interface CourseInfoSectionProps {
   courseId: string;
   title: string;
   description: string;
   price: number;
+  slug: string;
   validationErrors?: {
     title?: string;
     description?: string;
@@ -32,7 +35,10 @@ export function CourseInfoSection({
 
   const [title, setTitle] = useState(initialTitle);
   const [description, setDescription] = useState(initialDescription);
-  const [price, setPrice] = useState(initialPrice);
+  // Use string to allow empty editing state
+  const [priceInput, setPriceInput] = useState(
+    initialPrice > 0 ? initialPrice.toString() : ""
+  );
 
   // Track unsaved changes irrespective of parent prop sync
   const [dirty, setDirty] = useState(false);
@@ -56,7 +62,7 @@ export function CourseInfoSection({
   }, [initialDescription]);
 
   useEffect(() => {
-    setPrice(initialPrice);
+    setPriceInput(initialPrice > 0 ? initialPrice.toString() : "");
     savedPrice.current = initialPrice;
   }, [initialPrice]);
 
@@ -68,12 +74,41 @@ export function CourseInfoSection({
 
     if (name === "title") setTitle(value);
     if (name === "description") setDescription(value);
-    if (name === "price") setPrice(parseFloat(value) || 0);
+    if (name === "price") {
+      const sanitized = sanitizePriceInput(value);
+      setPriceInput(sanitized);
+    }
 
     setDirty(true);
 
     onChange?.(e);
   };
+
+  // Sanitize price input: allow digits and single dot, no leading zeros unless decimal
+  function sanitizePriceInput(input: string): string {
+    // Remove non-digit/dot characters
+    let cleaned = input.replace(/[^\d.]/g, "");
+
+    // Keep only first dot
+    const firstDot = cleaned.indexOf(".");
+    if (firstDot !== -1) {
+      const beforeDot = cleaned.slice(0, firstDot);
+      const afterDot = cleaned.slice(firstDot + 1).replace(/\./g, "");
+      cleaned = `${beforeDot}.${afterDot}`;
+    }
+
+    // If starts with dot, prefix 0
+    if (cleaned.startsWith(".")) cleaned = `0${cleaned}`;
+
+    // Remove leading zeros (but preserve single 0 or 0.xxx)
+    const parts = cleaned.split(".");
+    if (parts[0] && parts[0].length > 1) {
+      parts[0] = parts[0].replace(/^0+/, "");
+    }
+    cleaned = parts.join(".");
+
+    return cleaned;
+  }
 
   return (
     <div className="border border-slate-200 rounded-md overflow-hidden bg-white">
@@ -87,20 +122,29 @@ export function CourseInfoSection({
           loading={updateCourse.isPending}
           disabled={updateCourse.isPending || !dirty}
           onClick={() => {
-            updateCourse.mutate(
-              { title, description, price },
-              {
-                onSuccess: () => {
-                  toast.success("Course updated");
-                  // update baseline refs to current values
-                  savedTitle.current = title;
-                  savedDescription.current = description;
-                  savedPrice.current = price;
-                  setDirty(false);
-                },
-                onError: (err) => toast.error(err.message || "Failed to update"),
+            const payload: Partial<CreateCourseData> = {};
+            if (title !== savedTitle.current) payload.title = title;
+            if (description !== savedDescription.current) payload.description = description;
+            const newPrice = parseFloat(priceInput) || 0;
+            if (newPrice !== savedPrice.current) payload.price = newPrice;
+
+            if (Object.keys(payload).length === 0) {
+              toast.info("No changes to save");
+              setDirty(false);
+              return;
+            }
+
+            updateCourse.mutate(payload, {
+              onSuccess: () => {
+                toast.success("Course updated");
+                // update baseline refs to current values
+                if (payload.title) savedTitle.current = payload.title;
+                if (payload.description) savedDescription.current = payload.description;
+                if (payload.price !== undefined) savedPrice.current = payload.price;
+                setDirty(false);
               },
-            );
+              onError: (err) => toast.error(err.message || "Failed to update"),
+            });
           }}
         >
           Save
@@ -116,13 +160,12 @@ export function CourseInfoSection({
         )}
 
         <FormField label="Course Title" required error={validationErrors.title}>
-          <input
+          <Input
             name="title"
             type="text"
             required
             value={title}
             onChange={handleChange}
-            className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
             placeholder="Enter a compelling course title"
           />
         </FormField>
@@ -143,16 +186,18 @@ export function CourseInfoSection({
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <span className="text-slate-500 sm:text-sm">$</span>
             </div>
-            <input
+            <Input
               name="price"
               type="number"
               step="0.01"
               min="0"
               required
-              value={price}
+              value={priceInput}
               onChange={handleChange}
-              className="w-full pl-7 pr-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
+              className="pl-7 pr-3"
               placeholder="0.00"
+              inputMode="decimal"
+              pattern="\\d*(\\.\\d*)?"
             />
           </div>
         </FormField>

@@ -1,7 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { X } from "lucide-react";
+import { X, Camera } from "lucide-react";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 interface CourseCoverImageProps {
   preview: string | null;
@@ -23,31 +24,66 @@ export function CourseCoverImage({
       </div>
       <div className="p-4">
         {preview ? (
-          <div className="relative aspect-video rounded-md overflow-hidden">
+          <div className="relative aspect-video overflow-hidden rounded-md group">
+            {/* Cover image */}
             <Image
               src={preview}
               alt="Course cover preview"
-              className="object-cover"
               fill
               sizes="(max-width: 768px) 100vw, 300px"
+              className="object-cover transition-transform duration-300 ease-out group-hover:scale-105"
               priority
             />
+
+            {/* Blur + spinner while uploading */}
             {uploading && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
-                <div className="animate-spin rounded-full h-10 w-10 border-4 border-white border-opacity-30 border-t-white"></div>
+              <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+                <div className="h-10 w-10 animate-spin rounded-full border-4 border-white/30 border-t-white" />
               </div>
             )}
-            <button
-              type="button"
-              onClick={onImageRemove}
-              className="absolute top-2 right-2 p-1 bg-black bg-opacity-60 text-white rounded-full hover:bg-opacity-80"
-              disabled={uploading}
+
+            {/* Change cover overlay */}
+            <input
+              type="file"
+              id="course-cover-image"
+              className="hidden"
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  onImageChange(file);
+                }
+              }}
+            />
+
+            <label
+              htmlFor="course-cover-image"
+              className="absolute inset-0 z-10 flex flex-col items-center justify-center cursor-pointer bg-black/40 opacity-0 backdrop-blur-sm transition-opacity duration-200 group-hover:opacity-100"
             >
-              <X className="h-4 w-4" />
-            </button>
+              <Camera className="h-8 w-8 text-white mb-2 drop-shadow-sm" />
+              <span className="text-xs font-medium text-white">Change cover</span>
+            </label>
+
+            {/* Delete button */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={onImageRemove}
+                  className="absolute top-2 right-2 z-20 rounded-full bg-black/60 p-1 text-white opacity-0 transition-all duration-200 hover:bg-black/80 focus:outline-none focus:ring-2 focus:ring-emerald-400 group-hover:opacity-100"
+                  aria-label="Remove image"
+                  disabled={uploading}
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Remove image</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
         ) : (
-          <div className="border-2 border-dashed border-neutral-300 rounded-lg p-6 text-center">
+          <div className="border-2 border-dashed border-neutral-300 rounded-lg p-6 text-center hover:border-emerald-500/70 hover:bg-emerald-50/20 transition-colors duration-200">
             <input
               type="file"
               id="course-cover-image"
@@ -63,7 +99,8 @@ export function CourseCoverImage({
             
             <label
               htmlFor="course-cover-image"
-              className="flex flex-col items-center justify-center cursor-pointer"
+              className="flex flex-col items-center justify-center cursor-pointer hover:scale-105 transition-transform duration-200"
+              role="button"
             >
               <div className="h-10 w-10 text-neutral-400 mb-2 flex items-center justify-center">
                 <svg 

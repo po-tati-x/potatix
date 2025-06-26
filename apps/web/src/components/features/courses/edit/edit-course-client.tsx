@@ -90,18 +90,29 @@ export default function EditCourseClient({ courseId }: Props) {
   };
 
   const saveCourse = () => {
+    if (!course) {
+      setError("Course data not loaded");
+      return;
+    }
+
     if (!formData.title) {
       setError("Course title is required");
       return;
     }
 
-    const updateData: Partial<CreateCourseData> = {
-      title: formData.title,
-      description: formData.description,
-      price: formData.price,
-      status: formData.status,
-      imageUrl: formData.imageUrl,
-    };
+    const updateData: Partial<CreateCourseData> = {};
+
+    if (formData.title && formData.title !== course.title) updateData.title = formData.title;
+    if (formData.description !== course.description) updateData.description = formData.description;
+    if (formData.price !== course.price) updateData.price = formData.price;
+    if (formData.status && formData.status !== course.status) updateData.status = formData.status;
+    if (formData.imageUrl !== course.imageUrl) updateData.imageUrl = formData.imageUrl;
+    if (formData.slug && formData.slug !== course.slug) updateData.slug = formData.slug;
+
+    if (Object.keys(updateData).length === 0) {
+      setError("No changes to save");
+      return;
+    }
 
     updateCourse(updateData, {
       onSuccess: () => router.push(`/courses/${formData.slug}`),
@@ -215,6 +226,7 @@ export default function EditCourseClient({ courseId }: Props) {
             title={enhancedFormData.title || ""}
             description={enhancedFormData.description || ""}
             price={enhancedFormData.price || 0}
+            slug={enhancedFormData.slug || ""}
             onChange={(e) =>
               updateField(e.target.name as keyof Course, e.target.value as string)
             }
@@ -235,7 +247,10 @@ export default function EditCourseClient({ courseId }: Props) {
             preview={imagePreview}
             uploading={isUploading}
             onImageChange={handleCourseImageUpload}
-            onImageRemove={() => updateField("imageUrl", "")}
+            onImageRemove={() => {
+              setImagePreview(null);
+              updateField("imageUrl", "");
+            }}
           />
 
           <CourseStats

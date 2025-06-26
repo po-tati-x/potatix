@@ -2,7 +2,13 @@
 
 import { useRef, useState } from 'react';
 import Image from 'next/image';
-import { Camera, Loader2, Trash2, UserCircle, AlertCircle } from 'lucide-react';
+import {
+  Camera,
+  Loader2,
+  X,
+  UserCircle,
+  AlertCircle,
+} from 'lucide-react';
 import { toast } from 'sonner';
 
 export type ProfileImageProps = {
@@ -48,10 +54,6 @@ export function ProfileImage({ image, isUploading, onUpload, onDelete }: Profile
     }
   };
   
-  const handleClick = () => {
-    fileInputRef.current?.click();
-  };
-  
   const handleImageError = () => {
     console.error('Image failed to load:', image);
     setImgError(true);
@@ -60,69 +62,90 @@ export function ProfileImage({ image, isUploading, onUpload, onDelete }: Profile
 
   return (
     <div className="flex flex-col items-center justify-center mb-6">
-      <div className="relative group">
-        {isUploading ? (
-          <div className="w-24 h-24 rounded-full bg-slate-100 flex items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-emerald-500" />
+      <div className="relative group size-24">
+        {/* Spinner overlay while uploading */}
+        {isUploading && (
+          <div className="absolute inset-0 z-30 flex items-center justify-center rounded-full bg-black/60 backdrop-blur-sm">
+            <Loader2 className="h-8 w-8 animate-spin text-white" />
           </div>
-        ) : image && !imgError ? (
-          <div 
-            className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-slate-200 cursor-pointer"
-            onClick={handleClick}
-          >
+        )}
+
+        {/* Avatar present */}
+        {image && !imgError ? (
+          <>
             <Image
               src={image}
               alt="Profile"
               fill
               sizes="(max-width: 768px) 100vw, 96px"
-              className="object-cover"
+              className="rounded-full object-cover transition-transform duration-300 ease-out group-hover:scale-105"
               priority
               onError={handleImageError}
             />
-            <div className="absolute inset-0 bg-transparent flex items-center justify-center group-hover:bg-black group-hover:bg-opacity-30 transition-all duration-200">
-              <Camera className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-            </div>
-          </div>
+
+            {/* Overlay label to change photo */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="hidden"
+              disabled={isUploading}
+              id="profile-image-input"
+            />
+
+            <label
+              htmlFor="profile-image-input"
+              className="absolute inset-0 z-10 flex flex-col items-center justify-center cursor-pointer rounded-full bg-black/40 opacity-0 backdrop-blur-sm transition-opacity duration-200 group-hover:opacity-100"
+            >
+              <Camera className="h-6 w-6 text-white mb-0.5" />
+              <span className="text-[10px] font-medium text-white">Change</span>
+            </label>
+
+            {/* Delete button */}
+            <button
+              type="button"
+              onClick={onDelete}
+              disabled={isUploading}
+              aria-label="Remove image"
+              className="absolute -bottom-1 -right-1 z-20 rounded-full bg-black/60 p-1 text-white opacity-0 transition-all duration-200 hover:bg-black/80 focus:outline-none focus:ring-2 focus:ring-emerald-400 group-hover:opacity-100"
+            >
+              <X className="h-4 w-4" />
+              <span className="sr-only">Remove image</span>
+            </button>
+          </>
         ) : (
-          <div 
-            className="w-24 h-24 rounded-full bg-slate-100 flex items-center justify-center cursor-pointer hover:bg-slate-200 transition-colors duration-200"
-            onClick={handleClick}
-          >
-            {imgError ? (
-              <AlertCircle className="h-10 w-10 text-red-400" />
-            ) : (
-              <UserCircle className="h-16 w-16 text-slate-400" />
-            )}
-            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-              <Camera className="h-6 w-6 text-slate-600" />
+          /* Placeholder avatar */
+          <>
+            <div className="flex size-full items-center justify-center rounded-full bg-slate-100 text-slate-400">
+              {imgError ? (
+                <AlertCircle className="h-10 w-10 text-red-400" />
+              ) : (
+                <UserCircle className="h-16 w-16" />
+              )}
             </div>
-          </div>
-        )}
-        
-        <input 
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          onChange={handleFileChange}
-          className="hidden"
-          disabled={isUploading}
-        />
-        
-        {image && !imgError && !isUploading && (
-          <button
-            type="button"
-            onClick={onDelete}
-            disabled={isUploading}
-            className="absolute -bottom-1 -right-1 bg-red-500 hover:bg-red-600 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
+
+            {/* Upload overlay */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="hidden"
+              disabled={isUploading}
+              id="profile-image-input"
+            />
+            <label
+              htmlFor="profile-image-input"
+              className="absolute inset-0 z-10 flex flex-col items-center justify-center cursor-pointer rounded-full bg-black/0 hover:bg-black/10 transition-colors"
+            >
+              <Camera className="h-6 w-6 text-slate-600" />
+            </label>
+          </>
         )}
       </div>
-      
-      {localError && (
-        <p className="text-xs text-red-500 mt-2">{localError}</p>
-      )}
+
+      {localError && <p className="mt-2 text-xs text-red-500">{localError}</p>}
     </div>
   );
 } 

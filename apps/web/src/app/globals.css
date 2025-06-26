@@ -1,5 +1,6 @@
 @import "tailwindcss" source(none);
 @import "tailwindcss/theme.css";
+@import "@potatix/tailwind-preset/style.css";
 
 @source "../**/*.{ts,tsx}";
 @source "../**/*.{js,jsx}";

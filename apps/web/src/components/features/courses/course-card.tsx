@@ -37,7 +37,7 @@ export function CourseCard({ course }: CourseCardProps) {
     
   return (
     <Link href={`/courses/${course.slug!}`} className="block group">
-      <div className="relative h-full border border-slate-200 rounded-lg overflow-hidden hover:border-slate-400 hover:shadow-sm transition-all duration-200 bg-white">
+      <div className="relative h-full flex flex-col border border-slate-200 rounded-lg overflow-hidden hover:border-slate-400 hover:shadow-sm transition-all duration-200 bg-white">
         {/* Course image or placeholder */}
         <div className="h-44 bg-slate-50 overflow-hidden relative">
           {course.imageUrl ? (
@@ -63,7 +63,7 @@ export function CourseCard({ course }: CourseCardProps) {
         </div>
         
         {/* Course info */}
-        <div className="p-5">
+        <div className="p-5 flex flex-col flex-grow">
           <h3 className="font-medium text-lg text-slate-900 mb-2 line-clamp-2 group-hover:text-slate-800">
             {course.title}
           </h3>
@@ -74,7 +74,7 @@ export function CourseCard({ course }: CourseCardProps) {
             </p>
           )}
           
-          <div className="flex items-center justify-between border-t border-slate-100 pt-4 mt-4">
+          <div className="flex items-center justify-between border-t border-slate-100 pt-4 mt-auto">
             <div className="flex items-center gap-3">
               <div className="flex items-center text-xs text-slate-500">
                 <BookText className="h-3.5 w-3.5 mr-1.5" />
