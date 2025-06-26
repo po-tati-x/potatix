@@ -32,7 +32,7 @@ export default function CourseLayout({ children, params }: CourseLayoutProps) {
   const toggleSidebarCollapsed = () => setSidebarCollapsed((s) => !s);
 
   // Auth / enrollment state (derive from session hook so it updates automatically)
-  const { data: session, isPending: sessionLoading } = useSession();
+  const { data: session } = useSession();
   const isAuthenticated = !!session?.user;
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [enrollmentStatus, setEnrollmentStatus] = useState<"active" | "pending" | "rejected" | null>(null);
