@@ -1,13 +1,10 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { PlusCircle, Loader2, BookOpen } from "lucide-react";
-import { uniqueNamesGenerator, colors, animals } from "unique-names-generator";
-
+import React from "react";
+import { Loader2, PlusCircle, AlertTriangle } from "lucide-react";
 import type { Course } from "@/lib/shared/types/courses";
-import type { CreateCourseData } from "@/lib/shared/types/courses";
 import { ApiError } from "@/lib/client/api/dashboard";
-import { useCourses, useCreateCourse } from "@/lib/client/hooks/use-courses";
+import { useCourses } from "@/lib/client/hooks/use-courses";
 import { CourseCard } from "@/components/features/courses/course-card";
 
 // Helper to convert standard Error to ApiError if needed
@@ -64,50 +61,61 @@ function CreateCourseCard({
   );
 }
 
-/**
- * Main courses grid component that displays all courses with create functionality
- */
-export function CoursesGrid({ initialData }: { initialData?: Course[] } = {}) {
-  const router = useRouter();
-  const { data, isLoading, error, refetch } = useCourses(initialData ? { initialData } : undefined);
-  const createCourseMutation = useCreateCourse();
-  const isCreatingCourse = createCourseMutation.isPending;
+interface CoursesGridProps {
+  initialData?: Course[];
+  onCreateCourse: () => void;
+  isCreatingCourse: boolean;
+}
 
-  const handleCreateCourse = async () => {
-    if (isCreatingCourse) return;
+export function CoursesGrid({
+  initialData,
+  onCreateCourse,
+  isCreatingCourse,
+}: CoursesGridProps) {
+  const { data, isLoading, error, refetch } = useCourses(
+    initialData ? { initialData } : undefined,
+  );
 
-    const randomName = uniqueNamesGenerator({
-      dictionaries: [colors, animals],
-      style: "capital",
-      separator: " ",
-    });
-
-    const courseData: CreateCourseData = {
-      title: `${randomName} Course`,
-      description: "Click to edit course details",
-      price: 0,
-      status: "draft",
-    };
-
-    try {
-      const result = await createCourseMutation.mutateAsync(courseData);
-      if (result?.id) {
-        router.push(`/courses/${result.id}/edit`);
-      } else {
-        console.error("Course created, but no ID was returned from the API.");
-      }
-    } catch (err) {
-      console.error("Failed to create course:", err);
-    }
-  };
-
-  // Loading state
+  // Skeleton placeholder while loading
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="h-[220px] bg-slate-100 rounded-md animate-pulse" />
+          <SkeletonCourseCard key={i} />
         ))}
+      </div>
+    );
+  }
+
+  // Reusable state card component for empty & error views
+  function StateCard({
+    icon,
+    title,
+    message,
+    actionLabel,
+    onAction,
+  }: {
+    icon: React.ReactNode;
+    title: string;
+    message?: string;
+    actionLabel?: string;
+    onAction?: () => void;
+  }) {
+    return (
+      <div className="p-6 text-center border border-slate-200 rounded-md bg-white">
+        <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-full bg-slate-50">
+          {icon}
+        </div>
+        <h3 className="mb-2 text-sm font-medium text-slate-900">{title}</h3>
+        {message && <p className="mb-4 text-xs text-slate-500">{message}</p>}
+        {actionLabel && onAction && (
+          <button
+            className="px-4 py-2 text-sm border border-slate-300 rounded-md hover:bg-slate-50"
+            onClick={onAction}
+          >
+            {actionLabel}
+          </button>
+        )}
       </div>
     );
   }
@@ -115,47 +123,40 @@ export function CoursesGrid({ initialData }: { initialData?: Course[] } = {}) {
   // Error state
   if (error) {
     return (
-      <div className="p-6 text-center border border-slate-200 rounded-md">
-        <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-full bg-red-50">
-          <BookOpen className="h-6 w-6 text-red-500" />
-        </div>
-        <h3 className="mb-2 text-sm font-medium text-slate-900">Failed to load courses</h3>
-        <p className="mb-4 text-xs text-slate-500">{toApiError(error)?.message || "Unknown error"}</p>
-        <button 
-          className="px-4 py-2 text-sm border border-slate-300 rounded-md hover:bg-slate-50"
-          onClick={() => refetch?.()}
-        >
-          Try again
-        </button>
-      </div>
+      <StateCard
+        icon={<AlertTriangle className="h-6 w-6 text-red-500" />}
+        title="Failed to load courses"
+        message={toApiError(error)?.message || "Unknown error"}
+        actionLabel="Try again"
+        onAction={() => refetch?.()}
+      />
     );
   }
 
-  // Empty state
-  if (!data || data.length === 0) {
-    return (
-      <div className="p-6 text-center border border-slate-200 rounded-md">
-        <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-full bg-slate-50">
-          <BookOpen className="h-5 w-5 text-slate-400" />
-        </div>
-        <h3 className="mb-2 text-sm font-medium text-slate-900">No courses have been created yet.</h3>
-        <button 
-          className="px-4 py-2 text-sm border border-slate-300 rounded-md hover:bg-slate-50"
-          onClick={handleCreateCourse}
-        >
-          Create Your First Course
-        </button>
-      </div>
-    );
-  }
+  const hasCourses = data && data.length > 0;
 
   // Render grid with data
   return (
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-      {data.map((course) => (
-        <CourseCard key={course.id} course={course} />
-      ))}
-      <CreateCourseCard onClick={handleCreateCourse} isPending={isCreatingCourse} />
+      {hasCourses &&
+        data.map((course) => <CourseCard key={course.id} course={course} />)}
+      <CreateCourseCard onClick={onCreateCourse} isPending={isCreatingCourse} />
+    </div>
+  );
+}
+
+/**
+ * Minimal course card skeleton to maintain layout consistency
+ */
+function SkeletonCourseCard() {
+  return (
+    <div className="border border-slate-200 rounded-lg overflow-hidden bg-white animate-pulse">
+      <div className="h-44 bg-slate-100" />
+      <div className="p-5 space-y-3">
+        <div className="h-5 w-3/4 bg-slate-100 rounded" />
+        <div className="h-4 w-full bg-slate-100 rounded" />
+        <div className="h-4 w-2/3 bg-slate-100 rounded" />
+      </div>
     </div>
   );
 }

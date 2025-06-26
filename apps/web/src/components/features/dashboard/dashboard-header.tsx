@@ -1,10 +1,10 @@
-import { BookOpen, Plus } from "lucide-react";
+import { BookOpen, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/new-button";
 
 interface DashboardHeaderProps {
   userName: string;
   onCoursesClick: () => void;
-  onNewCourseClick: () => void;
+  onNewCourseClick?: () => void;
 }
 
 export function DashboardHeader({
@@ -31,14 +31,17 @@ export function DashboardHeader({
           >
             My Courses
           </Button>
-          <Button
-            type="primary"
-            size="small"
-            icon={<Plus className="h-3.5 w-3.5" />}
-            onClick={onNewCourseClick}
-          >
-            New Course
-          </Button>
+
+          {onNewCourseClick && (
+            <Button
+              type="primary"
+              size="small"
+              icon={<PlusCircle className="h-3.5 w-3.5" />}
+              onClick={onNewCourseClick}
+            >
+              New Course
+            </Button>
+          )}
         </div>
       </div>
     </header>

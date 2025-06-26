@@ -23,7 +23,11 @@ export function CourseHeader({
   backHref = "/courses",
   title = "Edit Course",
   status,
+  loading,
+  disabled,
+  isPending,
   onStatusChange,
+  onSave,
 }: CourseHeaderProps) {
   const router = useRouter();
 
@@ -37,11 +41,12 @@ export function CourseHeader({
 
   return (
     <>
+      {/* Back button */}
       <div className="mb-6">
         <Button
           type="text"
           size="tiny"
-          icon={
+          iconLeft={
             <span className="transition-transform duration-200 group-hover:-translate-x-0.5">
               <ArrowLeft className="h-3 w-3" />
             </span>
@@ -53,6 +58,7 @@ export function CourseHeader({
         </Button>
       </div>
 
+      {/* Header with status and save */}
       <header className="mb-6 border-b border-slate-200 pb-5">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -69,6 +75,18 @@ export function CourseHeader({
               </div>
             )}
           </div>
+
+          {onSave && (
+            <Button
+              type="primary"
+              size="small"
+              loading={!!loading || !!isPending}
+              disabled={disabled}
+              onClick={onSave as any}
+            >
+              Save
+            </Button>
+          )}
         </div>
       </header>
     </>

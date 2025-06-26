@@ -43,10 +43,10 @@ export default function CoursesPageClient({ initialData }: { initialData?: Cours
 
     try {
       const created = await createCourseMutation.mutateAsync(courseData);
-      if (created?.id) {
-        router.push(`/courses/${created.id}/edit`);
+      if (created?.slug) {
+        router.push(`/courses/${created.slug}/edit`);
       } else {
-        console.error("Course created, but no ID returned from API");
+        console.error("Course created, but no slug returned from API");
       }
     } catch (err) {
       console.error("Failed to create course:", err);
@@ -56,7 +56,7 @@ export default function CoursesPageClient({ initialData }: { initialData?: Cours
   return (
     <div className="mx-auto max-w-5xl px-4 py-6">
       <header className="mb-6 border-b border-slate-200 pb-5">
-        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
             <h1 className="text-xl font-medium text-slate-900">My Courses</h1>
             <p className="mt-1 max-w-2xl text-sm text-slate-600">
@@ -68,17 +68,22 @@ export default function CoursesPageClient({ initialData }: { initialData?: Cours
           <Button
             type="primary"
             size="small"
-            icon={<PlusCircle className="h-3.5 w-3.5" />}
+            iconLeft={<PlusCircle className="h-3.5 w-3.5" />}
             onClick={handleCreateCourse}
-            disabled={isCreatingCourse}
+            loading={isCreatingCourse}
+            aria-busy={isCreatingCourse}
           >
-            {isCreatingCourse ? "Creating..." : "New Course"}
+            New Course
           </Button>
         </div>
       </header>
 
       <main>
-        <CoursesGrid initialData={initialData} />
+        <CoursesGrid
+          initialData={initialData}
+          onCreateCourse={handleCreateCourse}
+          isCreatingCourse={isCreatingCourse}
+        />
       </main>
     </div>
   );

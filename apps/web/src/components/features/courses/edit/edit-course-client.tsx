@@ -145,6 +145,11 @@ export default function EditCourseClient({ courseId }: Props) {
     }
   };
 
+  const handleStatusChange = (newStatus: "draft" | "published" | "archived") => {
+    updateField("status", newStatus);
+    updateCourse({ status: newStatus });
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-3 text-slate-500">
@@ -193,8 +198,8 @@ export default function EditCourseClient({ courseId }: Props) {
         courseId={courseId}
         backHref={formData.slug ? `/courses/${formData.slug}` : "/courses"}
         title="Edit Course"
-        status={formData.status || "draft"}
-        onStatusChange={(status) => updateField("status", status)}
+        status={formData.status}
+        onStatusChange={handleStatusChange}
         onSave={saveCourse}
         loading={isSaving}
         disabled={isUploading || isSaving}
