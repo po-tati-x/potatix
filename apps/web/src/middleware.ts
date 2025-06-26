@@ -32,10 +32,14 @@ function isPublicPath(pathname: string): boolean {
  * Check for presence of either Better Auth cookie variant.
  */
 function hasAuthCookie(request: NextRequest): boolean {
-  return (
-    request.cookies.has("better-auth.session_token") ||
-    request.cookies.has("session_token")
-  );
+  // Better Auth may emit either "better-auth.session-token" or "better-auth.session_token"
+  // depending on upstream changes. Accept both plus the raw "session_token" for safety.
+  const cookieNames = [
+    "better-auth.session-token",
+    "better-auth.session_token",
+    "session_token",
+  ];
+  return cookieNames.some((name) => request.cookies.has(name));
 }
 
 /**
