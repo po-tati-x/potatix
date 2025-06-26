@@ -109,9 +109,9 @@ export function CourseProgressTracking() {
                 <span className="text-xs font-medium text-slate-900">{course.completionRate}%</span>
               </div>
               <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-emerald-500 rounded-full" 
-                  style={{ width: `${course.completionRate}%` }}
+                <div
+                  className="h-full bg-emerald-500 rounded-full"
+                  style={{ width: `${Math.min(Math.max(course.completionRate, 0), 100)}%` }}
                 ></div>
               </div>
             </div>
