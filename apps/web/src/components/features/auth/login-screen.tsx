@@ -1,7 +1,5 @@
 "use client";
 
-import { ArrowRight } from "lucide-react";
-import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect } from "react";
 
@@ -32,9 +30,9 @@ export default function LoginScreen({ defaultCallbackUrl = "/dashboard" }: Login
   // If already authenticated, bounce away immediately.
   useEffect(() => {
     if (!isPending && session?.user) {
-      router.push("/dashboard");
+      router.push(callbackUrl);
     }
-  }, [session, isPending, router]);
+  }, [session, isPending, router, callbackUrl]);
 
   // Pending session check – show a quick spinner.
   if (isPending) {
@@ -51,18 +49,6 @@ export default function LoginScreen({ defaultCallbackUrl = "/dashboard" }: Login
       <AuthForm isLoginMode callbackUrl={callbackUrl} />
 
       <SocialLogin callbackUrl={callbackUrl} />
-
-      <div className="mt-5 pt-5 border-t border-slate-200">
-        <div className="text-center text-sm text-slate-600">
-          <span>Don&apos;t have an account?</span>
-          <Link
-            href={`/signup?callbackUrl=${encodeURIComponent(callbackUrl)}`}
-            className="ml-1.5 font-medium text-emerald-600 hover:text-emerald-700 inline-flex items-center"
-          >
-            Create account <ArrowRight className="ml-1 w-3.5 h-3.5" />
-          </Link>
-        </div>
-      </div>
     </div>
   );
 } 

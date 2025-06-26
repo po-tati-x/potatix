@@ -91,6 +91,7 @@ export default function AuthForm({
 
         toast.success("Account created successfully");
         router.push(callbackUrl);
+        router.refresh();
       } else {
         // Handle sign in
         const response = await signIn.email({
@@ -106,6 +107,7 @@ export default function AuthForm({
 
         toast.success("Login successful");
         router.push(callbackUrl);
+        router.refresh();
       }
     } catch (error: unknown) {
       let errorMessage = "Authentication failed";

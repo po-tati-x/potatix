@@ -1,7 +1,5 @@
 "use client";
 
-import { ArrowRight } from "lucide-react";
-import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect } from "react";
 
@@ -28,9 +26,9 @@ export default function SignupScreen({ defaultCallbackUrl = "/dashboard" }: Sign
   // Redirect away if the user is already logged in
   useEffect(() => {
     if (!isPending && session?.user) {
-      router.push("/dashboard");
+      router.push(callbackUrl);
     }
-  }, [session, isPending, router]);
+  }, [session, isPending, router, callbackUrl]);
 
   if (isPending) {
     return (
@@ -46,18 +44,6 @@ export default function SignupScreen({ defaultCallbackUrl = "/dashboard" }: Sign
       <AuthForm isLoginMode={false} callbackUrl={callbackUrl} />
 
       <SocialLogin callbackUrl={callbackUrl} />
-
-      <div className="mt-5 pt-5 border-t border-slate-200">
-        <div className="text-center text-sm text-slate-600">
-          <span>Already have an account?</span>
-          <Link
-            href={`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`}
-            className="ml-1.5 font-medium text-emerald-600 hover:text-emerald-700 inline-flex items-center"
-          >
-            Sign in <ArrowRight className="ml-1 w-3.5 h-3.5" />
-          </Link>
-        </div>
-      </div>
     </div>
   );
 } 
