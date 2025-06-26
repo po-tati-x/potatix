@@ -71,9 +71,9 @@ export function ProfileSection({ userData, onImageUpdate, loading }: ProfileSect
       {/* Profile image upload */}
       <ProfileImage
         image={userData.image}
-        isUploading={loading}
-        onUpload={handleImageUpload}
-        onDelete={handleImageDelete}
+        uploading={loading}
+        onImageChange={handleImageUpload}
+        onImageRemove={handleImageDelete}
       />
 
       {/* Name + Email */}
