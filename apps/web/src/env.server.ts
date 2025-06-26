@@ -7,7 +7,7 @@ const ServerEnvSchema = object({
   DATABASE_URL: string(),
   BETTER_AUTH_SECRET: string(),
   BETTER_AUTH_URL: optional(string()),
-  AUTH_COOKIE_DOMAIN: optional(string()),
+  AUTH_COOKIE_DOMAIN: string(),
 
   // Third-party services
   GOOGLE_CLIENT_ID: string(),
