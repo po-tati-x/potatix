@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Github, Mail, Twitter, BookOpen } from "lucide-react";
+import { Mail, BookOpen } from "lucide-react";
 
 interface SocialLink {
   href: string;
@@ -16,24 +16,22 @@ interface FooterLink {
 }
 
 const SOCIAL_LINKS: SocialLink[] = [
-  { href: "https://twitter.com/potatixhq", icon: Twitter, label: "Twitter" },
-  { href: "https://github.com/potatixhq", icon: Github, label: "GitHub" },
-  { href: "mailto:hello@potatix.com", icon: Mail, label: "Email" }
+  { href: "mailto:au@potatix.com", icon: Mail, label: "Email" }
 ];
 
-const PRODUCT_LINKS: FooterLink[] = [
-  { href: "#features", label: "Features" },
-  { href: "#pricing", label: "Pricing" },
-  { href: "#faq", label: "FAQs" },
-  { href: "/blog", label: "Blog" }
-];
+// const PRODUCT_LINKS: FooterLink[] = [
+//   { href: "#features", label: "Features" },
+//   { href: "#pricing", label: "Pricing" },
+//   { href: "#faq", label: "FAQs" },
+//   { href: "/blog", label: "Blog" }
+// ];
 
-const COMPANY_LINKS: FooterLink[] = [
-  { href: "/about", label: "About" },
-  { href: "/privacy", label: "Privacy" },
-  { href: "/terms", label: "Terms" },
-  { href: "/contact", label: "Contact" }
-];
+// const COMPANY_LINKS: FooterLink[] = [
+//   { href: "/about", label: "About" },
+//   { href: "/privacy", label: "Privacy" },
+//   { href: "/terms", label: "Terms" },
+//   { href: "/contact", label: "Contact" }
+// ];
 
 function SocialIcons({ links }: { links: SocialLink[] }) {
   return (
@@ -54,25 +52,25 @@ function SocialIcons({ links }: { links: SocialLink[] }) {
   );
 }
 
-function LinkColumn({ title, links }: { title: string; links: FooterLink[] }) {
-  return (
-    <div>
-      <h3 className="text-sm font-semibold text-white mb-4">{title}</h3>
-      <ul className="space-y-2">
-        {links.map(({ href, label }) => (
-          <li key={label}>
-            <Link 
-              href={href} 
-              className="text-sm text-slate-400 hover:text-emerald-400 transition-colors inline-block"
-            >
-              {label}
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
+// function LinkColumn({ title, links }: { title: string; links: FooterLink[] }) {
+//   return (
+//     <div>
+//       <h3 className="text-sm font-semibold text-white mb-4">{title}</h3>
+//       <ul className="space-y-2">
+//         {links.map(({ href, label }) => (
+//           <li key={label}>
+//             <Link 
+//               href={href} 
+//               className="text-sm text-slate-400 hover:text-emerald-400 transition-colors inline-block"
+//             >
+//               {label}
+//             </Link>
+//           </li>
+//         ))}
+//       </ul>
+//     </div>
+//   );
+// }
 
 function CompanyInfo() {
   return (
@@ -87,7 +85,7 @@ function CompanyInfo() {
         />
       </Link>
       <p className="text-sm text-slate-400 max-w-xs">
-        A minimalist platform for creators to sell courses without the bloat. 100% free, no fees or revenue share.
+        A minimalist platform for creators to sell courses without the bloat. 100% free, no fees or revenue share. 2025, All rights reserved.
       </p>
       <SocialIcons links={SOCIAL_LINKS} />
     </div>
@@ -102,14 +100,11 @@ export default function Footer() {
           <div className="lg:col-span-2">
             <CompanyInfo />
           </div>
-          <LinkColumn title="Product" links={PRODUCT_LINKS} />
-          <LinkColumn title="Company" links={COMPANY_LINKS} />
+          {/* <LinkColumn title="Product" links={PRODUCT_LINKS} />
+          <LinkColumn title="Company" links={COMPANY_LINKS} /> */}
         </div>
         
         <div className="border-t border-slate-800 mt-10 pt-8 flex flex-col sm:flex-row justify-between items-center">
-          <p className="text-xs text-slate-500">
-            &copy; {new Date().getFullYear()} Potatix. All rights reserved.
-          </p>
           
           <div className="mt-4 sm:mt-0">
             <span className="inline-flex items-center px-2.5 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-medium">

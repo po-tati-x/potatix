@@ -1,13 +1,9 @@
-"use client";
-
 import {
   Check,
   AlertCircle,
   XCircle,
   Zap,
-  LayoutDashboard,
 } from "lucide-react";
-import { Button } from "@/components/ui/new-button";
 
 interface ComparisonItem {
   feature: string;
@@ -168,15 +164,6 @@ function PricingCard() {
             </div>
           </div>
         </div>
-
-        <Button
-          type="primary"
-          size="large"
-          className="w-full justify-center group-hover:shadow-md transition-shadow"
-          iconLeft={<LayoutDashboard className="h-4 w-4" />}
-        >
-          Go to Dashboard
-        </Button>
       </div>
 
       <div className="p-6 sm:p-8 pt-2">
@@ -250,19 +237,19 @@ export default function Pricing() {
       aria-label="Pricing plans"
     >
       <div className="relative mx-auto px-4 sm:px-6 lg:px-8 max-w-5xl">
-        <div className="text-left w-full max-w-xl">
-          <div className="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-700">
+        <div className="text-center md:text-left w-full max-w-xl mx-auto md:mx-0">
+          <div className="inline-flex items-center mb-4 px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-medium">
             100% Free Platform
           </div>
 
-          <h2 className="font-roboto mt-6 text-2xl sm:text-3xl lg:text-4xl tracking-tight text-slate-900 leading-tight">
+          <h2 className="font-roboto mt-0 lg:mt-6 mb-5 text-3xl sm:text-3xl lg:text-4xl tracking-tight text-slate-900 leading-tight">
             No Costs,{" "}
             <span className="bg-gradient-to-r from-emerald-600 to-emerald-500 bg-clip-text text-transparent">
               No Catch
             </span>
           </h2>
 
-          <p className="mt-4 text-sm md:text-base text-slate-600 max-w-2xl">
+          <p className="mt-5 text-lg md:text-base text-slate-600 max-w-2xl mx-auto lg:mx-0">
             No monthly fees, no revenue share, no hidden costs. Create and sell
             courses completely free.
           </p>
