@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/new-button";
 import { ChevronRight } from "lucide-react";
+import { memo } from "react";
 
-export default function SidebarFooter() {
+function SidebarFooter() {
   return (
     <div className="p-4 border-t border-slate-200 bg-slate-50">
       <div className="p-3 bg-emerald-50 border border-emerald-100 rounded-md">
@@ -25,3 +26,6 @@ export default function SidebarFooter() {
     </div>
   );
 }
+
+// Export memoized component to prevent unnecessary re-renders
+export default memo(SidebarFooter);

@@ -4,42 +4,48 @@ import { useState } from "react";
 import { Button } from "@/components/ui/new-button";
 import { X } from "lucide-react";
 import { toast } from "sonner";
+import { useCourseContext } from "@/lib/client/context/course-context";
+import { memo } from "react";
 
 interface EnrollmentStatusProps {
-  isEnrolled?: boolean;
-  enrollmentStatus?: "active" | "pending" | "rejected" | null;
-  isEnrolling?: boolean;
-  isAuthenticated?: boolean;
   coursePrice?: number;
   courseProgress?: number;
   onEnroll?: () => Promise<void>;
 }
 
-export default function EnrollmentStatus({
-  isEnrolled = false,
-  enrollmentStatus = null,
-  isEnrolling = false,
-  isAuthenticated = false,
+function EnrollmentStatus({
   coursePrice = 0,
   courseProgress = 0,
   onEnroll,
 }: EnrollmentStatusProps) {
   const [loading, setIsLoading] = useState(false);
+  
+  // Get enrollment state from context
+  const {
+    isEnrolled,
+    enrollmentStatus,
+    isEnrolling,
+    isAuthenticated,
+    enroll: contextEnroll
+  } = useCourseContext();
+  
+  // Use either passed onEnroll or context enroll function
+  const handleEnrollment = onEnroll || contextEnroll;
 
   // Handle enrollment or auth redirect
   const handleEnroll = async () => {
-    if (isEnrolling || !onEnroll) return;
+    if (isEnrolling || !handleEnrollment) return;
 
     // If user is not authenticated, just trigger parent handler (opens auth modal)
     if (!isAuthenticated) {
-      await onEnroll();
+      await handleEnrollment();
       return;
     }
 
     // Authenticated – show loading indicator while actual enrollment happens
     setIsLoading(true);
     try {
-      await onEnroll();
+      await handleEnrollment();
     } catch (error) {
       console.error("[Enrollment] failed:", error);
       toast.error("Failed to enroll. Please try again.");
@@ -176,3 +182,6 @@ export default function EnrollmentStatus({
     );
   }
 }
+
+// Export memoized component
+export default memo(EnrollmentStatus);

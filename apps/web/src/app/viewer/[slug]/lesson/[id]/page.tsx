@@ -1,10 +1,14 @@
 import { notFound } from 'next/navigation';
+import { ensureCourseSubdomain } from '@/lib/server/utils/course-viewer';
 import { LessonViewer } from '@/components/features/viewer/lesson-viewer/lesson-viewer';
 import { courseService } from '@/lib/server/services/courses';
 import type { Lesson } from "@/lib/shared/types/courses";
 
 export default async function LessonViewerPage({ params }: { params: Promise<{ slug: string; id: string }> }) {
   const { slug: courseSlug, id: lessonId } = await params;
+
+  // Ensure correct subdomain
+  await ensureCourseSubdomain(courseSlug);
 
   // Fetch course (includes lessons)
   const course = await courseService.getCourseBySlug(courseSlug, true);

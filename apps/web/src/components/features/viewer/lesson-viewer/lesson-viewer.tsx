@@ -14,6 +14,7 @@ import { VideoProvider, useVideoStore } from "./video-context";
 import { useRouter } from "next/navigation";
 import { videoEventBus, VideoEventType } from "@/lib/shared/utils/video-event-bus";
 import { getLessonPath } from "@/lib/shared/utils/navigation";
+import { useCourseProgressStore } from '@/lib/client/stores/course-progress-store';
 
 // Import our components
 import { VideoPlayer } from "./video-player";
@@ -62,6 +63,33 @@ function LessonViewerInner({
   // Local lesson progress/completion state
   const [lessonProgress, setLessonProgress] = useState<number>(0);
   const [isCompleted, setIsCompleted] = useState<boolean>(false);
+
+  // Ensure course context is registered ASAP so VideoPlayer can resume correctly
+  const { setCurrentCourse } = useCourseProgressStore();
+
+  useEffect(() => {
+    // Register current course immediately – avoids race where VideoPlayer loads before course context exists
+    if (lesson.courseId) {
+      setCurrentCourse(lesson.courseId);
+    }
+  }, [lesson.courseId, setCurrentCourse]);
+
+  // Load saved progress when lesson changes
+  useEffect(() => {
+    const { courseProgress, currentCourseId } = useCourseProgressStore.getState();
+    if (!currentCourseId) return;
+    const cp = courseProgress.get(currentCourseId);
+    const lp = cp?.lessonProgress.get(lesson.id);
+    if (lp) {
+      const durationSec = lesson.transcriptData?.duration ?? 0;
+      const percent = durationSec ? (lp.lastPosition / durationSec) * 100 : 0;
+      setLessonProgress(Math.min(percent, 99));
+      setIsCompleted(lp.status === 'completed' || !!lp.completedAt);
+    } else {
+      setLessonProgress(0);
+      setIsCompleted(false);
+    }
+  }, [lesson.id, lesson.transcriptData?.duration]);
 
   const effectiveProgress = lessonProgress;
   const effectiveIsCompleted = isCompleted;

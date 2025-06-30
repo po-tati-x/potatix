@@ -1,16 +1,15 @@
 "use client";
 
-import { useEffect, useState, use as usePromise } from "react";
+import { useEffect, useState, use as usePromise, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { useCourseBySlug } from "@/lib/client/hooks/use-courses";
 import LoadingState from "@/components/features/viewer/loading-state";
 import ErrorState from "@/components/features/viewer/error-state";
 import CourseSidebar from "@/components/features/viewer/sidebar/course-sidebar-container";
 import { Menu, X } from "lucide-react";
-import { useSession } from "@/lib/auth/auth";
-import axios from "axios";
 import Modal from "@/components/ui/Modal";
 import LoginScreen from "@/components/features/auth/login-screen";
+import { cn } from "@/lib/shared/utils/cn";
+import { CourseProvider, useCourseContext } from "@/lib/client/context/course-context";
 
 interface CourseLayoutProps {
   children: React.ReactNode;
@@ -19,91 +18,38 @@ interface CourseLayoutProps {
   }>;
 }
 
-export default function CourseLayout({ children, params }: CourseLayoutProps) {
+// Inner component that uses the context
+function CourseLayoutInner({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { slug: courseSlug } = usePromise(params);
-
-  // UI state
-  const [isMobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
-
-  const toggleMobileSidebar = () => setMobileSidebarOpen((s) => !s);
-  const toggleSidebarCollapsed = () => setSidebarCollapsed((s) => !s);
-
-  // Auth / enrollment state (derive from session hook so it updates automatically)
-  const { data: session } = useSession();
-  const isAuthenticated = !!session?.user;
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [enrollmentStatus, setEnrollmentStatus] = useState<"active" | "pending" | "rejected" | null>(null);
-  const [isEnrollmentLoading, setEnrollmentLoading] = useState(false);
-  const [isEnrolling, setEnrolling] = useState(false);
-
-  const isEnrolled = enrollmentStatus === "active";
-
-  // Load course data
+  
+  // Get all state from context
   const {
-    data: course,
-    isLoading: courseLoading,
+    course,
+    isLoading,
     error: courseError,
-  } = useCourseBySlug(courseSlug);
+    isAuthenticated,
+    isEnrolled,
+    isViewerMode,
+    isMobileSidebarOpen,
+    toggleMobileSidebar,
+  } = useCourseContext();
+  
+  // Auth modal state (kept local as it's UI specific)
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  
+  // Refs for focus management
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+  const sidebarRef = useRef<HTMLDivElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
 
-  // Check enrollment status when authenticated
+  // Close auth modal automatically when authentication succeeds
   useEffect(() => {
-    async function checkEnrollment() {
-      if (!isAuthenticated || !courseSlug) {
-        setEnrollmentStatus(null);
-        setEnrollmentLoading(false);
-        return;
-      }
-
-      try {
-        setEnrollmentLoading(true);
-        const response = await axios.get(
-          `/api/courses/enrollment?slug=${courseSlug}`,
-        );
-
-        if (response.data.isEnrolled && response.data.enrollment) {
-          setEnrollmentStatus(response.data.enrollment.status);
-        } else {
-          setEnrollmentStatus(null);
-        }
-      } catch (error) {
-        console.error("Failed to check enrollment status:", error);
-        setEnrollmentStatus(null);
-      } finally {
-        setEnrollmentLoading(false);
-      }
+    if (isAuthenticated) {
+      setShowAuthModal(false);
     }
-
-    checkEnrollment();
-  }, [isAuthenticated, courseSlug]);
-
-  // Enroll in the course
-  const handleEnroll = async () => {
-    if (isEnrolling) return;
-
-    if (!isAuthenticated) {
-      setShowAuthModal(true);
-      return;
-    }
-
-    try {
-      setEnrolling(true);
-      const response = await axios.post("/api/courses/enrollment", {
-        courseSlug,
-      });
-
-      // Set the enrollment status from the response
-      if (response.data.enrollment) {
-        setEnrollmentStatus(response.data.enrollment.status);
-      }
-    } catch (error) {
-      console.error("Failed to enroll in course:", error);
-    } finally {
-      setEnrolling(false);
-    }
-  };
+  }, [isAuthenticated]);
 
   // If user is not enrolled and trying to access a restricted page (like a lesson), redirect
   useEffect(() => {
@@ -116,28 +62,75 @@ export default function CourseLayout({ children, params }: CourseLayoutProps) {
       !isEnrolled &&
       !pathname.includes("/auth") &&
       pathname.includes("/lesson/") &&
-      !courseLoading &&
-      !isEnrollmentLoading
+      !isLoading
     ) {
       // Redirect to the ROOT URL of the subdomain, not the internal viewer path
-      window.location.href = "/";
+      router.replace("/");
     }
-  }, [
-    isEnrolled,
-    pathname,
-    courseLoading,
-    isEnrollmentLoading,
-  ]);
-
-  // Close auth modal automatically when authentication succeeds
+  }, [isEnrolled, pathname, isLoading, router]);
+  
+  // Handle keyboard navigation and focus trap for mobile sidebar
   useEffect(() => {
-    if (isAuthenticated) {
-      setShowAuthModal(false);
+    // Save previous focus when opening sidebar
+    if (isMobileSidebarOpen) {
+      previousFocusRef.current = document.activeElement as HTMLElement;
+      // Focus the close button when sidebar opens
+      setTimeout(() => {
+        closeButtonRef.current?.focus();
+      }, 100);
+    } else {
+      // Restore focus when closing sidebar
+      if (previousFocusRef.current) {
+        previousFocusRef.current.focus();
+      }
     }
-  }, [isAuthenticated]);
+    
+    // Handle escape key to close sidebar
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isMobileSidebarOpen) {
+        toggleMobileSidebar();
+      }
+    };
+    
+    // Create focus trap for mobile sidebar
+    const handleTabKey = (e: KeyboardEvent) => {
+      if (!isMobileSidebarOpen || !sidebarRef.current) return;
+      
+      if (e.key === 'Tab') {
+        // Get all focusable elements in the sidebar
+        const focusableElements = sidebarRef.current.querySelectorAll(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        
+        const firstElement = focusableElements[0] as HTMLElement;
+        const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
+        
+        // If shift+tab on first element, move to last element
+        if (e.shiftKey && document.activeElement === firstElement) {
+          e.preventDefault();
+          lastElement.focus();
+        } 
+        // If tab on last element, move to first element
+        else if (!e.shiftKey && document.activeElement === lastElement) {
+          e.preventDefault();
+          firstElement.focus();
+        }
+      }
+    };
+    
+    // Add event listeners
+    document.addEventListener('keydown', handleEscape);
+    document.addEventListener('keydown', handleTabKey);
+    
+    // Clean up event listeners
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.removeEventListener('keydown', handleTabKey);
+    };
+  }, [isMobileSidebarOpen, toggleMobileSidebar]);
 
   // Loading state
-  if (courseLoading || isEnrollmentLoading) {
+  if (isLoading) {
     return <LoadingState message="Loading course..." />;
   }
 
@@ -155,15 +148,24 @@ export default function CourseLayout({ children, params }: CourseLayoutProps) {
 
   // Success state - layout with sidebar and content
   return (
-    <div className="flex flex-col lg:flex-row h-screen overflow-hidden bg-slate-50">
+    <div
+      className={cn(
+        "flex flex-col lg:flex-row bg-slate-50",
+        isViewerMode && "h-screen overflow-hidden",
+      )}
+    >
       {/* Mobile header with menu toggle */}
       <div className="lg:hidden p-4 border-b border-slate-200 bg-white flex items-center justify-between">
         <h1 className="text-lg font-medium text-slate-900 truncate">
           {course.title}
         </h1>
         <button
+          ref={menuButtonRef}
           onClick={toggleMobileSidebar}
           className="p-2 text-slate-600 hover:text-emerald-600"
+          aria-label={isMobileSidebarOpen ? "Close sidebar" : "Open sidebar"}
+          aria-expanded={isMobileSidebarOpen}
+          aria-controls="mobile-sidebar"
         >
           {isMobileSidebarOpen ? (
             <X className="h-5 w-5" />
@@ -174,43 +176,54 @@ export default function CourseLayout({ children, params }: CourseLayoutProps) {
       </div>
 
       {/* Layout container with sidebar and content */}
-      <div className="flex flex-1 h-full overflow-hidden">
+      <div
+        className={cn(
+          "flex flex-1",
+          isViewerMode && "h-full overflow-hidden",
+        )}
+      >
         {/* Sidebar container */}
         <div className="relative flex flex-col lg:flex-row">
           {/* Sidebar component */}
           <div
-            className={`
-            ${isMobileSidebarOpen ? "block" : "hidden"}
-            lg:flex
-            fixed lg:static
-            inset-0 lg:inset-auto
-            z-10 lg:z-0
-            w-full
-            h-screen
-            lg:h-full
-            bg-white
-            lg:border-r lg:border-slate-200
-            transition-all duration-300 ease-in-out
-            ${isSidebarCollapsed ? "lg:w-16" : "lg:w-80"}
-          `}
+            ref={sidebarRef}
+            id="mobile-sidebar"
+            className={cn(
+              // Mobile overlay – visible only when toggled
+              isMobileSidebarOpen && "fixed inset-0 z-10 w-full h-screen bg-white",
+
+              // Base visibility – hidden on mobile when sidebar closed, block on desktop
+              (!isMobileSidebarOpen && "hidden") || "",
+              "lg:block lg:sticky lg:top-0 lg:z-0 lg:h-screen lg:bg-white lg:border-r lg:border-slate-200 transition-all duration-300 ease-in-out",
+            )}
           >
+            {/* Mobile close button - only visible on mobile */}
+            {isMobileSidebarOpen && (
+              <button
+                ref={closeButtonRef}
+                onClick={toggleMobileSidebar}
+                className="lg:hidden absolute top-4 right-4 p-2 text-slate-600 hover:text-emerald-600 z-20"
+                aria-label="Close sidebar"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            )}
+            
+            {/* We only need to pass the course now, everything else comes from context */}
             <CourseSidebar
               course={course}
-              currentLessonId={(pathname.split("/lesson/")[1] ?? "") as string}
-              courseSlug={courseSlug}
-              isAuthenticated={isAuthenticated}
-              isEnrolled={isEnrolled}
-              onEnroll={handleEnroll}
-              isEnrolling={isEnrolling}
-              enrollmentStatus={enrollmentStatus}
-              isCollapsed={isSidebarCollapsed}
-              onToggleCollapse={toggleSidebarCollapsed}
+              completedLessons={[]}
             />
           </div>
         </div>
 
-        {/* Main content - scrollable independently */}
-        <div className="flex-1 h-full overflow-y-auto w-full min-w-0">
+        {/* Main content */}
+        <div
+          className={cn(
+            "flex-1 w-full min-w-0",
+            isViewerMode && "h-full overflow-y-auto",
+          )}
+        >
           {children}
         </div>
       </div>
@@ -223,5 +236,23 @@ export default function CourseLayout({ children, params }: CourseLayoutProps) {
         </Modal>
       )}
     </div>
+  );
+}
+
+// Main layout component that sets up the context
+export default function CourseLayout({ children, params }: CourseLayoutProps) {
+  const { slug: courseSlug } = usePromise(params);
+  const pathname = usePathname();
+  const currentLessonId = (pathname.split("/lesson/")[1] ?? "") as string;
+  
+  return (
+    <CourseProvider 
+      courseSlug={courseSlug}
+      currentLessonId={currentLessonId}
+    >
+      <CourseLayoutInner>
+        {children}
+      </CourseLayoutInner>
+    </CourseProvider>
   );
 }

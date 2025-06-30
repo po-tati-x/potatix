@@ -4,43 +4,31 @@ import type { Course, Lesson } from '@/lib/shared/types/courses';
 import { PanelLeftClose, PanelLeft, Book } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/new-button";
-import { motion } from "framer-motion";
 import ModuleList from "./module-list";
 import EnrollmentStatus from "./enrollment-status";
 import SidebarFooter from "./sidebar-footer";
+import { useCourseContext } from "@/lib/client/context/course-context";
+import { memo } from "react";
 
-// Animation variants - defined outside to prevent recreation on render
-const sidebarVariants = {
-  expanded: { width: "20rem" },
-  collapsed: { width: "5rem" },
-};
-
+// Props now only need course data as everything else comes from context
 interface CourseSidebarProps {
   course: Course;
-  currentLessonId: string;
-  courseSlug: string;
-  isAuthenticated?: boolean;
-  isEnrolled?: boolean;
-  isEnrolling?: boolean;
-  enrollmentStatus?: "active" | "pending" | "rejected" | null;
-  onEnroll?: () => Promise<void>;
-  isCollapsed?: boolean;
-  onToggleCollapse?: () => void;
   completedLessons?: string[]; // IDs of completed lessons
 }
 
-export default function CourseSidebar({
+function CourseSidebar({
   course,
-  currentLessonId,
-  isAuthenticated = false,
-  isEnrolled = false,
-  isEnrolling = false,
-  enrollmentStatus = null,
-  onEnroll,
-  isCollapsed = false,
-  onToggleCollapse,
   completedLessons = [],
 }: CourseSidebarProps) {
+  // Get all state from context
+  const {
+    currentLessonId,
+    isEnrolled,
+    enrollmentStatus,
+    isSidebarCollapsed,
+    toggleSidebarCollapsed
+  } = useCourseContext();
+
   // Compute course progress locally
   const totalAvailableLessons = course.lessons?.filter((l: Lesson) => l.videoId).length || 0;
   const courseProgress = totalAvailableLessons > 0
@@ -63,27 +51,20 @@ export default function CourseSidebar({
     !isEnrolled || enrollmentStatus !== "active";
 
   return (
-    <motion.div
-      className="h-full flex flex-col bg-white border-r border-slate-200 overflow-hidden"
-      initial={isCollapsed ? "collapsed" : "expanded"}
-      animate={isCollapsed ? "collapsed" : "expanded"}
-      variants={sidebarVariants}
-      transition={{ duration: 0.3, ease: "easeInOut" }}
+    <div
+      className={`h-full flex flex-col bg-white border-r border-slate-200 overflow-hidden transition-all duration-300 ease-in-out ${
+        isSidebarCollapsed ? "w-16" : "w-80"
+      }`}
     >
       {/* Header section */}
       {renderHeader()}
 
       {/* Course title - hidden when collapsed */}
-      {!isCollapsed && renderCourseInfo()}
+      {!isSidebarCollapsed && renderCourseInfo()}
 
       {/* Enrollment Status - hidden when collapsed */}
-      {!isCollapsed && (
+      {!isSidebarCollapsed && (
         <EnrollmentStatus
-          isEnrolled={isEnrolled}
-          enrollmentStatus={enrollmentStatus}
-          isEnrolling={isEnrolling}
-          isAuthenticated={isAuthenticated}
-          onEnroll={onEnroll}
           coursePrice={course.price}
           courseProgress={courseProgress}
         />
@@ -91,33 +72,34 @@ export default function CourseSidebar({
 
       {/* Lesson list container - hiding scrollbar */}
       <div
-        className={`flex-1 overflow-y-auto ${isCollapsed ? "py-2" : "py-3"} scrollbar-hide`}
+        className={`flex-1 overflow-y-auto ${isSidebarCollapsed ? "py-2" : "py-3"} scrollbar-hide`}
       >
         <ModuleList
           course={course}
           currentLessonId={currentLessonId}
-          isCollapsed={isCollapsed}
+          isCollapsed={isSidebarCollapsed}
           isLocked={isLocked}
           completedLessons={completedLessons}
         />
       </div>
 
       {/* Footer with subscription CTA */}
-      {!isCollapsed && shouldShowSubscriptionCTA && <SidebarFooter />}
-    </motion.div>
+      {!isSidebarCollapsed && shouldShowSubscriptionCTA && <SidebarFooter />}
+    </div>
   );
 
   // Header with toggle button
   function renderHeader() {
-    if (isCollapsed) {
+    if (isSidebarCollapsed) {
       return (
         <div className="border-b border-slate-200">
           {/* Toggle button on top with better padding */}
-          {onToggleCollapse && (
+          {toggleSidebarCollapsed && (
             <button
-              onClick={onToggleCollapse}
+              onClick={toggleSidebarCollapsed}
               className="w-full text-slate-600 hover:text-emerald-600 transition-colors p-4 flex items-center justify-center hover:bg-slate-50"
               aria-label="Expand sidebar"
+              aria-expanded="false"
             >
               <PanelLeft className="h-5 w-5" />
             </button>
@@ -171,11 +153,12 @@ export default function CourseSidebar({
           </Button>
         </Link>
 
-        {onToggleCollapse && (
+        {toggleSidebarCollapsed && (
           <button
-            onClick={onToggleCollapse}
+            onClick={toggleSidebarCollapsed}
             className="text-slate-400 hover:text-emerald-600 transition-colors p-1"
             aria-label="Collapse sidebar"
+            aria-expanded="true"
           >
             <PanelLeftClose className="h-4 w-4" />
           </button>
@@ -201,3 +184,6 @@ export default function CourseSidebar({
     );
   }
 }
+
+// Memoize the component to prevent unnecessary re-renders
+export default memo(CourseSidebar);

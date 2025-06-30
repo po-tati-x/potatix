@@ -1,0 +1,10 @@
+export { CourseMarketingPage as default, CourseMarketingPage } from './course-marketing-page';
+export { HeroSection } from './hero-section';
+export { CourseStats } from './course-stats';
+export { StudentOutcomes } from './student-outcomes';
+export { CourseHighlights } from './course-highlights';
+export { CurriculumPreview } from './curriculum-preview';
+export { InstructorSpotlight } from './instructor-spotlight';
+export { PricingSection } from './pricing-section';
+export { FloatingEnrollBar } from './floating-enroll-bar';
+export { FAQSection } from './faq-section';

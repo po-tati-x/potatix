@@ -5,6 +5,8 @@ import Player from 'next-video/player';
 import { Lock, AlertTriangle, RotateCcw } from 'lucide-react';
 import { useVideoStore } from './video-context';
 import { VideoEventType, videoEventBus } from '@/lib/shared/utils/video-event-bus';
+import { useCourseProgressStore } from '@/lib/client/stores/course-progress-store';
+import { useUpdateLessonProgress } from '@/lib/client/hooks/use-course-data';
 
 interface VideoPlayerProps {
   videoId: string | null | undefined;
@@ -24,6 +26,7 @@ export function VideoPlayer({
   // Player container ref to attach events
   const playerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const initialisedRef = useRef(false);
 
   // Get video store state and actions
   const { 
@@ -39,6 +42,9 @@ export function VideoPlayer({
     setLessonId,
     resetVideoState
   } = useVideoStore();
+
+  // Get course progress store state and actions
+  const { updateProgress } = useUpdateLessonProgress();
 
   // Set video and lesson IDs when component mounts or IDs change
   useEffect(() => {
@@ -102,12 +108,14 @@ export function VideoPlayer({
   useEffect(() => {
     if (!playerRef.current || !videoId) return;
     
+    const { courseProgress, currentCourseId } = useCourseProgressStore.getState();
+    let lastSync = 0;
+    
     // Find and register the video element
     const videoElement = findAndRegisterVideoElement();
     if (videoElement) {
-      // Set up event listeners directly
-      const handleLoadedMetadata = (event: Event) => {
-        const video = event.target as HTMLVideoElement;
+
+      const handleLoadedMetadataInner = (video: HTMLVideoElement) => {
         setDuration(video.duration);
         
         // Detect aspect ratio
@@ -121,12 +129,51 @@ export function VideoPlayer({
         if (startAt > 0 && !hasSetInitialTime) {
           video.currentTime = (startAt / 100) * video.duration;
           setHasSetInitialTime(true);
+          initialisedRef.current = true;
+          console.debug('loadedmetadata resume', {
+            startAt,
+            initialTime: video.currentTime,
+          });
         }
+        // If no explicit startAt but we have store progress, resume there
+        if (startAt === 0 && !hasSetInitialTime) {
+          if (currentCourseId) {
+            const cp = courseProgress.get(currentCourseId);
+            const lp = cp?.lessonProgress.get(lessonId);
+            const resume = lp?.lastPosition ?? 0;
+            if (resume > 5) {
+              video.currentTime = resume;
+            }
+          }
+          setHasSetInitialTime(true);
+          initialisedRef.current = true;
+        }
+      };
+
+      // if metadata already loaded, process immediately
+      if (videoElement.readyState >= 1) {
+        handleLoadedMetadataInner(videoElement);
+      }
+      // Set up event listeners directly
+      const handleLoadedMetadata = (event: Event) => {
+        handleLoadedMetadataInner(event.target as HTMLVideoElement);
       };
       
       const handleTimeUpdate = (event: Event) => {
         const video = event.target as HTMLVideoElement;
+        // Ignore initial useless ticks that report 0 before we have resumed
+        if (!initialisedRef.current) return;
+        if (video.currentTime < 1) return;
+
         setCurrentTime(video.currentTime);
+        console.debug('timeupdate', lessonId, video.currentTime);
+
+        // Throttle syncing to once every 5s
+        const now = Date.now();
+        if (now - lastSync > 5000) {
+          lastSync = now;
+          updateProgress(lessonId, Math.floor(video.currentTime), Math.floor(video.duration));
+        }
       };
 
       const handlePlay = () => setIsPlaying(true);
@@ -146,7 +193,7 @@ export function VideoPlayer({
         videoElement.removeEventListener('pause', handlePause);
       };
     }
-  }, [videoId, startAt, hasSetInitialTime, setDuration, setCurrentTime, setIsPlaying, findAndRegisterVideoElement]);
+  }, [videoId, startAt, lessonId, hasSetInitialTime, setDuration, setCurrentTime, setIsPlaying, findAndRegisterVideoElement, updateProgress]);
   
   // Event handlers for player
   const handleLoadStart = useCallback(() => {

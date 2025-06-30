@@ -10,6 +10,10 @@ export interface Lesson {
   title: string;
   description?: string;
   videoId?: string;
+  /** Total length of the video in seconds */
+  duration?: number;
+  /** CDN URL or data URI representing a frame of the lesson video */
+  thumbnailUrl?: string;
   uploadStatus?: string;
   order: number;
   courseId: string;
@@ -88,4 +92,31 @@ export interface CreateLessonData {
   videoId?: string;
   order: number;
   moduleId: string;
+}
+
+// ────────────────────────────────────────────────────────────────────────────────
+// Instructor models (for Course Spotlight & editing forms)
+// ────────────────────────────────────────────────────────────────────────────────
+
+export interface Instructor {
+  id: string;
+  name: string;
+  title?: string;
+  bio?: string;
+  avatarUrl?: string | null;
+  credentials?: string[];
+  /** If the instructor is a registered user */
+  userId?: string | null;
+  /** Active students across this course (when provided) */
+  totalStudents?: number;
+}
+
+export interface CourseInstructor {
+  id: string;
+  courseId: string;
+  instructorId: string;
+  role: 'primary' | 'co' | 'guest';
+  sortOrder: number;
+  titleOverride?: string;
+  instructor: Instructor;
 } 
