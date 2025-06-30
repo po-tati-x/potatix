@@ -148,7 +148,7 @@ export default function CourseOverview({
                   "Learn how to build modern web applications with expert guidance."}
               </p>
 
-              <div className="flex items-center gap-2 mb-4">
+              <div className="mb-4 flex items-center gap-2">
                 <div className="flex">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <Star

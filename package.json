@@ -5,6 +5,7 @@
     "auth:schema:generate": "turbo run auth:schema:generate",
     "build": "turbo run build",
     "clean": "bun run scripts/clean.ts",
+    "fixnew": "bun run scripts/fix-lesson-durations.ts",
     "db:push": "turbo -F @potatix/db push",
     "db:studio": "turbo -F @potatix/db studio",
     "dev": "turbo run dev --watch",
@@ -47,6 +48,9 @@
     "bun": ">=1.2.17"
   },
   "dependencies": {
-    "better-auth": "^1.2.10"
+    "@radix-ui/react-progress": "^1.1.7",
+    "better-auth": "^1.2.10",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.3.1"
   }
 }
