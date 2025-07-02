@@ -22,6 +22,10 @@ const database = db!; // assume singleton initialized
 // Enrollment Service
 export const enrollmentService = {
   async checkEnrollment(userId: string, courseId: string) {
+    // Always fetch the latest enrollment regardless of status so we can
+    // surface "pending" / "rejected" states to the client. We keep the
+    // result limited to one because a user can only have a single active
+    // enrollment record at a time.
     const enrollments = await database
       .select()
       .from(courseSchema.courseEnrollment)
@@ -29,22 +33,26 @@ export const enrollmentService = {
         and(
           eq(courseSchema.courseEnrollment.userId, userId),
           eq(courseSchema.courseEnrollment.courseId, courseId),
-          eq(courseSchema.courseEnrollment.status, "active"),
         ),
       )
+      .orderBy(desc(courseSchema.courseEnrollment.createdAt))
       .limit(1);
     
     if (!enrollments.length) {
       return { enrolled: false };
     }
     
-    return { enrolled: true, enrollment: enrollments[0] };
+    const latest = enrollments[0]!;
+    const isActive = latest.status === "active";
+
+    return { enrolled: isActive, status: latest.status, enrollment: latest };
   },
   
   async createEnrollment(data: EnrollmentCreateInput) {
     const enrollmentId = `enrollment-${nanoid()}`;
     
-    // Check if user is already enrolled
+    // Check if user is already enrolled/requested – return early to avoid
+    // mutating the status implicitly.
     const existingEnrollment = await database
       .select()
       .from(courseSchema.courseEnrollment)
@@ -58,20 +66,21 @@ export const enrollmentService = {
     
     if (existingEnrollment.length > 0) {
       const existing = existingEnrollment[0]!;
-      // If already enrolled but not active, update the status
-      if (existing.status !== "active") {
-        await database
-          .update(courseSchema.courseEnrollment)
-          .set({
-            status: "active",
-            updatedAt: new Date(),
-          })
-          .where(eq(courseSchema.courseEnrollment.id, existing.id));
-      }
-      
       return { id: existing.id, enrollment: existing, alreadyEnrolled: true };
     }
-    
+
+    // Figure out whether the course is paid – paid courses require instructor
+    // approval and therefore start as "pending", free courses activate
+    // immediately.
+    const course = await database
+      .select({ price: courseSchema.course.price })
+      .from(courseSchema.course)
+      .where(eq(courseSchema.course.id, data.courseId))
+      .limit(1);
+
+    const price = course[0]?.price ?? 0;
+    const initialStatus: "active" | "pending" = price > 0 ? "pending" : "active";
+
     // Insert new enrollment
     const newEnrollment = await database
       .insert(courseSchema.courseEnrollment)
@@ -79,7 +88,7 @@ export const enrollmentService = {
         id: enrollmentId,
         userId: data.userId,
         courseId: data.courseId,
-        status: "active",
+        status: initialStatus,
         createdAt: new Date(),
         updatedAt: new Date(),
       })
