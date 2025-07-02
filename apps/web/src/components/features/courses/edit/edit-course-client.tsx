@@ -11,6 +11,9 @@ import { CourseCoverImage } from "@/components/features/courses/course-form/cour
 import { CourseStats } from "@/components/features/courses/course-form/course-stats";
 import { SlugEditor } from "@/components/features/courses/course-form/slug-editor";
 import { CourseInstructorsSection } from "@/components/features/courses/course-form/course-instructors-section";
+import { CoursePerksSection } from "@/components/features/courses/course-form/course-perks-section";
+import { CourseLearningOutcomesSection } from "@/components/features/courses/course-form/course-learning-outcomes-section";
+import { CoursePrerequisitesSection } from "@/components/features/courses/course-form/course-prerequisites-section";
 import type { Course, CreateCourseData, CourseModule, Lesson } from "@/lib/shared/types/courses";
 import { useCourse, useUpdateCourse, useUploadCourseImage } from "@/lib/client/hooks/use-courses";
 
@@ -194,6 +197,31 @@ export default function EditCourseClient({ courseId }: Props) {
 
   const enhancedFormData = {
     ...formData,
+    // Inject defaults for marketing fields if absent
+    perks:
+      formData.perks ?? [
+        "52 hours on-demand video",
+        "23 coding exercises",
+        "Assignments",
+        "225 articles",
+        "164 downloadable resources",
+        "Access on mobile & TV",
+        "Certificate of completion",
+      ],
+    learningOutcomes:
+      formData.learningOutcomes ?? [
+        "Modern development patterns and best practices",
+        "Testing strategies and debugging techniques",
+        "Performance optimisation and scalability",
+        "Clean code principles and architecture",
+        "API design and integration patterns",
+      ],
+    prerequisites:
+      formData.prerequisites ?? [
+        "Solid understanding of JavaScript / TypeScript fundamentals",
+        "Comfort with modern ES modules and async / await",
+        "Basic familiarity with Git and the command-line",
+      ],
     modules: formData.modules?.map((module) => ({
       ...module,
       expanded: expandedModules[module.id] || false,
@@ -243,6 +271,14 @@ export default function EditCourseClient({ courseId }: Props) {
           />
 
           <CourseInstructorsSection courseId={courseId} />
+
+          {/* Marketing sections */}
+          <CoursePerksSection courseId={courseId} perks={enhancedFormData.perks} />
+
+          <CourseLearningOutcomesSection courseId={courseId} outcomes={enhancedFormData.learningOutcomes} />
+
+          <CoursePrerequisitesSection courseId={courseId} prerequisites={enhancedFormData.prerequisites} />
+
         </div>
 
         <div className="space-y-5">
@@ -270,6 +306,9 @@ export default function EditCourseClient({ courseId }: Props) {
 
           <SlugEditor currentSlug={formData.slug || ""} onUpdateSlug={handleUpdateSlug} />
         </div>
+
+
+        
       </div>
     </div>
   );

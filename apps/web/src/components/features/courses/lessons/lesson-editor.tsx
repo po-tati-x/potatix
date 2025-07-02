@@ -5,6 +5,7 @@ import { ChevronDown, ChevronRight, Trash2, GripVertical } from "lucide-react";
 import type { DraggableProvidedDragHandleProps } from "@hello-pangea/dnd";
 import type { UILesson } from './draggable-lesson-list';
 import { FormField } from "../../../ui/form-field";
+import { Switch } from "../../../ui/switch";
 import { VideoUploader } from "../media/video-uploader";
 import { VideoPreview } from "../media/video-preview";
 import { useUpdateLesson, useDeleteLesson } from "@/lib/client/hooks/use-courses";
@@ -37,6 +38,7 @@ export function LessonEditor({
   const isExpanded = lesson.expanded ?? false;
   const [title, setTitle] = useState(lesson.title || "");
   const [description, setDescription] = useState(lesson.description || "");
+  const [visibility, setVisibility] = useState<'public' | 'enrolled'>(lesson.visibility || 'enrolled');
 
   // Use React Query mutations
   const { mutate: updateLesson } = useUpdateLesson();
@@ -71,6 +73,18 @@ export function LessonEditor({
     if (window.confirm("Are you sure you want to remove this lesson?")) {
       deleteLesson({ lessonId: lesson.id, courseId });
     }
+  };
+
+  // Toggle preview visibility
+  const handleVisibilityChange = (checked: boolean) => {
+    const newVisibility: 'public' | 'enrolled' = checked ? 'public' : 'enrolled';
+    setVisibility(newVisibility);
+
+    updateLesson({
+      lessonId: lesson.id,
+      visibility: newVisibility,
+      courseId,
+    });
   };
 
   return (
@@ -156,6 +170,20 @@ export function LessonEditor({
               />
             </FormField>
           </div>
+
+          <FormField label="Free Preview">
+            <div className="flex items-center gap-3">
+              <Switch
+                id={`preview-${lesson.id}`}
+                checked={visibility === 'public'}
+                onCheckedChange={handleVisibilityChange}
+                className="data-[state=checked]:bg-emerald-600 dark:data-[state=checked]:bg-emerald-500"
+              />
+              <label htmlFor={`preview-${lesson.id}`} className="text-sm text-slate-700 select-none">
+                {visibility === 'public' ? 'ON' : 'OFF'}
+              </label>
+            </div>
+          </FormField>
 
           <FormField label="Lesson Video">
             {!lesson.file && !lesson.fileUrl && !lesson.uploading ? (

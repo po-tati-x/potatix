@@ -17,6 +17,7 @@ export interface UILesson {
   moduleId: string;
   courseId: string;
   order: number;
+  visibility?: 'public' | 'enrolled';
   createdAt: string | Date; // Support both string and Date for compatibility
   updatedAt: string | Date; // Support both string and Date for compatibility
   
