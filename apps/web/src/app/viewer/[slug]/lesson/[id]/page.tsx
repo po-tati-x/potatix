@@ -1,7 +1,6 @@
-import { notFound } from 'next/navigation';
-import { ensureCourseSubdomain } from '@/lib/server/utils/course-viewer';
+import { notFound, redirect } from 'next/navigation';
+import { ensureCourseSubdomain, getViewerAccess } from '@/lib/server/utils/course-viewer';
 import { LessonViewer } from '@/components/features/viewer/lesson-viewer/lesson-viewer';
-import { courseService } from '@/lib/server/services/courses';
 import type { Lesson } from "@/lib/shared/types/courses";
 
 export default async function LessonViewerPage({ params }: { params: Promise<{ slug: string; id: string }> }) {
@@ -10,9 +9,9 @@ export default async function LessonViewerPage({ params }: { params: Promise<{ s
   // Ensure correct subdomain
   await ensureCourseSubdomain(courseSlug);
 
-  // Fetch course (includes lessons)
-  const course = await courseService.getCourseBySlug(courseSlug, true);
-  if (!course || !course.lessons) { 
+  // Fetch course + auth/enrollment in one go
+  const { course, isEnrolled } = await getViewerAccess(courseSlug);
+  if (!course || !course.lessons) {
     notFound();
   }
 
@@ -31,7 +30,16 @@ export default async function LessonViewerPage({ params }: { params: Promise<{ s
     notFound();
   }
 
-  const lesson: Lesson = lessons[currentIndex]!;
+  // Server-side gate – unauthenticated / unenrolled users can only access public preview lessons
+  const currentLesson = lessons[currentIndex]!;
+  const isPublicPreview = currentLesson.visibility === 'public';
+
+  if (!isEnrolled && !isPublicPreview) {
+    // Bounce before any HTML for the lesson is streamed
+    redirect('/');
+  }
+
+  const lesson: Lesson = currentLesson;
 
   const nextLesson: Lesson | null = currentIndex + 1 < lessons.length ? lessons[currentIndex + 1]! : null;
   const prevLesson: Lesson | null = currentIndex - 1 >= 0 ? lessons[currentIndex - 1]! : null;

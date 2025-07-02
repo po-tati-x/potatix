@@ -11,6 +11,7 @@ const BG_MAP = {
   slate: 'bg-slate-50',
   'slate-100': 'bg-slate-100',
   'slate-200': 'bg-slate-200',
+  'slate-gradient': 'bg-gradient-to-b from-slate-50 via-slate-50/60 to-white',
 } as const;
 
 type BgKey = keyof typeof BG_MAP;

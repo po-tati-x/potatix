@@ -3,13 +3,15 @@
 import { useEffect, useState, use as usePromise, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import LoadingState from "@/components/features/viewer/loading-state";
-import ErrorState from "@/components/features/viewer/error-state";
+import { Ghost } from "lucide-react";
+import { Button } from "@/components/ui/new-button";
 import CourseSidebar from "@/components/features/viewer/sidebar/course-sidebar-container";
 import { Menu, X } from "lucide-react";
 import Modal from "@/components/ui/Modal";
 import LoginScreen from "@/components/features/auth/login-screen";
 import { cn } from "@/lib/shared/utils/cn";
 import { CourseProvider, useCourseContext } from "@/lib/client/context/course-context";
+import { clientEnv } from "@/env.client";
 
 interface CourseLayoutProps {
   children: React.ReactNode;
@@ -30,9 +32,10 @@ function CourseLayoutInner({ children }: { children: React.ReactNode }) {
     error: courseError,
     isAuthenticated,
     isEnrolled,
-    isViewerMode,
     isMobileSidebarOpen,
     toggleMobileSidebar,
+    enroll,
+    currentLessonId,
   } = useCourseContext();
   
   // Auth modal state (kept local as it's UI specific)
@@ -53,21 +56,30 @@ function CourseLayoutInner({ children }: { children: React.ReactNode }) {
 
   // If user is not enrolled and trying to access a restricted page (like a lesson), redirect
   useEffect(() => {
-    // Redirect only if:
-    // 1. User is not enrolled OR enrollment status is pending/rejected
-    // 2. Not on auth page
-    // 3. Trying to access a lesson page
-    // 4. Course data has loaded and enrollment status has been checked
+    const isLessonRoute = pathname.includes("/lesson/");
+
     if (
-      !isEnrolled &&
-      !pathname.includes("/auth") &&
-      pathname.includes("/lesson/") &&
-      !isLoading
+      !isEnrolled && // user not enrolled
+      !pathname.includes("/auth") && // not on auth route
+      isLessonRoute &&
+      !isLoading && // data loaded
+      course?.lessons?.length // we have lessons to inspect
     ) {
-      // Redirect to the ROOT URL of the subdomain, not the internal viewer path
-      router.replace("/");
+      const lesson = course.lessons.find((l) => l.id === currentLessonId);
+
+      // Redirect ONLY when lesson exists and it ISN'T marked public
+      if (lesson && lesson.visibility !== "public") {
+        router.replace("/");
+      }
     }
-  }, [isEnrolled, pathname, isLoading, router]);
+  }, [
+    isEnrolled,
+    pathname,
+    isLoading,
+    router,
+    course?.lessons,
+    currentLessonId,
+  ]);
   
   // Handle keyboard navigation and focus trap for mobile sidebar
   useEffect(() => {
@@ -129,6 +141,20 @@ function CourseLayoutInner({ children }: { children: React.ReactNode }) {
     };
   }, [isMobileSidebarOpen, toggleMobileSidebar]);
 
+  // Enrollment handler – opens auth modal when unauthenticated, otherwise delegates to context
+  const handleEnroll = async () => {
+    if (!isAuthenticated) {
+      setShowAuthModal(true);
+      return;
+    }
+
+    try {
+      await enroll();
+    } catch (error) {
+      console.error("[Enrollment] failed:", error);
+    }
+  };
+
   // Loading state
   if (isLoading) {
     return <LoadingState message="Loading course..." />;
@@ -137,12 +163,27 @@ function CourseLayoutInner({ children }: { children: React.ReactNode }) {
   // Error state
   if (courseError || !course) {
     return (
-      <ErrorState
-        title="Course Not Found"
-        message="This course does not exist or is currently unavailable."
-        buttonText="Back to Homepage"
-        buttonAction={() => router.push("/")}
-      />
+      <div className="flex flex-col items-center justify-center h-screen bg-slate-50 px-4 text-center">
+        <Ghost className="h-12 w-12 text-slate-400 mb-6" />
+        <h1 className="text-2xl font-semibold text-slate-800 mb-2">Course Not Found</h1>
+        <p className="text-sm text-slate-600 max-w-sm">
+          The course you&rsquo;re looking for doesn&rsquo;t exist or is currently unavailable.
+        </p>
+        <p className="text-xs text-slate-500 mt-3 mb-6 max-w-sm">
+          If you&rsquo;re the course creator and attempting to preview it, ensure the course state is switched from <span className="font-medium">Draft</span> to <span className="font-medium">Published</span> first.
+        </p>
+        <Button
+          type="primary"
+          size="small"
+          onClick={() => {
+            const target = clientEnv.NEXT_PUBLIC_APP_URL || "/";
+            // Use full reload to ensure correct host
+            window.location.href = target;
+          }}
+        >
+          Back to Home
+        </Button>
+      </div>
     );
   }
 
@@ -150,8 +191,7 @@ function CourseLayoutInner({ children }: { children: React.ReactNode }) {
   return (
     <div
       className={cn(
-        "flex flex-col lg:flex-row bg-slate-50",
-        isViewerMode && "h-screen overflow-hidden",
+        "flex flex-col lg:flex-row bg-slate-50 h-screen overflow-hidden",
       )}
     >
       {/* Mobile header with menu toggle */}
@@ -178,8 +218,7 @@ function CourseLayoutInner({ children }: { children: React.ReactNode }) {
       {/* Layout container with sidebar and content */}
       <div
         className={cn(
-          "flex flex-1",
-          isViewerMode && "h-full overflow-hidden",
+          "flex flex-1 h-full overflow-hidden",
         )}
       >
         {/* Sidebar container */}
@@ -213,6 +252,7 @@ function CourseLayoutInner({ children }: { children: React.ReactNode }) {
             <CourseSidebar
               course={course}
               completedLessons={[]}
+              onEnroll={handleEnroll}
             />
           </div>
         </div>
@@ -220,8 +260,7 @@ function CourseLayoutInner({ children }: { children: React.ReactNode }) {
         {/* Main content */}
         <div
           className={cn(
-            "flex-1 w-full min-w-0",
-            isViewerMode && "h-full overflow-y-auto",
+            "flex-1 w-full min-w-0 h-full overflow-y-auto",
           )}
         >
           {children}

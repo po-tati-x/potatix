@@ -22,7 +22,6 @@ function EnrollmentStatus({
   
   // Get enrollment state from context
   const {
-    isEnrolled,
     enrollmentStatus,
     isEnrolling,
     isAuthenticated,
@@ -60,17 +59,17 @@ function EnrollmentStatus({
   }
 
   // Pending enrollment state
-  if (isEnrolled && enrollmentStatus === "pending") {
+  if (enrollmentStatus === "pending") {
     return renderPendingEnrollment();
   }
 
   // Rejected enrollment state
-  if (isEnrolled && enrollmentStatus === "rejected") {
+  if (enrollmentStatus === "rejected") {
     return renderRejectedEnrollment();
   }
 
   // Active enrollment state (with progress)
-  if (isEnrolled && enrollmentStatus === "active") {
+  if (enrollmentStatus === "active") {
     return renderActiveEnrollment();
   }
 

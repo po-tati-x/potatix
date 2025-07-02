@@ -14,11 +14,14 @@ import { memo } from "react";
 interface CourseSidebarProps {
   course: Course;
   completedLessons?: string[]; // IDs of completed lessons
+  /** Optional enrollment handler (e.g. show auth modal on unauthenticated click) */
+  onEnroll?: () => Promise<void>;
 }
 
 function CourseSidebar({
   course,
   completedLessons = [],
+  onEnroll,
 }: CourseSidebarProps) {
   // Get all state from context
   const {
@@ -26,7 +29,8 @@ function CourseSidebar({
     isEnrolled,
     enrollmentStatus,
     isSidebarCollapsed,
-    toggleSidebarCollapsed
+    toggleSidebarCollapsed,
+    isAuthenticated
   } = useCourseContext();
 
   // Compute course progress locally
@@ -67,6 +71,7 @@ function CourseSidebar({
         <EnrollmentStatus
           coursePrice={course.price}
           courseProgress={courseProgress}
+          onEnroll={onEnroll}
         />
       )}
 
@@ -80,6 +85,8 @@ function CourseSidebar({
           isCollapsed={isSidebarCollapsed}
           isLocked={isLocked}
           completedLessons={completedLessons}
+          isAuthenticated={isAuthenticated}
+          onAuthRequired={onEnroll}
         />
       </div>
 

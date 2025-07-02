@@ -24,8 +24,13 @@ interface ModuleListProps {
   course: Course;
   currentLessonId: string;
   isCollapsed?: boolean;
+  /** Global lock flag (e.g., when enrollment inactive) */
   isLocked?: boolean;
   completedLessons?: string[];
+  /** Whether user is authenticated */
+  isAuthenticated?: boolean;
+  /** Triggered to prompt auth (e.g., open login modal) */
+  onAuthRequired?: () => void;
 }
 
 function ModuleList({
@@ -33,7 +38,9 @@ function ModuleList({
   currentLessonId,
   isCollapsed = false,
   isLocked = false,
-  completedLessons = []
+  completedLessons = [],
+  isAuthenticated = false,
+  onAuthRequired,
 }: ModuleListProps) {
   // Reference to the current lesson element for auto-scrolling
   const currentLessonRef = useRef<HTMLDivElement>(null);
@@ -74,11 +81,6 @@ function ModuleList({
     return [] as UIModule[];
   }, [course, enhancedLessons]);
 
-  // Filter available lessons only once per module
-  const getAvailableLessons = (lessons: UILesson[] = []) => {
-    return lessons.filter((lesson: UILesson) => !isLocked && (lesson as UILesson).videoId);
-  };
-  
   // Auto-scroll to current lesson on mount and when currentLessonId changes
   useEffect(() => {
     if (currentLessonRef.current && currentLessonId) {
@@ -145,8 +147,8 @@ function ModuleList({
   
   // Render module with its lessons - optimized with fewer object creations
   const renderModule = (module: UIModule, moduleIndex: number, isCollapsedView: boolean) => {
-    const availableLessons = getAvailableLessons(module.lessons);
-    if (availableLessons.length === 0) return null;
+    const lessonsToRender = module.lessons;
+    if (lessonsToRender.length === 0) return null;
     
     if (isCollapsedView) {
       return (
@@ -158,7 +160,7 @@ function ModuleList({
           )}
           
           <div className={moduleData.length > 1 ? 'mb-1' : 'mb-0'}>
-            {availableLessons.map((lesson, index) => {
+            {lessonsToRender.map((lesson, index) => {
               const isCurrentLesson = lesson.id === currentLessonId;
               return (
                 <div 
@@ -169,9 +171,11 @@ function ModuleList({
                   <LessonItem
                     lesson={lesson}
                     isCurrentLesson={isCurrentLesson}
-                    isLocked={isLocked || !lesson.videoId}
+                    isLocked={isLocked && lesson.visibility !== 'public'}
                     index={index}
                     isCollapsed={true}
+                    isAuthenticated={isAuthenticated}
+                    onAuthRequired={onAuthRequired}
                   />
                 </div>
               );
@@ -181,7 +185,7 @@ function ModuleList({
       );
     }
     
-    const moduleLessons = module.lessons;
+    const moduleLessons = lessonsToRender;
     const completedModuleLessons = moduleLessons.filter(lesson => lesson.completed)?.length || 0;
     const completionPercentage = moduleLessons.length > 0 
       ? Math.round((completedModuleLessons / moduleLessons.length) * 100) 
@@ -228,9 +232,11 @@ function ModuleList({
                 <LessonItem
                   lesson={lesson}
                   isCurrentLesson={isCurrentLesson}
-                  isLocked={isLocked || !lesson.videoId}
+                  isLocked={isLocked && lesson.visibility !== 'public'}
                   index={index}
                   isCollapsed={false}
+                  isAuthenticated={isAuthenticated}
+                  onAuthRequired={onAuthRequired}
                 />
               </div>
             );

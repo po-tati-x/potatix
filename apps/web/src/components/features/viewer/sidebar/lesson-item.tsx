@@ -11,6 +11,10 @@ interface LessonItemProps {
   isLocked: boolean;
   index: number;
   isCollapsed?: boolean;
+  /** Whether user is authenticated */
+  isAuthenticated?: boolean;
+  /** Callback to prompt auth (e.g., show login modal) */
+  onAuthRequired?: () => void;
 }
 
 function LessonItem({
@@ -18,7 +22,9 @@ function LessonItem({
   isCurrentLesson,
   isLocked,
   index,
-  isCollapsed = false
+  isCollapsed = false,
+  isAuthenticated = false,
+  onAuthRequired,
 }: LessonItemProps) {
   // If lesson is locked, render locked state
   if (isLocked) {
@@ -62,6 +68,12 @@ function LessonItem({
           className="relative block group w-full"
           aria-label={`${lesson.title} (${status})`}
           aria-current={isCurrentLesson ? 'page' : undefined}
+          onClick={(e) => {
+            if (!isAuthenticated && onAuthRequired) {
+              e.preventDefault();
+              onAuthRequired();
+            }
+          }}
         >
           <div 
             className={`w-full flex items-center justify-center py-2 rounded-md border ${bgColorClass} 
@@ -164,6 +176,12 @@ function LessonItem({
           className={`flex items-center py-2 px-3 text-sm rounded-md ${linkClass}`}
           aria-label={`${lesson.title} (${status})`}
           aria-current={isCurrentLesson ? 'page' : undefined}
+          onClick={(e) => {
+            if (!isAuthenticated && onAuthRequired) {
+              e.preventDefault();
+              onAuthRequired();
+            }
+          }}
         >
           <div className={`w-5 h-5 rounded-full ${iconWrapperClass} flex items-center justify-center flex-shrink-0 mr-2`}>
             {icon}

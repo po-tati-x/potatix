@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 
 import { ensureCourseSubdomain, getViewerAccess } from '@/lib/server/utils/course-viewer';
 import { CourseHubClient } from '@/components/features/viewer/course-hub/course-hub-client';
-import CourseMarketing from '@/components/features/marketing/courses';
+import { CourseMarketingPage } from '@/components/features/marketing/courses/course-marketing-page';
 import type { Course } from '@/lib/shared/types/courses';
 
 // Server-side component – fetch course once, hand straight to the client UI
@@ -20,7 +20,7 @@ export default async function CourseViewerPage({ params }: { params: Promise<{ s
 
   if (!session?.user || !isEnrolled) {
     // Show marketing landing if not logged in or not enrolled
-    return <CourseMarketing course={course as unknown as Course} isLoggedIn={Boolean(session?.user)} />;
+    return <CourseMarketingPage course={course as unknown as Course} isLoggedIn={Boolean(session?.user)} />;
   }
 
   return <CourseHubClient courseSlug={slug} />;
