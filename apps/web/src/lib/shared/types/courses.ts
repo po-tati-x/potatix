@@ -16,6 +16,8 @@ export interface Lesson {
   thumbnailUrl?: string;
   uploadStatus?: string;
   order: number;
+  /** Visibility of lesson: 'public' preview or 'enrolled' gated */
+  visibility?: 'public' | 'enrolled';
   courseId: string;
   moduleId: string;
   createdAt: string;
@@ -63,6 +65,11 @@ export interface Course {
   lessons?: Lesson[];
   modules?: CourseModule[];
   slug?: string;
+
+  /** Marketing sections */
+  perks?: string[];
+  learningOutcomes?: string[];
+  prerequisites?: string[];
 }
 
 export interface CreateCourseData {
@@ -77,6 +84,11 @@ export interface CreateCourseData {
     description?: string;
     videoId?: string | null;
   }[];
+
+  /** Marketing sections */
+  perks?: string[];
+  learningOutcomes?: string[];
+  prerequisites?: string[];
 }
 
 export interface CreateModuleData {
