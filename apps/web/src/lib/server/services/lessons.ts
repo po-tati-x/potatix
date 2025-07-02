@@ -22,6 +22,7 @@ export interface LessonUpdateInput {
   videoId?: string | null;
   order?: number;
   uploadStatus?: string;
+  visibility?: 'public' | 'enrolled';
 }
 
 interface OwnershipFail {
@@ -48,6 +49,7 @@ export const lessonService = {
         videoId: courseSchema.lesson.videoId,
         duration: courseSchema.lesson.duration,
         uploadStatus: courseSchema.lesson.uploadStatus,
+        visibility: courseSchema.lesson.visibility,
         order: courseSchema.lesson.order,
         moduleId: courseSchema.lesson.moduleId,
         courseId: courseSchema.lesson.courseId,
@@ -68,6 +70,7 @@ export const lessonService = {
         videoId: courseSchema.lesson.videoId,
         duration: courseSchema.lesson.duration,
         uploadStatus: courseSchema.lesson.uploadStatus,
+        visibility: courseSchema.lesson.visibility,
         order: courseSchema.lesson.order,
         moduleId: courseSchema.lesson.moduleId,
         courseId: courseSchema.lesson.courseId,
@@ -121,6 +124,7 @@ export const lessonService = {
         ...(data.videoId !== undefined ? { videoId: data.videoId } : {}),
         ...(data.order !== undefined ? { order: data.order } : {}),
         ...(data.uploadStatus !== undefined ? { uploadStatus: data.uploadStatus } : {}),
+        ...(data.visibility !== undefined ? { visibility: data.visibility } : {}),
         updatedAt: new Date(),
       })
       .where(eq(courseSchema.lesson.id, lessonId))
