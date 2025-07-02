@@ -57,6 +57,9 @@ export async function POST(request: NextRequest) {
       status: body.status || "draft",
       imageUrl: body.imageUrl,
       userId: auth.userId,
+      perks: body.perks,
+      learningOutcomes: body.learningOutcomes,
+      prerequisites: body.prerequisites,
     };
     
     // Create course

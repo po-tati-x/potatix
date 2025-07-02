@@ -71,6 +71,9 @@ export async function PATCH(request: NextRequest) {
       status: body.status,
       imageUrl: body.imageUrl,
       slug: body.slug,
+      perks: body.perks,
+      learningOutcomes: body.learningOutcomes,
+      prerequisites: body.prerequisites,
     };
     
     // Update course

@@ -95,6 +95,7 @@ export async function PATCH(request: NextRequest) {
       videoId: body.videoId,
       uploadStatus: body.uploadStatus,
       order: body.order,
+      visibility: body.visibility,
     };
     
     // Update lesson
