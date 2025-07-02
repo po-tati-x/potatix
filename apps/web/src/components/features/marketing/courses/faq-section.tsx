@@ -2,6 +2,7 @@
 
 import { ChevronDown, HelpCircle, MessageCircle } from 'lucide-react';
 import { Section } from '@/components/ui/section';
+import { Button } from '@/components/ui/new-button';
 
 interface FAQItem {
   id: string;
@@ -16,61 +17,25 @@ interface FAQSectionProps {
 }
 
 export function FAQSection({ courseId }: FAQSectionProps) {
-  // Temporary static data – replace with fetch when backend ready.
+  // Platform-level FAQs only – no course-specific fluff
   const faqs: FAQItem[] = [
     {
-      id: '1',
-      question: 'How long do I have access to the course?',
+      id: 'support',
+      question: 'What if I need help or have questions?',
       answer:
-        'You get lifetime access. Watch videos whenever you want, forever. All future updates included.',
-      category: 'general',
-    },
-    {
-      id: '2',
-      question: 'What if I get stuck or have questions?',
-      answer:
-        'Get help via Q&A, community forum, and docs. Most questions answered within 24 hours.',
+        'Ping us via in-app chat, community forum, or email. Average response time: <24h.',
       category: 'support',
     },
     {
-      id: '3',
-      question: 'Do I need any prior experience?',
-      answer:
-        'The course starts with fundamentals and scales to advanced topics. Beginners welcome.',
-      category: 'technical',
-    },
-    {
-      id: '4',
+      id: 'refund',
       question: 'Is there a money-back guarantee?',
-      answer: '30-day money-back guarantee. Not satisfied? Get a full refund – no questions asked.',
+      answer: '30-day no-questions-asked refund on all purchases.',
       category: 'payment',
     },
     {
-      id: '5',
-      question: 'Will I receive a certificate?',
-      answer:
-        'Yes. Complete the course to receive a verified certificate you can share on LinkedIn.',
-      category: 'general',
-    },
-    {
-      id: '6',
-      question: 'Can I download the videos?',
-      answer:
-        'Videos stream online for the best experience, but resources and code can be downloaded.',
-      category: 'technical',
-    },
-    {
-      id: '7',
-      question: 'What makes this course different from free tutorials?',
-      answer:
-        'Structured curriculum, production-quality videos, hands-on projects, instructor support, certificate.',
-      category: 'general',
-    },
-    {
-      id: '8',
-      question: 'How often is the course updated?',
-      answer:
-        'Content reviewed quarterly. Enrolled students automatically receive new lessons and bonuses.',
+      id: 'sync',
+      question: 'Will my progress sync across devices?',
+      answer: 'Yes. Your learning progress is saved to the cloud in real-time.',
       category: 'technical',
     },
   ];
@@ -127,12 +92,17 @@ export function FAQSection({ courseId }: FAQSectionProps) {
           </span>
           <h3 className="mb-2 text-base font-medium text-slate-800">Still have questions?</h3>
           <p className="mb-5 text-sm text-slate-600">Can&apos;t find the answer you&apos;re looking for? We&apos;re here to help.</p>
-          <a
-            href="#contact-support"
-            className="inline-flex items-center justify-center gap-2 rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+          <Button
+            type="primary"
+            size="small"
+            onClick={() => {
+              if (typeof window !== 'undefined') {
+                window.location.hash = 'contact-support';
+              }
+            }}
           >
             Contact support
-          </a>
+          </Button>
         </div>
       </div>
     </Section>

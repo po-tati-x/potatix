@@ -3,10 +3,12 @@
 import {
   CheckCircle,
   ShieldCheck,
-  Clock,
-  Users,
-  Award,
   Sparkles,
+  Globe,
+  Bot,
+  Zap,
+  CloudLightning,
+  Tv2,
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/new-button";
@@ -14,6 +16,7 @@ import { Section } from "@/components/ui/section";
 import type { Course } from "@/lib/shared/types/courses";
 import { cn } from "@/lib/shared/utils/cn";
 import { InfiniteZig } from "@/components/ui/infinite-zig";
+import { useEnrollment } from "@/lib/client/hooks/use-enrollment";
 
 interface PricingSectionProps {
   course: Course;
@@ -26,20 +29,31 @@ export function PricingSection({ course, isLoggedIn, onEnroll, isEnrolling }: Pr
   const isFree = (course.price ?? 0) <= 0;
   const priceLabel = isFree ? "Free" : `$${course.price?.toLocaleString()}`;
 
-  // Feature bullets – feel free to extend via CMS later.
-  const perks = [
-    "Lifetime access – no subscriptions",
-    "Hands-on projects & real-world patterns",
-    "Private community & instructor Q&A",
-    "Certificate of completion",
-    "Mobile & desktop friendly",
-  ];
+  // Enrollment pending status
+  const { enrollmentStatus } = useEnrollment(course.slug ?? "");
+  const isPending = enrollmentStatus === "pending";
 
-  // Trust/Evidence chips shown below feature list
-  const trustChips: Array<{ icon: LucideIcon; label: string }> = [
-    { icon: Clock, label: "Instant access" },
-    { icon: Users, label: "10k+ students" },
-    { icon: Award, label: "Industry-recognised" },
+  // Feature bullets – authored by course owner; fallback seed list when nothing configured yet
+  const perks = course.perks && course.perks.filter(Boolean).length
+    ? course.perks
+    : [
+        "52 hours on-demand video",
+        "23 coding exercises",
+        "Assignments",
+        "225 articles",
+        "164 downloadable resources",
+        "Access on mobile & TV",
+        "Certificate of completion",
+      ];
+
+  // Platform-wide perks – universal across all courses
+  const platformChips: Array<{ icon: LucideIcon; label: string }> = [
+    { icon: Sparkles, label: "AI-powered hints" },
+    { icon: Globe, label: "Multilingual captions" },
+    { icon: Bot, label: "Chat assistant" },
+    { icon: Zap, label: "Blazing-fast player" },
+    { icon: CloudLightning, label: "Cloud-synced progress" },
+    { icon: Tv2, label: "Chromecast & AirPlay" },
   ];
 
   return (
@@ -77,10 +91,18 @@ export function PricingSection({ course, isLoggedIn, onEnroll, isEnrolling }: Pr
               block
               onClick={onEnroll}
               loading={isEnrolling}
-              disabled={isEnrolling}
-              className="bg-emerald-600 hover:bg-emerald-700"
+              disabled={isEnrolling || isPending}
+              className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-amber-500/60"
             >
-              {isLoggedIn ? (isFree ? "Start Learning" : "Enroll Now") : "Sign In To Enroll"}
+              {isEnrolling
+                ? "Enrolling..."
+                : isPending
+                  ? "Pending Approval"
+                  : isLoggedIn
+                    ? isFree
+                      ? "Start Learning"
+                      : "Enroll Now"
+                    : "Sign In To Enroll"}
             </Button>
 
             {/* Satisfaction guarantee */}
@@ -97,15 +119,14 @@ export function PricingSection({ course, isLoggedIn, onEnroll, isEnrolling }: Pr
               id="pricing-heading"
               className="text-3xl font-semibold tracking-tight text-slate-800"
             >
-              Unlock your next level
+              What&#39;s inside
             </h2>
-            <p className="max-w-md text-base leading-relaxed text-slate-600">
-              Invest once, benefit forever. No upsells, no bullshit – just proven material that
-              translates to production-ready skills.
-            </p>
           </header>
 
-          <ul role="list" className="space-y-4">
+          <ul
+            role="list"
+            className="grid gap-4 sm:grid-cols-2 sm:gap-x-8 sm:gap-y-5"
+          >
             {perks.map((perk) => (
               <li key={perk} className="flex items-start gap-3 text-sm leading-relaxed text-slate-700">
                 <CheckCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-500" />
@@ -114,9 +135,9 @@ export function PricingSection({ course, isLoggedIn, onEnroll, isEnrolling }: Pr
             ))}
           </ul>
 
-          {/* Evidence chips */}
+          {/* Platform feature chips */}
           <ul role="list" className="flex flex-wrap gap-3 pt-2 text-xs text-slate-500">
-            {trustChips.map(({ icon: Icon, label }) => (
+            {platformChips.map(({ icon: Icon, label }) => (
               <li
                 key={label}
                 className="flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 backdrop-blur-sm"

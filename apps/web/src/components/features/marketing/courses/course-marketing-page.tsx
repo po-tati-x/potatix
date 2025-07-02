@@ -3,17 +3,17 @@
 import type { Course } from '@/lib/shared/types/courses';
 import { HeroSection } from './hero-section';
 import { InstructorSpotlight } from './instructor-spotlight';
-import { CourseHighlights } from './course-highlights';
 import { CurriculumPreview } from './curriculum-preview';
 import { PricingSection } from './pricing-section';
 import { FAQSection } from './faq-section';
 import { CourseStats } from './course-stats';
-import { StudentOutcomes } from './student-outcomes';
 import { FloatingEnrollBar } from './floating-enroll-bar';
 import { useState, useEffect, useRef } from 'react';
 import { Section } from '@/components/ui/section';
 import Modal from '@/components/ui/Modal';
 import LoginScreen from '@/components/features/auth/login-screen';
+import { WhatYoullLearn } from './what-youll-learn';
+import { Prerequisites } from './prerequisites';
 
 interface CourseMarketingPageProps {
   course: Course;
@@ -84,11 +84,11 @@ export function CourseMarketingPage({ course, isLoggedIn }: CourseMarketingPageP
         <CourseStats course={course} />
       </Section>
 
-      {/* Outcomes – full-width gradient section */}
-      <StudentOutcomes course={course} />
+      {/* Learning outcomes */}
+      <WhatYoullLearn course={course} />
 
-      {/* Highlights – full-width slate section */}
-      <CourseHighlights course={course} />
+      {/* Prerequisites */}
+      <Prerequisites course={course} />
 
       {/* Instructor */}
       <InstructorSpotlight courseId={course.id} />

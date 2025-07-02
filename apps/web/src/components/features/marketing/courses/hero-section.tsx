@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/new-button';
 import type { Course } from '@/lib/shared/types/courses';
 import { Section } from '@/components/ui/section';
 
+import { useEnrollment } from '@/lib/client/hooks/use-enrollment';
+
 interface HeroSectionProps {
   course: Course;
   isLoggedIn: boolean;
@@ -27,6 +29,10 @@ export function HeroSection({ course, isLoggedIn, onEnroll, isEnrolling }: HeroS
 
   // ─────────────── Derived data
   const isPaid = Boolean(course.price && course.price > 0);
+
+  // ─────────────── Enrollment state (optional)
+  const { enrollmentStatus } = useEnrollment(course.slug ?? '');
+  const isPending = enrollmentStatus === 'pending';
 
   // ──────────────────────────────────────────────────────────────────────────────
   return (
@@ -51,17 +57,19 @@ export function HeroSection({ course, isLoggedIn, onEnroll, isEnrolling }: HeroS
               size="medium"
               onClick={onEnroll}
               loading={isEnrolling}
-              disabled={isEnrolling}
+              disabled={isEnrolling || isPending}
               iconRight={<ChevronRight className="h-4 w-4" />}
-              className="bg-emerald-600 hover:bg-emerald-700"
+              className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-amber-500/60"
             >
               {isEnrolling
                 ? 'Enrolling...'
-                : !isLoggedIn
-                  ? 'Sign in to continue'
-                  : isPaid
-                    ? 'Request Enrollment'
-                    : 'Enroll Now (Free)'}
+                : isPending
+                  ? 'Pending Approval'
+                  : !isLoggedIn
+                    ? 'Sign in to continue'
+                    : isPaid
+                      ? 'Request Enrollment'
+                      : 'Enroll Now (Free)'}
             </Button>
 
             <div className="flex items-baseline gap-2">

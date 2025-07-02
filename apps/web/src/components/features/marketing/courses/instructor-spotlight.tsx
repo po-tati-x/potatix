@@ -54,14 +54,14 @@ export function InstructorSpotlight({ courseId }: InstructorSpotlightProps) {
 
   if (!pivots || pivots.length === 0) {
     return (
-      <Section bg="slate" className="py-24">
+      <Section bg="slate-gradient" className="py-24">
         <InstructorSkeleton /> 
       </Section>
     );
   }
 
   return (
-    <Section bg="slate" className="py-24">
+    <Section bg="slate-gradient" className="py-24">
       <div className="space-y-32">
         {pivots.map((pivot) => {
           const ins = pivot.instructor as ExtendedInstructor;

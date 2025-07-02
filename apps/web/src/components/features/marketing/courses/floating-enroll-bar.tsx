@@ -3,6 +3,7 @@
 import { cn } from '@/lib/shared/utils/cn';
 import { Button } from '@/components/ui/new-button';
 import type { Course } from '@/lib/shared/types/courses';
+import { useEnrollment } from '@/lib/client/hooks/use-enrollment';
 
 interface FloatingEnrollBarProps {
   course: Course;
@@ -29,6 +30,10 @@ export function FloatingEnrollBar({
   const totalModules = course.modules?.length ?? 0;
 
   const priceLabel = course.price && course.price > 0 ? `$${course.price}` : 'Free';
+
+  // Enrollment state
+  const { enrollmentStatus } = useEnrollment(course.slug ?? '');
+  const isPending = enrollmentStatus === 'pending';
 
   return (
     <div
@@ -69,13 +74,18 @@ export function FloatingEnrollBar({
           size="medium"
           onClick={onEnroll}
           loading={isEnrolling}
-          disabled={isEnrolling}
-          className="bg-emerald-600 hover:bg-emerald-700"
+          disabled={isEnrolling || isPending}
+          className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-amber-300 disabled:text-slate-900 disabled:opacity-100"
         >
           {isEnrolling ? (
             <>
               <span className="hidden sm:inline">Enrolling...</span>
               <span className="sm:hidden">...</span>
+            </>
+          ) : isPending ? (
+            <>
+              <span className="hidden sm:inline">Pending Approval</span>
+              <span className="sm:hidden">Pending</span>
             </>
           ) : !isLoggedIn ? (
             <>
