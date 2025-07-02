@@ -21,6 +21,9 @@ export interface CourseCreateInput {
   status?: string;
   imageUrl?: string | null;
   userId: string;
+  perks?: string[];
+  learningOutcomes?: string[];
+  prerequisites?: string[];
 }
 
 export interface CourseUpdateInput {
@@ -30,6 +33,9 @@ export interface CourseUpdateInput {
   status?: string;
   imageUrl?: string | null;
   slug?: string;
+  perks?: string[];
+  learningOutcomes?: string[];
+  prerequisites?: string[];
 }
 
 // Course Service
@@ -45,6 +51,9 @@ export const courseService = {
           price: courseSchema.course.price,
           status: courseSchema.course.status,
           imageUrl: courseSchema.course.imageUrl,
+          perks: courseSchema.course.perks,
+          learningOutcomes: courseSchema.course.learningOutcomes,
+          prerequisites: courseSchema.course.prerequisites,
           userId: courseSchema.course.userId,
           slug: courseSchema.course.slug,
           createdAt: courseSchema.course.createdAt,
@@ -109,6 +118,9 @@ export const courseService = {
         ...course,
         // Normalise optional description to undefined for client convenience
         description: course.description || undefined,
+        perks: course.perks || undefined,
+        learningOutcomes: course.learningOutcomes || undefined,
+        prerequisites: course.prerequisites || undefined,
         status: (course.status as 'draft' | 'published' | 'archived') ?? 'draft',
         // Convert dates only once – JSON.stringify will handle ISO conversion
         createdAt: course.createdAt.toISOString(),
@@ -146,6 +158,9 @@ export const courseService = {
             c.created_at AS "createdAt",
             c.updated_at AS "updatedAt",
             c.slug,
+            c.perks,
+            c.learning_outcomes AS "learningOutcomes",
+            c.prerequisites,
             /* counts */
             (
               SELECT COUNT(*)
@@ -178,6 +193,9 @@ export const courseService = {
         createdAt: Date;
         updatedAt: Date | null;
         slug: string | null;
+        perks: string[] | null;
+        learningOutcomes: string[] | null;
+        prerequisites: string[] | null;
         lessonCount: number;
         moduleCount: number;
         studentCount: number;
@@ -198,6 +216,9 @@ export const courseService = {
         return {
           ...course,
           description: course.description || undefined,
+          perks: course.perks || undefined,
+          learningOutcomes: course.learningOutcomes || undefined,
+          prerequisites: course.prerequisites || undefined,
           createdAt: created.toISOString(),
           updatedAt: updated?.toISOString(),
           status: (course.status as 'draft' | 'published' | 'archived') ?? 'draft',
@@ -263,6 +284,9 @@ export const courseService = {
         imageUrl: data.imageUrl || null,
         userId: data.userId,
         slug,
+        perks: data.perks || [],
+        learningOutcomes: data.learningOutcomes || [],
+        prerequisites: data.prerequisites || [],
         createdAt: new Date(),
         updatedAt: new Date(),
       });
@@ -294,6 +318,9 @@ export const courseService = {
           ...(data.status !== undefined ? { status: data.status } : {}),
           ...(data.imageUrl !== undefined ? { imageUrl: data.imageUrl } : {}),
           ...(slug ? { slug } : {}),
+          ...(data.perks !== undefined ? { perks: data.perks } : {}),
+          ...(data.learningOutcomes !== undefined ? { learningOutcomes: data.learningOutcomes } : {}),
+          ...(data.prerequisites !== undefined ? { prerequisites: data.prerequisites } : {}),
           updatedAt: new Date(),
         })
         .where(eq(courseSchema.course.id, courseId))
