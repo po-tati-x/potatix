@@ -189,7 +189,9 @@ export function CourseInstructorsSection({ courseId }: CourseInstructorsSectionP
 
               <div className="flex gap-2">
                 <Button type="outline" size="tiny" onClick={()=>handleEditStart(ins)}>Edit</Button>
-                <Button type="outline" size="tiny" iconLeft={<X className="h-3 w-3" />} onClick={()=>removeInstructor(ins.id, ins.instructorId)} loading={deleteMutation.isPending}>Del</Button>
+                <Button type="danger" size="tiny" iconLeft={<X className="h-3 w-3" />} onClick={() => removeInstructor(ins.id, ins.instructorId)} loading={deleteMutation.isPending}>
+                  Delete
+                </Button>
               </div>
             </div>
           )
