@@ -32,10 +32,16 @@ export const UPLOAD_STATUS = {
   FAILED: 'failed',
 } as const;
 
+export const LESSON_VISIBILITY = {
+  PUBLIC: 'public',
+  ENROLLED: 'enrolled',
+} as const;
+
 export type CourseStatus = (typeof COURSE_STATUS)[keyof typeof COURSE_STATUS];
 export type EnrollmentStatus =
   (typeof ENROLLMENT_STATUS)[keyof typeof ENROLLMENT_STATUS];
 export type UploadStatus = (typeof UPLOAD_STATUS)[keyof typeof UPLOAD_STATUS];
+export type LessonVisibility = (typeof LESSON_VISIBILITY)[keyof typeof LESSON_VISIBILITY];
 
 /**
  * Course table - the main content unit
@@ -55,6 +61,11 @@ export const course = pgTable('course', {
 
   // Metadata fields
   imageUrl: text('image_url'),
+
+  // Marketing metadata stored as JSON arrays of strings
+  perks: json('perks').$type<string[]>(),
+  learningOutcomes: json('learning_outcomes').$type<string[]>(),
+  prerequisites: json('prerequisites').$type<string[]>(),
 
   // Timestamps matching auth.ts style
   ...timestamps,
@@ -92,6 +103,9 @@ export const lesson = pgTable('lesson', {
 
   // Video identifier (for future MUX integration)
   videoId: text('video_id'),
+
+  // Visibility – public preview or gated by enrollment
+  visibility: text('visibility').notNull().default('enrolled'),
 
   // Video upload status and metadata
   uploadStatus: text('upload_status'),
