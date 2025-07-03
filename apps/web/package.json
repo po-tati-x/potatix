@@ -25,6 +25,7 @@
     "@mux/mux-player": "^3.4.0",
     "@mux/mux-player-react": "^3.4.0",
     "@mux/mux-uploader-react": "^1.2.0",
+    "@mux/upchunk": "^3.5.0",
     "@potatix/db": "workspace:*",
     "@radix-ui/react-accordion": "^1.2.11",
     "@radix-ui/react-alert-dialog": "^1.1.11",
