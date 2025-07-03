@@ -41,7 +41,7 @@ export function CourseDetailProvider({ children, courseId, initialData }: Provid
     queryKey: courseKeys.detail(courseId),
     queryFn: () => courseApi.getCourse(courseId),
     initialData,
-    enabled: initialData ? false : true,
+    staleTime: 10_000, // 10s grace so we don't hammer API but still refresh
   });
 
   // Delete mutation

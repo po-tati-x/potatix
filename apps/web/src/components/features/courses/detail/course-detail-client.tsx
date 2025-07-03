@@ -103,7 +103,7 @@ const ModuleItem = ({ module, index }: { module: Module; index: number }) => {
                 </div>
 
                 <div className="flex-shrink-0">
-                  {lesson.videoId ? (
+                  {lesson.playbackId ? (
                     <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded text-xs">
                       <Play className="h-2.5 w-2.5" />
                       <span>Video</span>

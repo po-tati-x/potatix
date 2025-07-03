@@ -36,7 +36,7 @@ export default function CoursesPageClient({ initialData }: { initialData?: Cours
 
     const courseData: CreateCourseData = {
       title: `${randomName} Course`,
-      description: "Click to edit course details",
+      description: "",
       price: 0,
       status: "draft",
     };
