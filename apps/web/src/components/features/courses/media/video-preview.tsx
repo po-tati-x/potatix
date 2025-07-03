@@ -20,11 +20,11 @@ export function VideoPreview({ lesson, onFileRemove }: VideoPreviewProps) {
   useEffect(() => {
     console.log(`[VideoPreview] Rendering for lesson ${lesson.id}:`, {
       fileUrl: lesson.fileUrl,
-      videoId: lesson.videoId,
+      playbackId: lesson.playbackId,
       uploading: lesson.uploading,
       file: lesson.file
     });
-  }, [lesson.id, lesson.fileUrl, lesson.uploading, lesson.file, lesson.videoId]);
+  }, [lesson.id, lesson.fileUrl, lesson.uploading, lesson.file, lesson.playbackId]);
 
   const handleTogglePlay = () => {
     setIsPlaying(prev => !prev);
@@ -40,11 +40,11 @@ export function VideoPreview({ lesson, onFileRemove }: VideoPreviewProps) {
   const handleLoadStart = () => setIsLoading(true);
   const handleCanPlay = () => setIsLoading(false);
 
-  // Already uploaded video (has fileUrl or videoId)
-  if (lesson.fileUrl || lesson.videoId) {
-    const videoId = lesson.videoId;
-    const videoSrc = videoId ? `https://stream.mux.com/${videoId}.m3u8` : "";
-    const posterSrc = lesson.fileUrl || (videoId ? `https://image.mux.com/${videoId}/thumbnail.jpg` : "");
+  // Already uploaded video (has fileUrl or playbackId)
+  if (lesson.fileUrl || lesson.playbackId) {
+    const playbackId = lesson.playbackId;
+    const videoSrc = playbackId ? `https://stream.mux.com/${playbackId}.m3u8` : "";
+    const posterSrc = lesson.fileUrl || (playbackId ? `https://image.mux.com/${playbackId}/thumbnail.jpg` : "");
 
     return (
       <div className="border border-slate-200 rounded-md overflow-hidden">
@@ -151,16 +151,23 @@ export function VideoPreview({ lesson, onFileRemove }: VideoPreviewProps) {
   // Video is processing after upload
   if (lesson.uploading) {
     return (
-      <div className="border border-slate-200 rounded-md p-4">
-        <div className="flex flex-col items-center justify-center space-y-3">
-          <Loader2 className="h-6 w-6 text-emerald-500 animate-spin" />
-          <div className="text-center">
-            <p className="text-sm font-medium text-slate-900">Video Processing</p>
-            <p className="text-xs text-slate-500 mt-1">
-              Your video is being processed. This may take a few minutes.
-            </p>
+      <div className="border border-slate-200 rounded-md p-4 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <Loader2 className="h-5 w-5 text-emerald-500 animate-spin" />
+          <div>
+            <p className="text-sm font-medium text-slate-900">Processing…</p>
+            <p className="text-xs text-slate-500">Hang tight or cancel below</p>
           </div>
         </div>
+
+        <button
+          type="button"
+          onClick={() => onFileRemove(lesson.id)}
+          className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded transition-all"
+          aria-label="Cancel & delete video"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
       </div>
     );
   }
