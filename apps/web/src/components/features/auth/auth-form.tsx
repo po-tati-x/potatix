@@ -18,6 +18,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { signIn, signUp } from "@/lib/auth/auth";
 import { Button } from "@/components/ui/new-button";
+import Link from "next/link";
 
 // Form validation schema that matches backend requirements
 const authSchema = z.object({
@@ -47,7 +48,7 @@ export default function AuthForm({
   customTitle,
   customDescription,
 }: AuthFormProps) {
-  const [isSignUp, setIsSignUp] = useState(!isLoginMode);
+  const isSignUp = !isLoginMode;
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
@@ -242,18 +243,14 @@ export default function AuthForm({
       </Form>
 
       <div className="mt-4 text-center">
-        <button
-          type="button"
-          onClick={() => {
-            setIsSignUp(!isSignUp);
-            form.reset();
-          }}
-          className="text-sm text-emerald-600 hover:text-emerald-700 font-medium transition-colors cursor-pointer"
+        <Link
+          href={isSignUp ? "/login" : "/signup"}
+          className="text-sm text-emerald-600 hover:text-emerald-700 font-medium transition-colors"
         >
           {isSignUp
             ? "Already have an account? Sign in"
             : "Need an account? Sign up"}
-        </button>
+        </Link>
       </div>
     </div>
   );
