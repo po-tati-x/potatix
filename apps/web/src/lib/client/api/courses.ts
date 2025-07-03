@@ -69,7 +69,7 @@ export const courseApi = {
     return response.data.data;
   },
 
-  async updateLesson(data: { lessonId: string; title?: string; description?: string; visibility?: 'public' | 'enrolled' }): Promise<unknown> {
+  async updateLesson(data: { lessonId: string; title?: string; description?: string; visibility?: 'public' | 'enrolled'; playbackId?: string | null; uploadStatus?: string | null }): Promise<unknown> {
     const { lessonId, ...updateData } = data;
     const response = await axios.patch<ApiResponse<unknown>>(`/api/courses/lessons/${lessonId}`, updateData);
     return response.data.data;

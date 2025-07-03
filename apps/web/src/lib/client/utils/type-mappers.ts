@@ -61,7 +61,7 @@ export function mapCourseProgress(
     currentLessonTitle: currentLesson?.title || '',
     currentLessonThumbnail:
       currentLesson?.thumbnailUrl ||
-      (currentLesson?.videoId ? `https://image.mux.com/${currentLesson.videoId}/thumbnail.jpg` : undefined),
+      (currentLesson?.playbackId ? `https://image.mux.com/${currentLesson.playbackId}/thumbnail.jpg` : undefined),
     lastWatchedAt: backendProgress.lastAccessedAt,
     lastWatchedPosition: getCurrentLessonPosition(backendProgress),
     totalDuration: lessonDuration,
@@ -212,14 +212,14 @@ export function transformCourseToModules(
       }
     }
 
-    const thumb = lessonIn.thumbnailUrl || (lessonIn.videoId ? `https://image.mux.com/${lessonIn.videoId}/thumbnail.jpg` : undefined);
+    const thumb = lessonIn.thumbnailUrl || (lessonIn.playbackId ? `https://image.mux.com/${lessonIn.playbackId}/thumbnail.jpg` : undefined);
 
     return {
       id: lessonIn.id,
       title: lessonIn.title,
       duration: durationSec,
       isCompleted: lp?.status === 'completed' || false,
-      isLocked: !lessonIn.videoId,
+      isLocked: !lessonIn.playbackId,
       isCurrent: false, // caller can overwrite
       moduleId: lessonIn.moduleId,
       progressPercentage: progressPercent,
