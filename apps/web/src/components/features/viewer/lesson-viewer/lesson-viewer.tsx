@@ -56,7 +56,7 @@ function LessonViewerInner({
     currentTime,
     duration,
     resetVideoState,
-    setVideoId,
+    setplaybackId,
     setLessonId,
   } = useVideoStore();
 
@@ -96,14 +96,14 @@ function LessonViewerInner({
 
   // Update video and lesson IDs when they change
   useEffect(() => {
-    setVideoId(lesson.videoId || null);
+    setplaybackId(lesson.playbackId || null);
     setLessonId(lesson.id);
 
     // Cleanup
     return () => {
       resetVideoState();
     };
-  }, [lesson.id, lesson.videoId, setVideoId, setLessonId, resetVideoState]);
+  }, [lesson.id, lesson.playbackId, setplaybackId, setLessonId, resetVideoState]);
 
   // Connect to video event bus for additional events
   useEffect(() => {
@@ -278,16 +278,45 @@ function LessonViewerInner({
             {/* Video player */}
             <div className="mb-6">
               <VideoPlayer
-                videoId={lesson.videoId}
+                playbackId={lesson.playbackId}
                 lessonId={lesson.id}
                 startAt={effectiveProgress}
+                initialOrientation={(() => {
+                  if (typeof lesson.aspectRatio === 'number') {
+                    return lesson.aspectRatio < 1 ? 'portrait' : 'landscape';
+                  }
+                  if (
+                    typeof lesson.width === 'number' &&
+                    typeof lesson.height === 'number'
+                  ) {
+                    return lesson.height > lesson.width ? 'portrait' : 'landscape';
+                  }
+                  return 'landscape';
+                })() as 'landscape' | 'portrait'}
+                initialAspectRatio={(() => {
+                  if (
+                    typeof lesson.width === 'number' &&
+                    typeof lesson.height === 'number' &&
+                    lesson.width > 0 &&
+                    lesson.height > 0
+                  ) {
+                    return `${lesson.width} / ${lesson.height}`;
+                  }
+                  if (typeof lesson.aspectRatio === 'number' && lesson.aspectRatio > 0) {
+                    // convert ratio (w/h) to w/h string with rounded integers to avoid floating point display issues
+                    const w = Math.round(lesson.aspectRatio * 1000);
+                    const h = 1000;
+                    return `${w} / ${h}`;
+                  }
+                  return undefined;
+                })()}
               />
 
               {/* Video chapters */}
-              {lesson.videoId && (
+              {lesson.playbackId && (
                 <VideoChapters
                   lessonId={lesson.id}
-                  videoId={lesson.videoId}
+                  playbackId={lesson.playbackId}
                   courseId={lesson.courseId}
                 />
               )}

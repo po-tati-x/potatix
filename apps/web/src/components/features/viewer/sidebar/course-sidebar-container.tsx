@@ -34,14 +34,14 @@ function CourseSidebar({
   } = useCourseContext();
 
   // Compute course progress locally
-  const totalAvailableLessons = course.lessons?.filter((l: Lesson) => l.videoId).length || 0;
+  const totalAvailableLessons = course.lessons?.filter((l: Lesson) => l.playbackId).length || 0;
   const courseProgress = totalAvailableLessons > 0
     ? Math.round((completedLessons.length / totalAvailableLessons) * 100)
     : 0;
 
   // Count available lessons
   const availableLessons =
-    course.lessons?.filter((lesson: Lesson) => lesson.videoId)?.length || 0;
+    course.lessons?.filter((lesson: Lesson) => lesson.playbackId)?.length || 0;
   const totalLessons = course.lessons?.length || 0;
 
   // Determine if the sidebar should be locked (not enrolled or pending approval)

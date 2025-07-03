@@ -10,11 +10,11 @@ interface Chapter { id: string; title: string; timestamp: number }
 
 interface VideoChaptersProps {
   lessonId: string;
-  videoId: string;
+  playbackId: string;
   courseId?: string; // reserved
 }
 
-export function VideoChapters({ lessonId, videoId }: VideoChaptersProps) {
+export function VideoChapters({ lessonId, playbackId }: VideoChaptersProps) {
   const [isExpanded, setIsExpanded] = useState(true);
   
   // Get video store state and actions
@@ -33,10 +33,10 @@ export function VideoChapters({ lessonId, videoId }: VideoChaptersProps) {
   const [error, setError] = useState<string | null>(null);
 
   const fetchChapters = useCallback(async () => {
-    if (!videoId) return;
+    if (!playbackId) return;
     try {
       setIsLoading(true);
-      const res = await fetch(`/api/ai/transcript?playbackId=${videoId}&lessonId=${lessonId}`);
+      const res = await fetch(`/api/ai/transcript?playbackId=${playbackId}&lessonId=${lessonId}`);
       const json = await res.json();
       if (res.ok) {
         setChaptersData(json);
@@ -48,7 +48,7 @@ export function VideoChapters({ lessonId, videoId }: VideoChaptersProps) {
     } finally {
       setIsLoading(false);
     }
-  }, [videoId, lessonId]);
+  }, [playbackId, lessonId]);
 
   // Fetch on mount / change
   useEffect(() => {

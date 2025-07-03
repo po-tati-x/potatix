@@ -16,7 +16,7 @@ interface VideoContextValue {
   duration: number;
 
   // Meta
-  videoId: string | null;
+  playbackId: string | null;
   lessonId: string | null;
 
   // Chapters
@@ -30,7 +30,7 @@ interface VideoContextValue {
   setIsLoading: (v: boolean) => void;
   setIsPlaying: (v: boolean) => void;
   setError: (msg: string | null) => void;
-  setVideoId: (id: string | null) => void;
+  setplaybackId: (id: string | null) => void;
   setLessonId: (id: string) => void;
   resetVideoState: () => void;
 
@@ -47,23 +47,55 @@ export function VideoProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [videoId, setVideoId] = useState<string | null>(null);
+  const [playbackId, setplaybackId] = useState<string | null>(null);
   const [lessonId, setLessonId] = useState<string | null>(null);
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [activeChapterId, setActiveChapterId] = useState<string | null>(null);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const muxPlayerRef = useRef<any | null>(null);
+  const pendingSeek = useRef<number | null>(null);
 
   const setVideoElement = (el: HTMLVideoElement) => {
     videoRef.current = el;
+    const host = (el.getRootNode() as ShadowRoot).host as HTMLElement | undefined;
+    if (host && host.tagName === 'MUX-PLAYER') {
+      muxPlayerRef.current = host as any;
+    }
+    if (pendingSeek.current !== null) {
+      const t = pendingSeek.current;
+      try {
+        if (muxPlayerRef.current) muxPlayerRef.current.currentTime = t;
+        el.currentTime = t;
+      } finally {
+        pendingSeek.current = null;
+      }
+    }
   };
 
-  const seekTo = (time: number) => {
-    if (!videoRef.current) return;
-    try {
-      videoRef.current.currentTime = time;
-    } catch {
-      // ignore
+  const seekTo = (t: number) => {
+    const el = videoRef.current;
+    const mux = muxPlayerRef.current;
+
+    const doSeek = () => {
+      try {
+        if (mux) mux.currentTime = t;
+        if (el) el.currentTime = t;
+      } catch {
+        /* swallow */
+      }
+    };
+
+    if (el && el.readyState >= 1) {
+      doSeek();
+    } else if (el) {
+      const handler = () => {
+        doSeek();
+        el.removeEventListener('loadedmetadata', handler);
+      };
+      el.addEventListener('loadedmetadata', handler, { once: true });
+    } else {
+      pendingSeek.current = t;
     }
   };
 
@@ -81,7 +113,7 @@ export function VideoProvider({ children }: { children: React.ReactNode }) {
     error,
     currentTime,
     duration,
-    videoId,
+    playbackId,
     lessonId,
     chapters,
     activeChapterId,
@@ -91,7 +123,7 @@ export function VideoProvider({ children }: { children: React.ReactNode }) {
     setIsLoading,
     setIsPlaying,
     setError,
-    setVideoId,
+    setplaybackId,
     setLessonId,
     resetVideoState,
     setChapters,

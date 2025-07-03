@@ -23,7 +23,7 @@ export default async function LessonViewerPage({ params }: { params: Promise<{ s
     .flatMap((mod) => (mod.lessons ?? []).sort((l1, l2) => l1.order - l2.order));
 
   // Exclude lessons that do not have a video
-  const lessons: Lesson[] = flattenedLessons.filter((l) => l.videoId);
+  const lessons: Lesson[] = flattenedLessons.filter((l) => l.playbackId);
 
   const currentIndex = lessons.findIndex((l) => l.id === lessonId);
   if (currentIndex === -1) {
