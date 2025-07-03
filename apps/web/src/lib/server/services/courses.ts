@@ -1,11 +1,13 @@
 import { db, courseSchema } from "@potatix/db";
 import { eq, and, count, sql } from "drizzle-orm";
 import { nanoid } from "nanoid";
-import { slugify } from "../../shared/utils/courses";
 import { getMuxAssetId, deleteMuxAsset } from "@/lib/server/utils/mux";
 import { moduleService } from "./modules";
 import { lessonService } from "./lessons";
+import { instructorService } from "./instructors";
+import { userService } from "./user";
 import { logger } from "../utils/logger";
+import { uniqueNamesGenerator, colors, animals } from "unique-names-generator";
 
 // Create a logger instance for courses
 const courseLogger = logger.child("CourseService");
@@ -272,7 +274,12 @@ export const courseService = {
   async createCourse(data: CourseCreateInput) {
     try {
       const courseId = `course-${nanoid()}`;
-      const slug = `${slugify(data.title)}-${nanoid(6)}`;
+      const slug = uniqueNamesGenerator({
+        dictionaries: [colors, animals],
+        separator: "-",
+        length: 2,
+        style: "lowerCase",
+      });
 
       // Create course
       await database.insert(courseSchema.course).values({
@@ -291,6 +298,50 @@ export const courseService = {
         updatedAt: new Date(),
       });
 
+      /* -------------------------------------------------- */
+      /*  Auto-attach creator as primary instructor          */
+      /* -------------------------------------------------- */
+
+      try {
+        // 1. Resolve instructor row for this user (create if missing)
+        let instructorId: string | null = null;
+
+        const existing = await instructorService.getPublicInstructor(
+          data.userId,
+        );
+
+        if (existing) {
+          instructorId = existing.id;
+        } else {
+          // Fetch user profile for name / bio / avatar
+          const profile = await userService.getUserProfile(data.userId);
+
+          const newInstructor = await instructorService.createInstructor({
+            name: profile.name ?? "Instructor",
+            bio: profile.bio ?? null,
+            avatarUrl: profile.image ?? null,
+            userId: data.userId,
+          });
+
+          instructorId = newInstructor.id;
+        }
+
+        // 2. Link instructor to the new course as primary
+        if (instructorId) {
+          await instructorService.linkInstructorToCourse({
+            courseId,
+            instructorId,
+            role: "primary",
+            sortOrder: 0,
+          });
+        }
+      } catch (instructorErr) {
+        courseLogger.warn(
+          `Failed to attach instructor to course ${courseId}`,
+          instructorErr as Error,
+        );
+      }
+
       // Get the created course
       return await this.getCourseById(courseId);
     } catch (error) {
@@ -301,11 +352,8 @@ export const courseService = {
 
   async updateCourse(courseId: string, data: CourseUpdateInput) {
     try {
-      // If title has changed, generate a new slug
-      let slug = data.slug;
-      if (data.title && !data.slug) {
-        slug = `${slugify(data.title)}-${nanoid(6)}`;
-      }
+      // Preserve existing slug unless explicitly supplied
+      const slug = data.slug;
 
       const updatedCourse = await database
         .update(courseSchema.course)
@@ -317,7 +365,7 @@ export const courseService = {
           ...(data.price !== undefined ? { price: data.price } : {}),
           ...(data.status !== undefined ? { status: data.status } : {}),
           ...(data.imageUrl !== undefined ? { imageUrl: data.imageUrl } : {}),
-          ...(slug ? { slug } : {}),
+          ...(slug !== undefined ? { slug } : {}),
           ...(data.perks !== undefined ? { perks: data.perks } : {}),
           ...(data.learningOutcomes !== undefined ? { learningOutcomes: data.learningOutcomes } : {}),
           ...(data.prerequisites !== undefined ? { prerequisites: data.prerequisites } : {}),
@@ -342,7 +390,7 @@ export const courseService = {
       const lessonsWithVideos = await database
         .select({
           id: courseSchema.lesson.id,
-          videoId: courseSchema.lesson.videoId,
+          playbackId: courseSchema.lesson.playbackId,
         })
         .from(courseSchema.lesson)
         .where(eq(courseSchema.lesson.courseId, courseId));
@@ -350,8 +398,8 @@ export const courseService = {
       // Process videos deletion
       const videoResults = [];
       for (const lesson of lessonsWithVideos) {
-        if (lesson.videoId) {
-          const assetId = await getMuxAssetId(lesson.videoId);
+        if (lesson.playbackId) {
+          const assetId = await getMuxAssetId(lesson.playbackId);
 
           if (assetId) {
             const deleted = await deleteMuxAsset(assetId);
@@ -383,7 +431,7 @@ export const courseService = {
         success: true,
         error: null,
         videoCleanup: {
-          total: lessonsWithVideos.filter((l) => l.videoId).length,
+          total: lessonsWithVideos.filter((l) => l.playbackId).length,
           deleted: videoResults.filter((r) => r.deleted).length,
           failed: videoResults.filter((r) => !r.deleted).length,
         },

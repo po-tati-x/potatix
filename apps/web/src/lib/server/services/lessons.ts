@@ -10,7 +10,7 @@ const database = db!; // assume initialized elsewhere
 export interface LessonCreateInput {
   title: string;
   description?: string | null;
-  videoId?: string | null;
+  playbackId?: string | null;
   order: number;
   moduleId: string;
   courseId: string;
@@ -19,7 +19,7 @@ export interface LessonCreateInput {
 export interface LessonUpdateInput {
   title?: string;
   description?: string | null;
-  videoId?: string | null;
+  playbackId?: string | null;
   order?: number;
   uploadStatus?: string;
   visibility?: 'public' | 'enrolled';
@@ -46,7 +46,7 @@ export const lessonService = {
         id: courseSchema.lesson.id,
         title: courseSchema.lesson.title,
         description: courseSchema.lesson.description,
-        videoId: courseSchema.lesson.videoId,
+        playbackId: courseSchema.lesson.playbackId,
         duration: courseSchema.lesson.duration,
         uploadStatus: courseSchema.lesson.uploadStatus,
         visibility: courseSchema.lesson.visibility,
@@ -55,6 +55,9 @@ export const lessonService = {
         courseId: courseSchema.lesson.courseId,
         createdAt: courseSchema.lesson.createdAt,
         updatedAt: courseSchema.lesson.updatedAt,
+        width: courseSchema.lesson.width,
+        height: courseSchema.lesson.height,
+        aspectRatio: courseSchema.lesson.aspectRatio,
       })
       .from(courseSchema.lesson)
       .where(eq(courseSchema.lesson.courseId, courseId))
@@ -67,7 +70,7 @@ export const lessonService = {
         id: courseSchema.lesson.id,
         title: courseSchema.lesson.title,
         description: courseSchema.lesson.description,
-        videoId: courseSchema.lesson.videoId,
+        playbackId: courseSchema.lesson.playbackId,
         duration: courseSchema.lesson.duration,
         uploadStatus: courseSchema.lesson.uploadStatus,
         visibility: courseSchema.lesson.visibility,
@@ -76,6 +79,9 @@ export const lessonService = {
         courseId: courseSchema.lesson.courseId,
         createdAt: courseSchema.lesson.createdAt,
         updatedAt: courseSchema.lesson.updatedAt,
+        width: courseSchema.lesson.width,
+        height: courseSchema.lesson.height,
+        aspectRatio: courseSchema.lesson.aspectRatio,
       })
       .from(courseSchema.lesson)
       .where(eq(courseSchema.lesson.moduleId, moduleId))
@@ -102,7 +108,7 @@ export const lessonService = {
         id: lessonId,
         title: data.title,
         description: data.description || null,
-        videoId: data.videoId || null,
+        playbackId: data.playbackId || null,
         order: data.order,
         moduleId: data.moduleId,
         courseId: data.courseId,
@@ -121,7 +127,7 @@ export const lessonService = {
       .set({
         ...(data.title !== undefined ? { title: data.title } : {}),
         ...(data.description !== undefined ? { description: data.description } : {}),
-        ...(data.videoId !== undefined ? { videoId: data.videoId } : {}),
+        ...(data.playbackId !== undefined ? { playbackId: data.playbackId } : {}),
         ...(data.order !== undefined ? { order: data.order } : {}),
         ...(data.uploadStatus !== undefined ? { uploadStatus: data.uploadStatus } : {}),
         ...(data.visibility !== undefined ? { visibility: data.visibility } : {}),
@@ -147,9 +153,9 @@ export const lessonService = {
       .where(eq(courseSchema.lesson.id, lessonId));
     
     // If the lesson has a video, delete it from Mux
-    if (lesson.videoId) {
+    if (lesson.playbackId) {
       // Get the Mux asset ID (properly await the Promise)
-      const muxAssetId = await getMuxAssetId(lesson.videoId);
+      const muxAssetId = await getMuxAssetId(lesson.playbackId);
       if (muxAssetId) {
         try {
           await deleteMuxAsset(muxAssetId);
