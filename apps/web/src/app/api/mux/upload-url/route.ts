@@ -68,6 +68,24 @@ export async function POST(request: Request) {
       },
     });
 
+    // Persist direct upload ID & reset lesson status
+    try {
+      // Lazy import to avoid circular deps in lambda edge
+      const { db, courseSchema } = await import('@potatix/db');
+      const { eq } = await import('drizzle-orm');
+      if (db) {
+        await db
+          .update(courseSchema.lesson)
+          .set({
+            directUploadId: upload.id,
+            uploadStatus: 'PENDING',
+          })
+          .where(eq(courseSchema.lesson.id, lessonId));
+      }
+    } catch (err) {
+      console.error('[Mux Upload] Failed to store direct upload ID', err);
+    }
+
     return NextResponse.json({
       url: upload.url,
       id: upload.id,

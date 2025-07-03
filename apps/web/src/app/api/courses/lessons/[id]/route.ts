@@ -92,7 +92,7 @@ export async function PATCH(request: NextRequest) {
     const updateInput: LessonUpdateInput = {
       title: body.title,
       description: body.description,
-      videoId: body.videoId,
+      playbackId: body.playback_id ?? body.playbackId,
       uploadStatus: body.uploadStatus,
       order: body.order,
       visibility: body.visibility,

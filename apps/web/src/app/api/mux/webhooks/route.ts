@@ -40,6 +40,13 @@ export async function POST(request: Request) {
 
     // Handle video.asset.ready event
     if (type === "video.asset.ready") {
+      // Extract metadata
+      const playbackId = data.playback_ids?.[0]?.id;
+      const assetId = data.id;
+      const aspectRatioNum = parseFloat(data.aspect_ratio || '0');
+      const width = data.max_stored_resolution?.width || null;
+      const height = data.max_stored_resolution?.height || null;
+
       // Get lesson ID from passthrough data
       const passthrough = data.passthrough
         ? JSON.parse(data.passthrough)
@@ -56,9 +63,6 @@ export async function POST(request: Request) {
           { status: 400 },
         );
       }
-
-      // Get playback ID
-      const playbackId = data.playback_ids?.[0]?.id;
 
       if (!playbackId) {
         console.error("[Mux Webhook] FATAL ERROR: No playback ID available");
@@ -84,7 +88,7 @@ export async function POST(request: Request) {
           .select({
             id: courseSchema.lesson.id,
             title: courseSchema.lesson.title,
-            videoId: courseSchema.lesson.videoId,
+            playbackId: courseSchema.lesson.playbackId,
             uploadStatus: courseSchema.lesson.uploadStatus,
           })
           .from(courseSchema.lesson)
@@ -101,7 +105,7 @@ export async function POST(request: Request) {
             .select({
               id: courseSchema.lesson.id,
               title: courseSchema.lesson.title,
-              videoId: courseSchema.lesson.videoId,
+              playbackId: courseSchema.lesson.playbackId,
               uploadStatus: courseSchema.lesson.uploadStatus,
               updatedAt: courseSchema.lesson.updatedAt,
             })
@@ -119,7 +123,7 @@ export async function POST(request: Request) {
             lessonCheck = [{
               id: first.id,
               title: first.title,
-              videoId: first.videoId,
+              playbackId: first.playbackId,
               uploadStatus: first.uploadStatus,
             }];
           }
@@ -141,18 +145,23 @@ export async function POST(request: Request) {
           JSON.stringify(lessonCheck[0]!),
         );
 
-        // Update lesson with videoId using raw SQL for better logging
+        // Update lesson with playbackId using raw SQL for better logging
         console.log(
           `[Mux Webhook] Executing SQL update for lesson ${targetLessonId}...`,
         );
         const updateResult = await db.execute(
           sql`UPDATE "lesson"
-              SET "videoId" = ${playbackId},
-                  "uploadStatus" = 'COMPLETED',
+              SET "playback_id" = ${playbackId},
+                  "mux_asset_id" = ${assetId},
+                  "aspect_ratio" = ${isNaN(aspectRatioNum) ? null : aspectRatioNum},
+                  "width" = ${width},
+                  "height" = ${height},
+                  "upload_status" = 'COMPLETED',
                   "duration" = ${Math.round(data.duration || 0)},
-                  "updatedAt" = NOW()
+                  "poster_url" = ${`https://image.mux.com/${playbackId}/thumbnail.jpg`},
+                  "updated_at" = NOW()
               WHERE "id" = ${targetLessonId}
-              RETURNING "id", "videoId", "uploadStatus", "updatedAt"`,
+              RETURNING "id", "playback_id", "upload_status", "updated_at"`,
         );
 
         const rowCount = updateResult.rowCount || 0;
@@ -181,7 +190,7 @@ export async function POST(request: Request) {
         const verifyUpdate = await db
           .select({
             id: courseSchema.lesson.id,
-            videoId: courseSchema.lesson.videoId,
+            playbackId: courseSchema.lesson.playbackId,
             uploadStatus: courseSchema.lesson.uploadStatus,
           })
           .from(courseSchema.lesson)
@@ -192,9 +201,9 @@ export async function POST(request: Request) {
           JSON.stringify(verifyUpdate[0]),
         );
 
-        if (!verifyUpdate[0]?.videoId) {
+        if (!verifyUpdate[0]?.playbackId) {
           console.error(
-            `[Mux Webhook] FATAL ERROR: Update verification failed - videoId not set`,
+            `[Mux Webhook] FATAL ERROR: Update verification failed - playbackId not set`,
           );
         }
       } catch (dbError) {
@@ -227,6 +236,22 @@ export async function POST(request: Request) {
         console.log(
           `[Mux Webhook] Marked lesson ${lessonId} upload as cancelled`,
         );
+      }
+    }
+
+    // Handle video.upload.asset_created – map direct upload to asset
+    else if (type === "video.upload.asset_created") {
+      const directUploadId = data.upload_id;
+      const assetId = data.asset_id;
+
+      if (!directUploadId || !assetId) {
+        console.error('[Mux Webhook] Missing IDs in asset_created');
+      } else {
+        await db
+          .update(courseSchema.lesson)
+          .set({ muxAssetId: assetId, uploadStatus: 'PROCESSING' })
+          .where(eq(courseSchema.lesson.directUploadId, directUploadId));
+        console.log(`[Mux Webhook] Linked direct upload ${directUploadId} -> asset ${assetId}`);
       }
     }
 
