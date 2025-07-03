@@ -101,8 +101,14 @@ export const lesson = pgTable('lesson', {
   title: text('title').notNull(),
   description: text('description'),
 
-  // Video identifier (for future MUX integration)
-  videoId: text('video_id'),
+  // Mux video identifiers and metadata
+  directUploadId: text('direct_upload_id'), // Mux direct upload ID
+  muxAssetId: text('mux_asset_id'),
+  playbackId: text('playback_id'),
+  width: integer('width'),
+  height: integer('height'),
+  aspectRatio: doublePrecision('aspect_ratio'),
+  posterUrl: text('poster_url'),
 
   // Visibility – public preview or gated by enrollment
   visibility: text('visibility').notNull().default('enrolled'),
