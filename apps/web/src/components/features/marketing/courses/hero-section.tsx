@@ -20,11 +20,11 @@ interface HeroSectionProps {
 // ────────────────────────────────────────────────────────────────────────────────
 export function HeroSection({ course, isLoggedIn, onEnroll, isEnrolling }: HeroSectionProps) {
   // ─────────────── Video helpers
-  const previewVideoId = course.lessons?.find(l => l.videoId)?.videoId;
+  const previewplaybackId = course.lessons?.find(l => l.playbackId)?.playbackId;
   const poster =
     course.imageUrl ||
-    (previewVideoId
-      ? `https://image.mux.com/${previewVideoId}/thumbnail.jpg?width=1280&height=720&fit_mode=smartcrop`
+    (previewplaybackId
+      ? `https://image.mux.com/${previewplaybackId}/thumbnail.jpg?width=1280&height=720&fit_mode=smartcrop`
       : undefined);
 
   // ─────────────── Derived data
@@ -86,9 +86,9 @@ export function HeroSection({ course, isLoggedIn, onEnroll, isEnrolling }: HeroS
 
         {/* ─────────────── Video preview */}
         <div className="order-1 lg:order-2">
-          {previewVideoId ? (
+          {previewplaybackId ? (
             <video
-              src={`https://stream.mux.com/${previewVideoId}.m3u8`}
+              src={`https://stream.mux.com/${previewplaybackId}.m3u8`}
               poster={poster}
               autoPlay
               loop
