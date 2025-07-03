@@ -36,9 +36,8 @@ export function CourseInfoSection({
   const [title, setTitle] = useState(initialTitle);
   const [description, setDescription] = useState(initialDescription);
   // Use string to allow empty editing state
-  const [priceInput, setPriceInput] = useState(
-    initialPrice > 0 ? initialPrice.toString() : ""
-  );
+  const [priceInput, setPriceInput] = useState(initialPrice.toString());
+  const [priceError, setPriceError] = useState<string | null>(null);
 
   // Track unsaved changes irrespective of parent prop sync
   const [dirty, setDirty] = useState(false);
@@ -48,23 +47,51 @@ export function CourseInfoSection({
   const savedDescription = useRef(initialDescription);
   const savedPrice = useRef(initialPrice);
 
+  // Track previous courseId to avoid unintended resets when only nested props change
+  const prevCourseIdRef = useRef<string>(courseId);
+
   const updateCourse = useUpdateCourse(courseId);
 
-  // Sync local state when parent props change (e.g., after fetch)
-  useEffect(() => {
-    setTitle(initialTitle);
-    savedTitle.current = initialTitle;
-  }, [initialTitle]);
+  /* --------------------------------------------------------------------- */
+  /*  Initialise local state once per course load.                         */
+  /*  We intentionally DO NOT resync saved refs on every prop change       */
+  /*  because parent echoes user keystrokes back via props, wiping dirty   */
+  /*  detection. Instead, reset only when courseId changes (new course).   */
+  /* --------------------------------------------------------------------- */
 
   useEffect(() => {
-    setDescription(initialDescription);
-    savedDescription.current = initialDescription;
-  }, [initialDescription]);
+    // Only reset local state when we are actually switching to a different course.
+    if (prevCourseIdRef.current !== courseId) {
+      setTitle(initialTitle);
+      setDescription(initialDescription);
+      setPriceInput(initialPrice.toString());
+
+      savedTitle.current = initialTitle;
+      savedDescription.current = initialDescription;
+      savedPrice.current = initialPrice;
+
+      setDirty(false);
+
+      prevCourseIdRef.current = courseId;
+    }
+  }, [courseId, initialTitle, initialDescription, initialPrice]);
+
+  /* --------------------------------------------------------------------- */
+  /*  One-time sync once real data arrives (initial blank -> populated).    */
+  /* --------------------------------------------------------------------- */
 
   useEffect(() => {
-    setPriceInput(initialPrice > 0 ? initialPrice.toString() : "");
-    savedPrice.current = initialPrice;
-  }, [initialPrice]);
+    const isFirstLoad = savedTitle.current === "" && initialTitle !== "";
+    if (isFirstLoad && !dirty) {
+      setTitle(initialTitle);
+      setDescription(initialDescription);
+      setPriceInput(initialPrice.toString());
+
+      savedTitle.current = initialTitle;
+      savedDescription.current = initialDescription;
+      savedPrice.current = initialPrice;
+    }
+  }, [initialTitle, initialDescription, initialPrice, dirty]);
 
   // Change handler updates local + parent but does NOT auto-save
   const handleChange = (
@@ -77,6 +104,20 @@ export function CourseInfoSection({
     if (name === "price") {
       const sanitized = sanitizePriceInput(value);
       setPriceInput(sanitized);
+
+      // Validate price: allow 0 or >= 0.5 USD
+      if (sanitized === "") {
+        setPriceError(null);
+      } else {
+        const parsed = parseFloat(sanitized);
+        if (isNaN(parsed)) {
+          setPriceError("Invalid number");
+        } else if (parsed !== 0 && parsed < 0.5) {
+          setPriceError("Price must be 0 or at least 0.5");
+        } else {
+          setPriceError(null);
+        }
+      }
     }
 
     setDirty(true);
@@ -120,13 +161,18 @@ export function CourseInfoSection({
           size="small"
           iconLeft={<Save className="h-4 w-4" />}
           loading={updateCourse.isPending}
-          disabled={updateCourse.isPending || !dirty}
+          disabled={updateCourse.isPending || !dirty || !!priceError}
           onClick={() => {
             const payload: Partial<CreateCourseData> = {};
             if (title !== savedTitle.current) payload.title = title;
             if (description !== savedDescription.current) payload.description = description;
             const newPrice = parseFloat(priceInput) || 0;
             if (newPrice !== savedPrice.current) payload.price = newPrice;
+
+            if (priceError) {
+              toast.error(priceError);
+              return;
+            }
 
             if (Object.keys(payload).length === 0) {
               toast.info("No changes to save");
@@ -136,12 +182,12 @@ export function CourseInfoSection({
 
             updateCourse.mutate(payload, {
               onSuccess: () => {
-                toast.success("Course updated");
-                // update baseline refs to current values
+                // Update baseline refs to current values
                 if (payload.title) savedTitle.current = payload.title;
                 if (payload.description) savedDescription.current = payload.description;
                 if (payload.price !== undefined) savedPrice.current = payload.price;
                 setDirty(false);
+                // Toast already handled globally by the hook
               },
               onError: (err) => toast.error(err.message || "Failed to update"),
             });
@@ -181,7 +227,7 @@ export function CourseInfoSection({
           />
         </FormField>
 
-        <FormField label="Price" required error={validationErrors.price}>
+        <FormField label="Price" required error={priceError || validationErrors.price}>
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <span className="text-slate-500 sm:text-sm">$</span>

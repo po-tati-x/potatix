@@ -109,11 +109,9 @@ export function CourseContentSection({
 
   // Empty state for when there are no modules
   const emptyState = (
-    <div className="text-center py-8 space-y-3 border border-dashed border-slate-300 rounded-md">
-      <p className="text-slate-600 text-sm">No modules yet</p>
-      <Button type="primary" size="small" onClick={addModule}>
-        Add Module
-      </Button>
+    <div className="text-center py-8 space-y-1 border border-dashed border-slate-300 rounded-md">
+      <p className="text-sm text-slate-600">No modules yet</p>
+      <p className="text-xs text-slate-500">Click &quot;Add Module&quot; to start structuring your course</p>
     </div>
   );
 
