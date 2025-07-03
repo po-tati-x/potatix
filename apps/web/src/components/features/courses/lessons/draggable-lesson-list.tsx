@@ -28,7 +28,7 @@ export interface UILesson {
   file?: File;
   
   // Other lesson properties
-  videoId?: string;
+  playbackId?: string;
   uploadStatus?: string;
   duration?: number;
   transcriptData?: {

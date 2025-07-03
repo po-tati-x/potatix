@@ -2,7 +2,8 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { ChevronDown, ChevronRight, Edit, Check, X, Plus, Trash2, GripVertical, ArrowUp, ArrowDown, Loader2 } from 'lucide-react';
-import { useUpdateModule, useDeleteModule, useCreateLesson } from "@/lib/client/hooks/use-courses";
+import { useUpdateModule, useDeleteModule, useCreateLesson, useUpdateLesson } from "@/lib/client/hooks/use-courses";
+import { courseKeys } from "@/lib/shared/constants/query-keys";
 import { LessonEditor } from '@/components/features/courses/lessons/lesson-editor';
 import { DraggableLessonList } from '@/components/features/courses/lessons/draggable-lesson-list';
 import type { UILesson } from '@/components/features/courses/lessons/draggable-lesson-list';
@@ -39,7 +40,10 @@ export function CourseModuleEditor({
   const inputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
-  // Local state for module editing
+  /* ------------------------------------------------------------------ */
+  /*  Local state                                                       */
+  /* ------------------------------------------------------------------ */
+
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(module.title || '');
   
@@ -49,17 +53,30 @@ export function CourseModuleEditor({
   const { mutate: updateModule } = useUpdateModule();
   const { mutate: deleteModule } = useDeleteModule();
   const { mutate: createLesson, isPending: isAddingLesson } = useCreateLesson();
+  const { mutate: updateLessonMutation } = useUpdateLesson();
   
-  // Transform standard lessons to UI lessons with either local state (after drag) or API data
-  const baseLessons = module.lessons?.map(lesson => ({
-    ...lesson,
-    expanded: !!expandedLessons[lesson.id],
-    uploading: false,
-    fileUrl: lesson.videoId ? `https://image.mux.com/${lesson.videoId}/thumbnail.jpg` : undefined
-  })) || [];
+  // Transform API lessons to UI-friendly structure
+  const baseLessons = module.lessons?.map((lesson) => {
+    const status = lesson.uploadStatus?.toUpperCase();
+    const isUploading = status === "PENDING" || status === "PROCESSING" || status === "UPLOADING";
 
-  // Use locally reordered lessons if available, otherwise use the API data
-  const uiLessons = localLessons || baseLessons;
+    return {
+      ...lesson,
+      expanded: !!expandedLessons[lesson.id],
+      uploading: isUploading,
+      fileUrl: lesson.playbackId
+        ? `https://image.mux.com/${lesson.playbackId}/thumbnail.jpg`
+        : undefined,
+    };
+  }) || [];
+
+  // Merge local overrides with latest data so remote truth wins on upload status
+  const uiLessons = localLessons
+    ? baseLessons.map((base) => {
+        const local = localLessons.find((l) => l.id === base.id);
+        return local ? { ...local, ...base } : base;
+      })
+    : baseLessons;
   
   // Reset local lessons when module changes
   useEffect(() => {
@@ -72,21 +89,14 @@ export function CourseModuleEditor({
     }
   }, [isEditing]);
 
-  const handleToggleModule = () => {
-    if (onToggleModule) {
-      onToggleModule(module.id);
-    }
-  };
+  const handleToggleModule = () => onToggleModule?.(module.id);
 
   const handleEditClick = () => {
     setIsEditing(true);
     setEditTitle(module.title || '');
-    
-    setTimeout(() => {
-      if (inputRef.current) {
-        inputRef.current.focus();
-      }
-    }, 0);
+
+    // focus after render
+    setTimeout(() => inputRef.current?.focus(), 0);
   };
   
   const handleEditCancel = () => {
@@ -124,21 +134,48 @@ export function CourseModuleEditor({
   };
 
   // Handle file changes for lessons
-  const handleLessonFileChange = (e: React.ChangeEvent<HTMLInputElement>, lessonId: string) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    
-    console.log('File selected for lesson', lessonId, file.name);
+  const handleLessonFileChange = (
+    input: React.ChangeEvent<HTMLInputElement> | File,
+    lessonId: string,
+  ) => {
+    void input;
+    void lessonId;
   };
 
   // Handle file removal for lessons
   const handleLessonFileRemove = (lessonId: string) => {
-    console.log('Remove video from lesson', lessonId);
+    if (!window.confirm('Remove video from this lesson?')) return;
+
+    // Optimistically reset local UI state
+    setLocalLessons((prev) => {
+      if (!prev) return prev;
+      return prev.map((lsn) =>
+        lsn.id === lessonId
+          ? { ...lsn, uploading: false, file: undefined, fileUrl: undefined, playbackId: undefined }
+          : lsn,
+      );
+    });
+
+    updateLessonMutation({
+      lessonId,
+      playbackId: null,
+      uploadStatus: null,
+      courseId,
+    });
   };
 
   // Handle direct upload complete callback
   const handleDirectUploadComplete = (lessonId: string) => {
-    console.log('Direct upload completed for lesson', lessonId);
+    // Mark lesson as processing until webhook updates with playbackId
+    setLocalLessons((prev) => {
+      const source = prev ?? baseLessons;
+      return source.map((lsn) =>
+        lsn.id === lessonId ? { ...lsn, uploading: true, file: undefined } : lsn,
+      );
+    });
+
+    // Trigger refetch to eventually get playbackId
+    queryClient.invalidateQueries({ queryKey: courseKeys.detail(courseId) });
   };
 
   // Handle lesson reordering with immediate UI update
@@ -147,7 +184,7 @@ export function CourseModuleEditor({
     setLocalLessons(reorderedLessons);
     
     // Invalidate queries to ensure data is refreshed on next fetch
-    queryClient.invalidateQueries({ queryKey: ['courses', courseId] });
+    queryClient.invalidateQueries({ queryKey: courseKeys.detail(courseId) });
   };
 
   // Render an individual lesson with drag handle
@@ -169,34 +206,34 @@ export function CourseModuleEditor({
 
   // Empty state for when there are no lessons
   const emptyState = (
-    <div className="py-8 text-center text-sm text-slate-500 bg-white rounded-md border border-dashed border-slate-200">
-      No lessons in this module. Use the card below to add one.
+    <div className="py-8 text-center text-sm text-slate-500 bg-white rounded-md border border-dashed border-slate-300">
+      No lessons yet. Click &quot;Add Lesson&quot; to get started.
     </div>
   );
 
   // Add Lesson card component
   function AddLessonCard() {
     return (
-      <div
-        onClick={() => {
-          if (!isAddingLesson) handleAddLesson();
-        }}
-        className={`flex items-center justify-between gap-3 px-4 py-3 border border-dashed border-slate-300 rounded-lg bg-white hover:bg-slate-50 transition-colors cursor-pointer ${
-          isAddingLesson ? "cursor-not-allowed opacity-60" : ""
+      <button
+        type="button"
+        onClick={handleAddLesson}
+        disabled={isAddingLesson}
+        className={`flex w-full items-center justify-between gap-3 px-4 py-3 border border-dashed border-slate-300 rounded-lg bg-white hover:bg-slate-50 transition-colors ${
+          isAddingLesson ? 'opacity-60 cursor-not-allowed' : ''
         }`}
       >
         <div className="flex items-center gap-3">
-          <div className="h-6 w-6 flex items-center justify-center rounded-full bg-emerald-600 text-white">
+          <span className="h-6 w-6 flex items-center justify-center rounded-full bg-emerald-600 text-white">
             {isAddingLesson ? (
               <Loader2 className="h-3 w-3 animate-spin" />
             ) : (
               <Plus className="h-3 w-3" />
             )}
-          </div>
+          </span>
           <span className="text-sm font-medium text-slate-900">Add Lesson</span>
         </div>
-        <span className="text-xs text-slate-500">Quickly create a lesson</span>
-      </div>
+        <span className="text-xs text-slate-500">Create a new lesson</span>
+      </button>
     );
   }
 
@@ -206,12 +243,9 @@ export function CourseModuleEditor({
       className="border border-slate-200 rounded-lg overflow-hidden bg-white mb-5 transition-all hover:border-slate-300"
     >
       <div
-        className="bg-slate-50 border-b border-slate-200 px-4 py-3 flex items-center justify-between group hover:bg-slate-100 transition-colors"
-        onClick={handleToggleModule}
-        role="button"
-        tabIndex={0}
+        className="bg-slate-50 border-b border-slate-200 px-4 py-3 flex items-center justify-between hover:bg-slate-100 transition-colors"
       >
-        <div className="flex items-center gap-3 flex-grow">
+        <div className="flex items-center gap-3 flex-grow min-w-0">
           {dragHandleProps && (
             <div
               {...dragHandleProps}
@@ -221,19 +255,18 @@ export function CourseModuleEditor({
             </div>
           )}
           
-          <div
-            className="p-1.5 rounded-md transition-colors hover:bg-slate-200 active:bg-slate-300"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleToggleModule();
-            }}
+          <button
+            type="button"
+            onClick={handleToggleModule}
+            className="p-1.5 rounded-md hover:bg-slate-200 active:bg-slate-300"
+            aria-label={isExpanded ? 'Collapse module' : 'Expand module'}
           >
             {isExpanded ? (
               <ChevronDown className="h-4 w-4 text-slate-600" />
             ) : (
               <ChevronRight className="h-4 w-4 text-slate-600" />
             )}
-          </div>
+          </button>
           
           {isEditing ? (
             <div className="flex items-center flex-grow">
@@ -268,7 +301,7 @@ export function CourseModuleEditor({
             </div>
           ) : (
             <>
-              <h3 className="text-sm font-medium text-slate-900">
+              <h3 className="text-sm font-medium text-slate-900 truncate">
                 {module.title || `Module ${index + 1}`}
               </h3>
             </>
@@ -288,24 +321,26 @@ export function CourseModuleEditor({
           )}
           {!isEditing && (
             <button
-              onClick={(e)=>{e.stopPropagation();handleEditClick();}}
+              type="button"
+              onClick={handleEditClick}
               className="inline-flex items-center justify-center h-8 w-8 rounded-md hover:bg-slate-200 text-slate-600 transition-colors"
-              title="Edit module"
+              aria-label="Edit module title"
             >
               <Edit className="h-3.5 w-3.5" />
             </button>
           )}
           
           <button
-            onClick={(e)=>{e.stopPropagation();handleDeleteModule();}}
+            type="button"
+            onClick={handleDeleteModule}
             className="inline-flex items-center justify-center h-8 w-8 rounded-md hover:bg-red-100 text-red-500 transition-colors"
-            title="Delete module"
+            aria-label="Delete module"
           >
             <Trash2 className="h-3.5 w-3.5" />
           </button>
           
           <span className="text-xs font-medium text-slate-500 ml-2 bg-slate-100 py-1 px-2 rounded-full">
-            {uiLessons.length || 0} lessons
+            {uiLessons.length} lessons
           </span>
         </div>
       </div>
