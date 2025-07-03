@@ -9,7 +9,7 @@ export interface Lesson {
   id: string;
   title: string;
   description?: string;
-  videoId?: string;
+  playbackId?: string;
   /** Total length of the video in seconds */
   duration?: number;
   /** CDN URL or data URI representing a frame of the lesson video */
@@ -18,6 +18,12 @@ export interface Lesson {
   order: number;
   /** Visibility of lesson: 'public' preview or 'enrolled' gated */
   visibility?: 'public' | 'enrolled';
+  /** Intrinsic video width reported by Mux asset */
+  width?: number;
+  /** Intrinsic video height reported by Mux asset */
+  height?: number;
+  /** Convenience ratio (w/h) stored for quick initial layout */
+  aspectRatio?: number;
   courseId: string;
   moduleId: string;
   createdAt: string;
@@ -82,7 +88,7 @@ export interface CreateCourseData {
   lessons?: {
     title: string;
     description?: string;
-    videoId?: string | null;
+    playbackId?: string | null;
   }[];
 
   /** Marketing sections */
@@ -101,7 +107,7 @@ export interface CreateModuleData {
 export interface CreateLessonData {
   title: string;
   description?: string;
-  videoId?: string;
+  playbackId?: string;
   order: number;
   moduleId: string;
 }

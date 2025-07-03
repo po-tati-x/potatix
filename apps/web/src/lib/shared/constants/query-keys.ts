@@ -82,7 +82,7 @@ export const progressKeys = createQueryKeyFactory('progress', {
 export const mediaKeys = createQueryKeyFactory('media', {
   all: () => ['media'] as const,
   upload: (uploadId: string) => ['media', 'upload', uploadId] as const,
-  transcript: (videoId: string) => ['media', 'transcript', videoId] as const,
+  transcript: (playbackId: string) => ['media', 'transcript', playbackId] as const,
   playback: (playbackId: string) => ['media', 'playback', playbackId] as const,
 });
 
