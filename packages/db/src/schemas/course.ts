@@ -130,6 +130,9 @@ export const lesson = pgTable('lesson', {
     processedAt: string;
   }>(),
 
+  // Cached AI-generated question suggestions for this lesson
+  aiPrompts: json('ai_prompts').$type<string[]>(),
+
   // Ordering is critical for correct display
   order: integer('order').notNull(),
 
