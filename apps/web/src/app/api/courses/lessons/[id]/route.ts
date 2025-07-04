@@ -14,7 +14,7 @@ function hasUserId(auth: AuthResult): auth is { userId: string } {
  * Get lesson by ID
  */
 export async function GET(request: NextRequest) {
-  const lessonId = request.nextUrl.pathname.split('/').pop() as string;
+  const lessonId = request.nextUrl.pathname.split("/").pop() as string;
   
   // Authenticate user
   const auth = await apiAuth(request);
@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
  * Update lesson by ID
  */
 export async function PATCH(request: NextRequest) {
-  const lessonId = request.nextUrl.pathname.split('/').pop() as string;
+  const lessonId = request.nextUrl.pathname.split("/").pop() as string;
   
   // Authenticate user
   const auth = await apiAuth(request);
@@ -92,7 +92,7 @@ export async function PATCH(request: NextRequest) {
     const updateInput: LessonUpdateInput = {
       title: body.title,
       description: body.description,
-      playbackId: body.playback_id ?? body.playbackId,
+      playbackId: body.playbackId,
       uploadStatus: body.uploadStatus,
       order: body.order,
       visibility: body.visibility,
@@ -116,7 +116,7 @@ export async function PATCH(request: NextRequest) {
  * Delete lesson by ID
  */
 export async function DELETE(request: NextRequest) {
-  const lessonId = request.nextUrl.pathname.split('/').pop() as string;
+  const lessonId = request.nextUrl.pathname.split("/").pop() as string;
   
   // Authenticate user
   const auth = await apiAuth(request);

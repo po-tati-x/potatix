@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
     const lessonInput: LessonCreateInput = {
       title: body.title,
       description: body.description,
-      playbackId: body.playback_id ?? body.playbackId,
+      playbackId: body.playbackId,
       order,
       moduleId: moduleId,
       courseId: courseId,

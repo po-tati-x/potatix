@@ -54,6 +54,7 @@ export async function POST(request: Request) {
       cors_origin: env.NEXT_PUBLIC_APP_URL || "*",
       new_asset_settings: {
         playback_policy: ["public"],
+        video_quality: "basic",
         passthrough: JSON.stringify({ lessonId }),
         input: [
           {
