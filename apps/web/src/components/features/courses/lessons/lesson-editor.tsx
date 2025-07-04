@@ -11,6 +11,7 @@ import { VideoPreview } from "../media/video-preview";
 import { useUpdateLesson, useDeleteLesson } from "@/lib/client/hooks/use-courses";
 import type { Lesson } from "@/lib/shared/types/courses";
 import { Button } from "@/components/ui/new-button";
+import { LESSON_UPLOAD_STATUS } from "@/lib/config/upload";
 
 interface LessonEditorProps {
   courseId: string;
@@ -24,6 +25,7 @@ interface LessonEditorProps {
   onFileRemove: (lessonId: string) => void;
   onToggleExpanded?: (lessonId: string) => void;
   onDirectUploadComplete?: (lessonId: string) => void;
+  onProcessingComplete?: (lessonId: string) => void;
 }
 
 /**
@@ -37,7 +39,8 @@ export function LessonEditor({
   onFileChange,
   onFileRemove,
   onToggleExpanded,
-  onDirectUploadComplete
+  onDirectUploadComplete,
+  onProcessingComplete
 }: LessonEditorProps) {
   const isExpanded = lesson.expanded ?? false;
   const [title, setTitle] = useState(lesson.title || "");
@@ -198,11 +201,13 @@ export function LessonEditor({
           </FormField>
 
           <FormField label="Lesson Video">
-            {!lesson.file && !lesson.fileUrl && !lesson.uploading ? (
+            {!lesson.playbackId && !lesson.fileUrl ? (
               <VideoUploader
                 lessonId={lesson.id}
                 onFileChange={onFileChange}
                 onDirectUploadComplete={onDirectUploadComplete}
+                onProcessingComplete={onProcessingComplete}
+                initialStatus={['PROCESSING','PENDING','UPLOADING'].includes((lesson.uploadStatus ?? '').toUpperCase()) ? LESSON_UPLOAD_STATUS.PROCESSING : LESSON_UPLOAD_STATUS.IDLE}
               />
             ) : (
               <VideoPreview lesson={lesson} onFileRemove={() => onFileRemove(lesson.id)} />

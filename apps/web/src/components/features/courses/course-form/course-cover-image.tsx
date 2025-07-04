@@ -3,6 +3,10 @@
 import Image from "next/image";
 import { X, Camera } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { useState, useRef } from "react";
+import { toast } from "sonner";
+import { openDefaultEditor } from '@pqina/pintura';
+import '@pqina/pintura/pintura.css';
 
 interface CourseCoverImageProps {
   preview: string | null;
@@ -17,6 +21,46 @@ export function CourseCoverImage({
   onImageChange,
   onImageRemove,
 }: CourseCoverImageProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const [localError, setLocalError] = useState<string | null>(null);
+
+  function resetInput() {
+    if (inputRef.current) inputRef.current.value = "";
+  }
+
+  function handleFileSelect(file: File) {
+    try {
+      if (file.size > 5 * 1024 * 1024) throw new Error("File too large (max 5 MB)");
+      if (!file.type.startsWith("image/")) throw new Error("Only image files allowed");
+
+      setLocalError(null);
+
+      const editor = openDefaultEditor({
+        src: file,
+        imageCropAspectRatio: 16 / 9,
+        util: 'crop',
+      });
+
+      editor.on('process', (detail: { dest?: File | Blob }) => {
+        const out = detail?.dest;
+        if (!out) {
+          toast.error('Failed to process image.');
+          return;
+        }
+        const processedFile =
+          out instanceof File ? out : new File([out], 'cover.png', { type: out.type || 'image/png' });
+        onImageChange(processedFile);
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to upload image";
+      toast.error(message);
+      setLocalError(message);
+    } finally {
+      resetInput();
+    }
+  }
+
   return (
     <div className="border border-slate-200 rounded-md overflow-hidden bg-white">
       <div className="border-b border-slate-200 px-4 py-2.5 bg-slate-50">
@@ -44,15 +88,15 @@ export function CourseCoverImage({
 
             {/* Change cover overlay */}
             <input
+              ref={inputRef}
               type="file"
               id="course-cover-image"
               className="hidden"
               accept="image/*"
+              disabled={uploading}
               onChange={(e) => {
                 const file = e.target.files?.[0];
-                if (file) {
-                  onImageChange(file);
-                }
+                if (file) handleFileSelect(file);
               }}
             />
 
@@ -85,15 +129,15 @@ export function CourseCoverImage({
         ) : (
           <div className="border-2 border-dashed border-neutral-300 rounded-lg p-6 text-center hover:border-emerald-500/70 hover:bg-emerald-50/20 transition-colors duration-200">
             <input
+              ref={inputRef}
               type="file"
               id="course-cover-image"
               className="hidden"
               accept="image/*"
+              disabled={uploading}
               onChange={(e) => {
                 const file = e.target.files?.[0];
-                if (file) {
-                  onImageChange(file);
-                }
+                if (file) handleFileSelect(file);
               }}
             />
             
@@ -125,10 +169,15 @@ export function CourseCoverImage({
               <p className="text-xs text-neutral-500 mt-1">
                 JPEG, PNG, or WebP (max 5MB)
               </p>
+              {localError && (
+                <p className="mt-2 text-xs text-red-500 text-center">{localError}</p>
+              )}
             </label>
           </div>
         )}
       </div>
+
+      {/* Pintura opens its own modal overlay; no extra JSX needed */}
     </div>
   );
 } 

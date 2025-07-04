@@ -178,6 +178,11 @@ export function CourseModuleEditor({
     queryClient.invalidateQueries({ queryKey: courseKeys.detail(courseId) });
   };
 
+  const handleProcessingComplete = () => {
+    // video ready, refresh data so UX shows preview
+    queryClient.invalidateQueries({ queryKey: courseKeys.detail(courseId) });
+  };
+
   // Handle lesson reordering with immediate UI update
   const handleLessonsReordered = (reorderedLessons: UILesson[]) => {
     // Update local state immediately to reflect the new order
@@ -200,6 +205,7 @@ export function CourseModuleEditor({
         onFileRemove={() => handleLessonFileRemove(lesson.id)}
         onToggleExpanded={onToggleExpanded || onToggleLesson}
         onDirectUploadComplete={handleDirectUploadComplete}
+        onProcessingComplete={handleProcessingComplete}
       />
     );
   };

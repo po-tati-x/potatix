@@ -14,7 +14,7 @@ import { CourseInstructorsSection } from "@/components/features/courses/course-f
 import { CoursePerksSection } from "@/components/features/courses/course-form/course-perks-section";
 import { CourseLearningOutcomesSection } from "@/components/features/courses/course-form/course-learning-outcomes-section";
 import { CoursePrerequisitesSection } from "@/components/features/courses/course-form/course-prerequisites-section";
-import type { Course, CreateCourseData, CourseModule, Lesson } from "@/lib/shared/types/courses";
+import type { Course, CourseModule, Lesson } from "@/lib/shared/types/courses";
 import { useCourse, useUpdateCourse, useUploadCourseImage } from "@/lib/client/hooks/use-courses";
 
 interface Props {
@@ -26,7 +26,7 @@ export default function EditCourseClient({ courseId }: Props) {
 
   // Get course data from API hooks
   const { data: course, isLoading, error: fetchError } = useCourse(courseId);
-  const { mutate: updateCourse, isPending: isSaving } = useUpdateCourse(courseId);
+  const { mutate: updateCourse } = useUpdateCourse(courseId);
   const { mutate: uploadImage, isPending: isUploading } = useUploadCourseImage(courseId);
 
   // Local form state
@@ -90,38 +90,6 @@ export default function EditCourseClient({ courseId }: Props) {
         setError("Failed to upload image");
         setImagePreview(null);
       },
-    });
-  };
-
-  const saveCourse = () => {
-    if (!course) {
-      setError("Course data not loaded");
-      return;
-    }
-
-    if (!formData.title) {
-      setError("Course title is required");
-      return;
-    }
-
-    const updateData: Partial<CreateCourseData> = {};
-
-    if (formData.title && formData.title !== course.title) updateData.title = formData.title;
-    if (formData.description !== course.description) updateData.description = formData.description;
-    if (formData.price !== course.price) updateData.price = formData.price;
-    if (formData.status && formData.status !== course.status) updateData.status = formData.status;
-    if (formData.imageUrl !== course.imageUrl) updateData.imageUrl = formData.imageUrl;
-    if (formData.slug && formData.slug !== course.slug) updateData.slug = formData.slug;
-
-    if (Object.keys(updateData).length === 0) {
-      setError("No changes to save");
-      return;
-    }
-
-    updateCourse(updateData, {
-      onSuccess: () => router.push(`/courses/${formData.slug}`),
-      onError: (err) =>
-        setError(err instanceof Error ? err.message : "Failed to save course"),
     });
   };
 
@@ -240,10 +208,6 @@ export default function EditCourseClient({ courseId }: Props) {
         title="Edit Course"
         status={formData.status}
         onStatusChange={handleStatusChange}
-        onSave={saveCourse}
-        loading={isSaving}
-        disabled={isUploading || isSaving}
-        isPending={isUploading}
       />
 
       {error && <CourseErrorAlert error={error} />}

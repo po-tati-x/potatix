@@ -10,12 +10,8 @@ interface CourseHeaderProps {
   backHref?: string;
   title?: string;
   status?: string;
-  loading?: boolean;
-  disabled?: boolean;
-  isPending?: boolean;
-  // Make the callbacks optional
+  // Status change handler remains optional
   onStatusChange?: (status: "draft" | "published" | "archived") => void;
-  onSave?: (e: React.FormEvent) => Promise<void> | void;
 }
 
 export function CourseHeader({
@@ -23,11 +19,7 @@ export function CourseHeader({
   backHref = "/courses",
   title = "Edit Course",
   status,
-  loading,
-  disabled,
-  isPending,
   onStatusChange,
-  onSave,
 }: CourseHeaderProps) {
   const router = useRouter();
 
@@ -75,18 +67,6 @@ export function CourseHeader({
               </div>
             )}
           </div>
-
-          {onSave && (
-            <Button
-              type="primary"
-              size="small"
-              loading={!!loading || !!isPending}
-              disabled={disabled}
-              onClick={onSave as any}
-            >
-              Save
-            </Button>
-          )}
         </div>
       </header>
     </>
