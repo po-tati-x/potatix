@@ -2,7 +2,6 @@ import { db, courseSchema } from "@potatix/db";
 import { eq, and, asc } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { getMuxAssetId, deleteMuxAsset } from "@/lib/server/utils/mux";
-import { courseService } from "./courses";
 
 const database = db!; // assume initialized elsewhere
 
@@ -169,32 +168,45 @@ export const lessonService = {
   },
   
   async checkLessonOwnership(lessonId: string, courseId: string, userId: string): Promise<OwnershipCheckResult> {
-    // First check course ownership
-    const courseCheck = await courseService.checkCourseOwnership(courseId, userId);
-    
-    if (!courseCheck.owned) {
-      const err = courseCheck.error!;
-      return { owned: false, error: err.error, status: err.status };
+    try {
+      // Verify lesson exists *and* its parent course belongs to the user in a single query
+      const rows = await database
+        .select({
+          id: courseSchema.lesson.id,
+          title: courseSchema.lesson.title,
+          description: courseSchema.lesson.description,
+          playbackId: courseSchema.lesson.playbackId,
+          courseId: courseSchema.lesson.courseId,
+          moduleId: courseSchema.lesson.moduleId,
+          order: courseSchema.lesson.order,
+          uploadStatus: courseSchema.lesson.uploadStatus,
+          visibility: courseSchema.lesson.visibility,
+          createdAt: courseSchema.lesson.createdAt,
+          updatedAt: courseSchema.lesson.updatedAt,
+        })
+        .from(courseSchema.lesson)
+        .innerJoin(
+          courseSchema.course,
+          eq(courseSchema.lesson.courseId, courseSchema.course.id),
+        )
+        .where(
+          and(
+            eq(courseSchema.lesson.id, lessonId),
+            eq(courseSchema.lesson.courseId, courseId),
+            eq(courseSchema.course.userId, userId),
+          ),
+        )
+        .limit(1);
+
+      if (!rows.length) {
+        return { owned: false, error: "Lesson not found or access denied", status: 403 };
+      }
+
+      return { owned: true, lesson: rows[0]! };
+    } catch (error) {
+      console.error("[lessonService] Failed ownership check", error);
+      return { owned: false, error: "Failed to verify ownership", status: 500 };
     }
-    
-    // Check if lesson exists and belongs to the course
-    const lessons = await database
-      .select()
-      .from(courseSchema.lesson)
-      .where(
-        and(
-          eq(courseSchema.lesson.id, lessonId),
-          eq(courseSchema.lesson.courseId, courseId),
-        ),
-      )
-      .limit(1);
-    
-    if (!lessons.length) {
-      return { owned: false, error: "Lesson not found", status: 404 };
-    }
-    
-    const lesson = lessons[0]!; // non-null assertion after existence check
-    return { owned: true, lesson };
   },
   
   async reorderLessons(moduleId: string, lessonIds: string[]) {
