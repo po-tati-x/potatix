@@ -57,6 +57,7 @@ export const lessonService = {
         width: courseSchema.lesson.width,
         height: courseSchema.lesson.height,
         aspectRatio: courseSchema.lesson.aspectRatio,
+        aiPrompts: courseSchema.lesson.aiPrompts,
       })
       .from(courseSchema.lesson)
       .where(eq(courseSchema.lesson.courseId, courseId))
@@ -81,6 +82,7 @@ export const lessonService = {
         width: courseSchema.lesson.width,
         height: courseSchema.lesson.height,
         aspectRatio: courseSchema.lesson.aspectRatio,
+        aiPrompts: courseSchema.lesson.aiPrompts,
       })
       .from(courseSchema.lesson)
       .where(eq(courseSchema.lesson.moduleId, moduleId))
@@ -228,5 +230,18 @@ export const lessonService = {
     
     // Return the reordered lessons
     return this.getLessonsByModuleId(moduleId);
+  },
+  
+  async getLessonPrompts(lessonId: string): Promise<string[] | null> {
+    const lesson = await this.getLessonById(lessonId);
+    if (!lesson) return null;
+    return (lesson as any).aiPrompts ?? null;
+  },
+  
+  async saveLessonPrompts(lessonId: string, prompts: string[]): Promise<void> {
+    await database
+      .update(courseSchema.lesson)
+      .set({ aiPrompts: prompts, updatedAt: new Date() })
+      .where(eq(courseSchema.lesson.id, lessonId));
   }
 } 
