@@ -1,6 +1,7 @@
 @import "tailwindcss" source(none);
 @import "tailwindcss/theme.css";
 @import "@potatix/tailwind-preset/style.css";
+@import "@potatix/tailwind-preset/style.css";
 
 @source "../**/*.{ts,tsx}";
 @source "../**/*.{js,jsx}";
@@ -19,4 +20,16 @@
   /* For IE, Edge and Firefox */
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
+}
+
+.index .pintura-editor {
+  --color-background: 255, 255, 255;
+  --color-foreground: 10, 10, 10;
+}
+
+@media (prefers-color-scheme: dark) {
+  .index .pintura-editor {
+      --color-background: 10, 10, 10;
+      --color-foreground: 255, 255, 255;
+  }
 }
