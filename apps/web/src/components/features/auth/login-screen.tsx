@@ -1,33 +1,44 @@
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 import AuthForm from "./auth-form";
 import SocialLogin from "./social-login";
 import { useSession } from "@/lib/auth/auth";
 
-interface LoginScreenProps {
+type AuthMode = "login" | "signup";
+
+interface AuthScreenProps {
   /**
    * Fallback callback URL when none is provided through the query string.
-   * For root login we default to "/dashboard"; for course viewer we usually
-   * provide something like `/viewer/${slug}`.
    */
   defaultCallbackUrl?: string;
+
+  /**
+   * Initial mode when mounting – defaults to "login" so existing imports work.
+   */
+  initialMode?: AuthMode;
 }
 
 /**
- * Reusable login UI with email / password + social providers.
- * Note: This is a *client component* because it relies on hooks from Next.js
- * navigation and our auth library.
+ * Unified auth screen – toggles between login and signup in-place instead of
+ * forcing a full navigation. This keeps modals lightweight and also avoids
+ * hitting rewrites / 404s on course sub-domains.
  */
-export default function LoginScreen({ defaultCallbackUrl = "/dashboard" }: LoginScreenProps) {
+export default function LoginScreen({
+  defaultCallbackUrl = "/dashboard",
+  initialMode = "login",
+}: AuthScreenProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || defaultCallbackUrl;
   const { data: session, isPending } = useSession();
 
-  // If already authenticated, bounce away immediately.
+  const [mode, setMode] = useState<AuthMode>(initialMode);
+  const isLoginMode = mode === "login";
+
+  // Authenticated? Redirect immediately.
   useEffect(() => {
     if (!isPending && session?.user) {
       router.push(callbackUrl);
@@ -46,7 +57,11 @@ export default function LoginScreen({ defaultCallbackUrl = "/dashboard" }: Login
 
   return (
     <div className="w-full">
-      <AuthForm isLoginMode callbackUrl={callbackUrl} />
+      <AuthForm
+        isLoginMode={isLoginMode}
+        callbackUrl={callbackUrl}
+        onToggleMode={() => setMode(isLoginMode ? "signup" : "login")}
+      />
 
       <SocialLogin callbackUrl={callbackUrl} />
     </div>
