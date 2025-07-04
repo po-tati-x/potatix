@@ -33,6 +33,8 @@ export function HeroSection({ course, isLoggedIn, onEnroll, isEnrolling }: HeroS
   // ─────────────── Enrollment state (optional)
   const { enrollmentStatus } = useEnrollment(course.slug ?? '');
   const isPending = enrollmentStatus === 'pending';
+  const isActive = enrollmentStatus === 'active';
+  const isRejected = enrollmentStatus === 'rejected';
 
   // ──────────────────────────────────────────────────────────────────────────────
   return (
@@ -53,23 +55,26 @@ export function HeroSection({ course, isLoggedIn, onEnroll, isEnrolling }: HeroS
           {/* Intentional empty spacer after description */}
           <div className="mt-6 flex flex-col gap-5 sm:flex-row sm:items-center sm:gap-6">
             <Button
-              type="primary"
+              type={isRejected ? 'danger' : 'primary'}
               size="medium"
               onClick={onEnroll}
               loading={isEnrolling}
-              disabled={isEnrolling || isPending}
-              iconRight={<ChevronRight className="h-4 w-4" />}
-              className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-amber-500/60"
+              disabled={isEnrolling || isPending || isRejected}
+              iconRight={!isPending && !isRejected ? <ChevronRight className="h-4 w-4" /> : undefined}
             >
               {isEnrolling
                 ? 'Enrolling...'
                 : isPending
                   ? 'Pending Approval'
-                  : !isLoggedIn
-                    ? 'Sign in to continue'
-                    : isPaid
-                      ? 'Request Enrollment'
-                      : 'Enroll Now (Free)'}
+                  : isRejected
+                    ? 'Enrollment Rejected'
+                    : isActive
+                      ? 'Continue Learning'
+                      : !isLoggedIn
+                        ? 'Sign in to continue'
+                        : isPaid
+                          ? 'Request Enrollment'
+                          : 'Enroll Now (Free)'}
             </Button>
 
             <div className="flex items-baseline gap-2">

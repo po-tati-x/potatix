@@ -39,7 +39,7 @@ export function useEnrollment(courseSlug: string): UseEnrollmentResult {
         enrollment: { status: "active" | "pending" | "rejected" } | null;
       }>(`/api/courses/enrollment?slug=${courseSlug}`);
 
-      return res.data.isEnrolled && res.data.enrollment
+      return res.data.enrollment
         ? { status: res.data.enrollment.status }
         : { status: null };
     },

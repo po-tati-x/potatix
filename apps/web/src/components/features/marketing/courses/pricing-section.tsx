@@ -32,6 +32,8 @@ export function PricingSection({ course, isLoggedIn, onEnroll, isEnrolling }: Pr
   // Enrollment pending status
   const { enrollmentStatus } = useEnrollment(course.slug ?? "");
   const isPending = enrollmentStatus === "pending";
+  const isActive = enrollmentStatus === "active";
+  const isRejected = enrollmentStatus === "rejected";
 
   // Feature bullets – authored by course owner; fallback seed list when nothing configured yet
   const perks = course.perks && course.perks.filter(Boolean).length
@@ -86,23 +88,26 @@ export function PricingSection({ course, isLoggedIn, onEnroll, isEnrolling }: Pr
             </header>
 
             <Button
-              type="primary"
+              type={isRejected ? 'danger' : 'primary'}
               size="large"
               block
               onClick={onEnroll}
               loading={isEnrolling}
-              disabled={isEnrolling || isPending}
-              className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-amber-500/60"
+              disabled={isEnrolling || isPending || isRejected}
             >
               {isEnrolling
                 ? "Enrolling..."
                 : isPending
                   ? "Pending Approval"
-                  : isLoggedIn
-                    ? isFree
-                      ? "Start Learning"
-                      : "Enroll Now"
-                    : "Sign In To Enroll"}
+                  : isRejected
+                    ? "Enrollment Rejected"
+                    : isActive
+                      ? "Continue Learning"
+                      : !isLoggedIn
+                        ? "Sign In To Enroll"
+                        : isFree
+                          ? "Start Learning"
+                          : "Enroll Now"}
             </Button>
 
             {/* Satisfaction guarantee */}

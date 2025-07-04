@@ -34,6 +34,8 @@ export function FloatingEnrollBar({
   // Enrollment state
   const { enrollmentStatus } = useEnrollment(course.slug ?? '');
   const isPending = enrollmentStatus === 'pending';
+  const isActive = enrollmentStatus === 'active';
+  const isRejected = enrollmentStatus === 'rejected';
 
   return (
     <div
@@ -70,12 +72,11 @@ export function FloatingEnrollBar({
 
         {/* CTA */}
         <Button
-          type="primary"
+          type={isRejected ? 'danger' : 'primary'}
           size="medium"
           onClick={onEnroll}
           loading={isEnrolling}
-          disabled={isEnrolling || isPending}
-          className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-amber-300 disabled:text-slate-900 disabled:opacity-100"
+          disabled={isEnrolling || isPending || isRejected}
         >
           {isEnrolling ? (
             <>
@@ -86,6 +87,16 @@ export function FloatingEnrollBar({
             <>
               <span className="hidden sm:inline">Pending Approval</span>
               <span className="sm:hidden">Pending</span>
+            </>
+          ) : isActive ? (
+            <>
+              <span className="hidden sm:inline">Continue Learning</span>
+              <span className="sm:hidden">Continue</span>
+            </>
+          ) : isRejected ? (
+            <>
+              <span className="hidden sm:inline">Enrollment Rejected</span>
+              <span className="sm:hidden">Rejected</span>
             </>
           ) : !isLoggedIn ? (
             <>
