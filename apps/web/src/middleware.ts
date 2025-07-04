@@ -6,6 +6,14 @@ const BASE_DOMAIN = clientEnv.NEXT_PUBLIC_APP_URL
   ? new URL(clientEnv.NEXT_PUBLIC_APP_URL).hostname
   : "localhost";
 
+// Paths that should *never* be rewritten on course subdomains – they belong to the root app scope.
+const EXCLUDED_PATH_PREFIXES = [
+  "/login",
+  "/signup",
+  "/forgot-password",
+  "/reset-password",
+];
+
 /**
  * Extract sub-domain (course slug) for potatix.* or *.localhost.
  */
@@ -29,6 +37,11 @@ function getSubdomain(hostHeader: string): string | null {
 function rewriteViewerPath(pathname: string, courseSlug: string): string {
   // Never rewrite API routes
   if (pathname.startsWith("/api/")) return pathname;
+
+  // Do not rewrite auth-related pages – they live on the root domain
+  if (EXCLUDED_PATH_PREFIXES.some((p) => pathname.startsWith(p))) {
+    return pathname;
+  }
 
   // Idempotency – already rewritten
   if (pathname.startsWith(`/viewer/${courseSlug}`)) return pathname;
