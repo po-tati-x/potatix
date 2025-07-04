@@ -59,8 +59,8 @@ const nextConfig: NextConfig = {
     ];
   },
   devIndicators: false,
-  // Webpack config for monorepo packages
-  transpilePackages: ['@potatix/db', '@potatix/auth'],
+  // Webpack config for monorepo packages and pintura
+  transpilePackages: ['@potatix/db', '@potatix/auth', '@pqina/pintura', '@pqina/react-pintura'],
   // This is required for subdomain routing in development
   allowedDevOrigins: ['potatix.com', '*.potatix.com'],
 };

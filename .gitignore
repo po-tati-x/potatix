@@ -40,7 +40,7 @@ next-env.d.ts
 .vscode
 
 # documentation - NEVER commit these private docs
-/docs/
+# /docs/
 
 # ignore nested package installs & builds
 **/node_modules/
