@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { CheckCircle, FilmIcon, PlayCircle, Trash2, Loader2, X } from "lucide-react";
-import Player from "next-video/player";
+import { CheckCircle, FilmIcon, PlayCircle, Trash2, X } from "lucide-react";
+import { VideoPlayer } from "../../viewer/lesson-viewer/video-player";
+import { VideoProvider } from "../../viewer/lesson-viewer/video-context";
 import type { UILesson } from "../lessons/draggable-lesson-list";
+import { COPY } from "@/lib/config/copy";
 
 interface VideoPreviewProps {
   lesson: UILesson;
@@ -13,8 +15,6 @@ interface VideoPreviewProps {
 
 export function VideoPreview({ lesson, onFileRemove }: VideoPreviewProps) {
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [playError, setPlayError] = useState<string | null>(null);
 
   // Debug logging on render to help diagnose issues
   useEffect(() => {
@@ -26,25 +26,21 @@ export function VideoPreview({ lesson, onFileRemove }: VideoPreviewProps) {
     });
   }, [lesson.id, lesson.fileUrl, lesson.uploading, lesson.file, lesson.playbackId]);
 
-  const handleTogglePlay = () => {
-    setIsPlaying(prev => !prev);
-    if (playError) setPlayError(null);
-  };
-
-  const handleVideoError = (e: Error | unknown) => {
-    console.error("[VideoPreview] Video playback error:", e);
-    setPlayError("Failed to load video. Try again later.");
-    setIsLoading(false);
-  };
-
-  const handleLoadStart = () => setIsLoading(true);
-  const handleCanPlay = () => setIsLoading(false);
+  const handleTogglePlay = () => setIsPlaying(prev => !prev);
 
   // Already uploaded video (has fileUrl or playbackId)
   if (lesson.fileUrl || lesson.playbackId) {
     const playbackId = lesson.playbackId;
-    const videoSrc = playbackId ? `https://stream.mux.com/${playbackId}.m3u8` : "";
     const posterSrc = lesson.fileUrl || (playbackId ? `https://image.mux.com/${playbackId}/thumbnail.jpg` : "");
+    const w = typeof lesson.width === 'number' ? lesson.width : undefined;
+    const h = typeof lesson.height === 'number' ? lesson.height : undefined;
+    const ratio = typeof lesson.aspectRatio === 'number'
+      ? lesson.aspectRatio
+      : w && h
+        ? w / h
+        : 16 / 9;
+    const orientation: 'landscape' | 'portrait' = ratio < 1 ? 'portrait' : 'landscape';
+    const initialAspectRatio = lesson.width && lesson.height ? `${lesson.width} / ${lesson.height}` : undefined;
 
     return (
       <div className="border border-slate-200 rounded-md overflow-hidden">
@@ -52,24 +48,6 @@ export function VideoPreview({ lesson, onFileRemove }: VideoPreviewProps) {
           {isPlaying ? (
             // Video player
             <div className="absolute inset-0 w-full h-full">
-              {isLoading && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 z-10">
-                  <div className="w-10 h-10 border-3 border-white border-t-transparent rounded-full animate-spin" />
-                </div>
-              )}
-              
-              {playError && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-80 z-10 p-4">
-                  <p className="text-white text-sm mb-3">{playError}</p>
-                  <button 
-                    onClick={handleTogglePlay}
-                    className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white text-xs font-medium rounded-md"
-                  >
-                    Back to Thumbnail
-                  </button>
-                </div>
-              )}
-              
               <div className="absolute top-2 right-2 z-20">
                 <button
                   type="button"
@@ -79,24 +57,14 @@ export function VideoPreview({ lesson, onFileRemove }: VideoPreviewProps) {
                   <X className="h-4 w-4" />
                 </button>
               </div>
-
-              <Player
-                key={`preview-${lesson.id}`}
-                src={videoSrc}
-                poster={posterSrc}
-                onLoadStart={handleLoadStart}
-                onCanPlay={handleCanPlay}
-                onError={handleVideoError}
-                controls
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  "--media-primary-color": "rgb(241, 245, 249)",
-                  "--media-secondary-color": "rgba(241, 245, 249, 0.1)",
-                  "--media-accent-color": "rgb(5, 150, 105)"
-                } as React.CSSProperties}
-                playsInline
-              />
+              <VideoProvider>
+                <VideoPlayer
+                  playbackId={playbackId}
+                  lessonId={lesson.id}
+                  initialOrientation={orientation}
+                  initialAspectRatio={initialAspectRatio}
+                />
+              </VideoProvider>
             </div>
           ) : (
             // Thumbnail with play button
@@ -131,7 +99,7 @@ export function VideoPreview({ lesson, onFileRemove }: VideoPreviewProps) {
             <div className="flex items-center gap-2">
               <CheckCircle className="h-3.5 w-3.5 text-emerald-500" />
               <span className="text-xs font-medium text-slate-900">
-                Video uploaded
+                {COPY.videoUploaded}
               </span>
             </div>
 
@@ -148,30 +116,6 @@ export function VideoPreview({ lesson, onFileRemove }: VideoPreviewProps) {
     );
   }
   
-  // Video is processing after upload
-  if (lesson.uploading) {
-    return (
-      <div className="border border-slate-200 rounded-md p-4 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <Loader2 className="h-5 w-5 text-emerald-500 animate-spin" />
-          <div>
-            <p className="text-sm font-medium text-slate-900">Processing…</p>
-            <p className="text-xs text-slate-500">Hang tight or cancel below</p>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => onFileRemove(lesson.id)}
-          className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded transition-all"
-          aria-label="Cancel & delete video"
-        >
-          <Trash2 className="h-3.5 w-3.5" />
-        </button>
-      </div>
-    );
-  }
-
   // In-progress upload with file
   if (lesson.file) {
     return (
