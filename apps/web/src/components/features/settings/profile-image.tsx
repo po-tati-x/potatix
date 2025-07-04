@@ -5,6 +5,8 @@ import Image from 'next/image';
 import { Camera, Loader2, X, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { openDefaultEditor } from '@pqina/pintura';
+import '@pqina/pintura/pintura.css';
 
 export interface ProfileImageProps {
   image?: string | null;
@@ -13,7 +15,12 @@ export interface ProfileImageProps {
   onImageRemove?: () => void;
 }
 
-export function ProfileImage({ image, uploading = false, onImageChange = () => {}, onImageRemove = () => {} }: ProfileImageProps) {
+export function ProfileImage({
+  image,
+  uploading = false,
+  onImageChange = () => {},
+  onImageRemove = () => {},
+}: ProfileImageProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [loadError, setLoadError] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -27,8 +34,16 @@ export function ProfileImage({ image, uploading = false, onImageChange = () => {
       if (file.size > 5 * 1024 * 1024) throw new Error('File too large (max 5 MB)');
       if (!file.type.startsWith('image/')) throw new Error('Only image files allowed');
 
-      onImageChange(file);
       setLocalError(null);
+
+      const editor = openDefaultEditor({
+        src: file,
+        imageCropAspectRatio: 1,
+        util: 'crop',
+      });
+
+      // Listen for the process event to receive the edited file
+      editor.on('process', handlePinturaProcess);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to upload image';
       toast.error(message);
@@ -48,10 +63,28 @@ export function ProfileImage({ image, uploading = false, onImageChange = () => {
     toast.error('Failed to load profile image');
   }
 
+  function handlePinturaProcess(detail: { dest?: File | Blob }) {
+    const file = detail?.dest;
+    if (!file) {
+      toast.error('Failed to process image.');
+      return;
+    }
+
+    const processedFile =
+      file instanceof File ? file : new File([file], 'profile.png', { type: file.type || 'image/png' });
+
+    if (processedFile.size > 5 * 1024 * 1024) {
+      toast.error('Cropped image is too large (max 5 MB)');
+      return;
+    }
+
+    onImageChange(processedFile);
+  }
+
   return (
-    <div className="flex flex-col items-center justify-center mb-6">
+    <div className="mb-6 flex flex-col items-center justify-center">
       <div className="relative size-24">
-        <div className="relative group size-full overflow-hidden rounded-full">
+        <div className="group relative size-full overflow-hidden rounded-full">
           {/* Upload spinner overlay */}
           {uploading && (
             <div className="absolute inset-0 z-30 flex items-center justify-center rounded-full bg-black/60 backdrop-blur-sm">
@@ -73,7 +106,7 @@ export function ProfileImage({ image, uploading = false, onImageChange = () => {
           ) : (
             <label
               htmlFor="profile-image-input"
-              className="flex items-center justify-center size-full rounded-full border-2 border-dashed border-neutral-300 text-neutral-400 cursor-pointer hover:border-emerald-500/70 hover:bg-emerald-50/20 transition-colors duration-200"
+              className="flex size-full cursor-pointer items-center justify-center rounded-full border-2 border-dashed border-neutral-300 text-neutral-400 transition-colors duration-200 hover:border-emerald-500/70 hover:bg-emerald-50/20"
             >
               {loadError ? (
                 <AlertCircle className="h-10 w-10 text-red-400" />
@@ -98,9 +131,9 @@ export function ProfileImage({ image, uploading = false, onImageChange = () => {
           {image && !loadError && (
             <label
               htmlFor="profile-image-input"
-              className="absolute inset-0 z-10 flex flex-col items-center justify-center cursor-pointer rounded-full bg-black/40 opacity-0 backdrop-blur-sm transition-opacity duration-200 group-hover:opacity-100"
+              className="absolute inset-0 z-10 flex cursor-pointer flex-col items-center justify-center rounded-full bg-black/40 opacity-0 backdrop-blur-sm transition-opacity duration-200 group-hover:opacity-100"
             >
-              <Camera className="h-6 w-6 text-white mb-0.5" />
+              <Camera className="mb-0.5 h-6 w-6 text-white" />
               <span className="text-[10px] font-medium text-white">Change</span>
             </label>
           )}
@@ -113,7 +146,7 @@ export function ProfileImage({ image, uploading = false, onImageChange = () => {
               <button
                 type="button"
                 onClick={onImageRemove}
-                className="absolute top-1 right-1 z-20 rounded-full bg-black/70 p-1 text-white transition-colors duration-200 hover:bg-black/90 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                className="absolute right-1 top-1 z-20 rounded-full bg-black/70 p-1 text-white transition-colors duration-200 hover:bg-black/90 focus:outline-none focus:ring-2 focus:ring-emerald-400"
                 aria-label="Remove image"
               >
                 <X className="h-4 w-4" />
@@ -127,10 +160,12 @@ export function ProfileImage({ image, uploading = false, onImageChange = () => {
       </div>
 
       {(!image || loadError) && (
-        <p className="mt-2 text-xs text-neutral-500 text-center">JPEG, PNG, or WebP (max 5MB)</p>
+        <p className="mt-2 text-center text-xs text-neutral-500">JPEG, PNG, or WebP (max 5MB)</p>
       )}
 
-      {localError && <p className="mt-2 text-xs text-red-500 text-center">{localError}</p>}
+      {localError && <p className="mt-2 text-center text-xs text-red-500">{localError}</p>}
+
+      {/* Pintura opens its own modal overlay, no additional JSX required */}
     </div>
   );
-} 
+}
