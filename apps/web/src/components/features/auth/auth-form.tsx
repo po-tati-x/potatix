@@ -37,6 +37,12 @@ interface AuthFormProps {
   callbackUrl?: string;
   customTitle?: string;
   customDescription?: string;
+  /**
+   * Optional toggle handler – when provided we avoid client-side navigation and
+   * simply flip between login ↔ signup modes within the same screen. This is
+   * handy for modals where we want to stay on the current route.
+   */
+  onToggleMode?: () => void;
 }
 
 const customInputStyles =
@@ -47,6 +53,7 @@ export default function AuthForm({
   callbackUrl = "/dashboard",
   customTitle,
   customDescription,
+  onToggleMode,
 }: AuthFormProps) {
   const isSignUp = !isLoginMode;
   const [showPassword, setShowPassword] = useState(false);
@@ -243,14 +250,26 @@ export default function AuthForm({
       </Form>
 
       <div className="mt-4 text-center">
-        <Link
-          href={isSignUp ? "/login" : "/signup"}
-          className="text-sm text-emerald-600 hover:text-emerald-700 font-medium transition-colors"
-        >
-          {isSignUp
-            ? "Already have an account? Sign in"
-            : "Need an account? Sign up"}
-        </Link>
+        {onToggleMode ? (
+          <button
+            type="button"
+            onClick={onToggleMode}
+            className="text-sm text-emerald-600 hover:text-emerald-700 font-medium transition-colors"
+          >
+            {isSignUp
+              ? "Already have an account? Sign in"
+              : "Need an account? Sign up"}
+          </button>
+        ) : (
+          <Link
+            href={isSignUp ? "/login" : "/signup"}
+            className="text-sm text-emerald-600 hover:text-emerald-700 font-medium transition-colors"
+          >
+            {isSignUp
+              ? "Already have an account? Sign in"
+              : "Need an account? Sign up"}
+          </Link>
+        )}
       </div>
     </div>
   );
