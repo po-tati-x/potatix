@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import { courseService } from '@/lib/server/services/courses';
 import { generateLessonPrompts } from '@/lib/server/services/ai';
+import { limitChat } from '@/lib/server/utils/rate-limiter';
+import { lessonService } from '@/lib/server/services/lessons';
 
 const bodySchema = z.object({
   lessonId: z.string(),
@@ -11,14 +13,41 @@ const bodySchema = z.object({
 
 export async function POST(req: Request) {
   try {
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+    const { success, remaining } = await limitChat(`prompt:${ip}`);
+    if (!success) {
+      return new Response('Too many requests – slow down.', {
+        status: 429,
+        headers: { 'X-RateLimit-Remaining': remaining.toString() },
+      });
+    }
+
     const json = await req.json();
-    const { courseId, lessonTitle, count } = bodySchema.parse(json);
+    const { courseId, lessonId, lessonTitle, count } = bodySchema.parse(json);
 
     // Minimal validation – ensure course exists
     const course = await courseService.getCourseById(courseId);
     if (!course) return new Response('Course not found', { status: 404 });
 
+    // Check cached prompts for lesson
+    let cachedPrompts: string[] | null = null;
+    if (lessonId) {
+      cachedPrompts = await lessonService.getLessonPrompts(lessonId);
+    }
+
+    if (cachedPrompts && cachedPrompts.length > 0) {
+      return new Response(JSON.stringify({ prompts: cachedPrompts }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     const prompts = await generateLessonPrompts(lessonTitle, course.title, count);
+
+    // Persist prompts for future requests
+    if (lessonId) {
+      await lessonService.saveLessonPrompts(lessonId, prompts);
+    }
+
     return new Response(JSON.stringify({ prompts }), {
       headers: { 'Content-Type': 'application/json' },
     });

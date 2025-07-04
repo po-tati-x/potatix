@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { streamLessonAnswer } from '@/lib/server/services/ai';
 import { courseService } from '@/lib/server/services/courses';
+import { limitChat } from '@/lib/server/utils/rate-limiter';
 
 const bodySchema = z.object({
   lessonId: z.string(),
@@ -16,6 +17,20 @@ const bodySchema = z.object({
 
 export async function POST(req: Request) {
   try {
+    // Identify caller – use forwarded IP to bucket limits
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+
+    // Apply rate limit (10 requests / minute)
+    const { success, remaining } = await limitChat(`chat:${ip}`);
+    if (!success) {
+      return new Response('Too many requests – slow down.', {
+        status: 429,
+        headers: {
+          'X-RateLimit-Remaining': remaining.toString(),
+        },
+      });
+    }
+
     const json = await req.json();
     const { courseId, lessonTitle, messages } = bodySchema.parse(json);
 
