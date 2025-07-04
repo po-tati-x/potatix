@@ -22,6 +22,7 @@ export function useChatWithLesson(
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
+      if (isLoading) return;
       if (!input.trim()) return;
 
       const userMessage: ChatMessage = {
@@ -49,7 +50,8 @@ export function useChatWithLesson(
         });
 
         if (!resp.ok || !resp.body) {
-          throw new Error('Failed to get response');
+          const errorText = await resp.text();
+          throw new Error(errorText || 'Failed to get response');
         }
 
         const reader = resp.body.getReader();
@@ -80,7 +82,7 @@ export function useChatWithLesson(
         setIsLoading(false);
       }
     },
-    [input, lessonId, courseId, lessonTitle, messages],
+    [input, lessonId, courseId, lessonTitle, messages, isLoading],
   );
 
   const clearChat = useCallback(() => {
