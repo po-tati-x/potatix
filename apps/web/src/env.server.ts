@@ -28,6 +28,10 @@ const ServerEnvSchema = object({
   MUX_TOKEN_ID: string(),
   MUX_TOKEN_SECRET: string(),
 
+  // Upstash (rate-limiting / KV)
+  UPSTASH_REDIS_REST_URL: optional(pipe(string(), url())),
+  UPSTASH_REDIS_REST_TOKEN: optional(string()),
+
   // System
   NODE_ENV: string(),
   LOG_SERVICES: optional(string()),
