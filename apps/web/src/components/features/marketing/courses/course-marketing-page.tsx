@@ -48,9 +48,10 @@ export function CourseMarketingPage({ course, isLoggedIn }: CourseMarketingPageP
 
     setIsEnrolling(true);
     try {
-      const response = await fetch(`/api/courses/${course.id}/enroll`, {
+      const response = await fetch(`/api/courses/enrollment`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ courseSlug: course.slug }),
       });
 
       if (response.ok) {
