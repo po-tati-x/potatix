@@ -186,12 +186,12 @@ export function useCreateLesson() {
 /**
  * Hook to update a lesson
  */
-interface UpdateLessonPayload { lessonId: string; title?: string; description?: string; visibility?: 'public' | 'enrolled'; playbackId?: string | null; uploadStatus?: string | null; courseId: string }
+interface UpdateLessonPayload { lessonId: string; title?: string; description?: string; visibility?: 'public' | 'enrolled'; playbackId?: string | null; uploadStatus?: string | null; transcriptData?: unknown; courseId: string }
 export function useUpdateLesson() {
   const queryClient = useQueryClient();
   
   return useMutation<unknown, Error, UpdateLessonPayload>({
-    mutationFn: ({ lessonId, title, description, visibility, playbackId, uploadStatus }) => courseApi.updateLesson({ lessonId, title, description, visibility, playbackId, uploadStatus }),
+    mutationFn: ({ lessonId, title, description, visibility, playbackId, uploadStatus, transcriptData }) => courseApi.updateLesson({ lessonId, title, description, visibility, playbackId, uploadStatus, transcriptData }),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: courseKeys.detail(variables.courseId) });
       toast.success("Lesson updated successfully");
@@ -257,10 +257,11 @@ export function useReorderModules() {
 /**
  * Hook to get a course by slug
  */
-export function useCourseBySlug(slug: string) {
+export function useCourseBySlug(slug: string, options?: { includeUnpublished?: boolean }) {
+  const includeUnpublished = options?.includeUnpublished ?? false;
   return useQuery<Course, Error>({
     queryKey: courseKeys.bySlug(slug),
-    queryFn: () => courseApi.getCourseBySlug(slug),
+    queryFn: () => courseApi.getCourseBySlug(slug, includeUnpublished),
     enabled: !!slug,
   });
 } 
