@@ -1,6 +1,6 @@
 export const UPLOAD_CONFIG = {
   MAX_FILE_SIZE_BYTES: 2 * 1024 * 1024 * 1024, // 2 GB
-  CHUNK_SIZE_BYTES: 30 * 1024 * 1024, // 30 MB
+  CHUNK_SIZE_BYTES: 5 * 1024 * 1024, // 5 MB – finer progress updates
   MAX_FETCH_RETRIES: 3,
 };
 
