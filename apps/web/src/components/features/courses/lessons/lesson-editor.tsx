@@ -155,82 +155,86 @@ export function LessonEditor({
       </div>
 
       {/* Content - only show when expanded */}
-      {isExpanded && (
-        <div className="p-5 space-y-5 bg-white">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <FormField label="Lesson Title" required>
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => {
-                  setTitle(e.target.value);
-                  handleUpdateField("title", e.target.value);
-                }}
-                placeholder="e.g. Introduction to TypeScript"
-                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
-                required
-              />
-            </FormField>
-
-            <FormField label="Description">
-              <textarea
-                value={description}
-                onChange={(e) => {
-                  setDescription(e.target.value);
-                  handleUpdateField("description", e.target.value);
-                }}
-                rows={3}
-                placeholder="What will students learn in this lesson?"
-                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm resize-none"
-              />
-            </FormField>
-          </div>
-
-          <FormField label="Free Preview">
-            <div className="flex items-center gap-3">
-              <Switch
-                id={`preview-${lesson.id}`}
-                checked={visibility === 'public'}
-                onCheckedChange={handleVisibilityChange}
-                className="data-[state=checked]:bg-emerald-600 dark:data-[state=checked]:bg-emerald-500"
-              />
-              <label htmlFor={`preview-${lesson.id}`} className="text-sm text-slate-700 select-none">
-                {visibility === 'public' ? 'ON' : 'OFF'}
-              </label>
-            </div>
+      <div className={`p-5 space-y-5 bg-white ${isExpanded ? '' : 'hidden'}`}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <FormField label="Lesson Title" required>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => {
+                setTitle(e.target.value);
+                handleUpdateField("title", e.target.value);
+              }}
+              placeholder="e.g. Introduction to TypeScript"
+              className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
+              required
+            />
           </FormField>
 
-          <FormField label="Lesson Video">
-            {!lesson.playbackId && !lesson.fileUrl ? (
-              <VideoUploader
-                lessonId={lesson.id}
-                onFileChange={onFileChange}
-                onDirectUploadComplete={onDirectUploadComplete}
-                onProcessingComplete={onProcessingComplete}
-                initialStatus={['PROCESSING','PENDING','UPLOADING'].includes((lesson.uploadStatus ?? '').toUpperCase()) ? LESSON_UPLOAD_STATUS.PROCESSING : LESSON_UPLOAD_STATUS.IDLE}
-              />
-            ) : (
-              <VideoPreview lesson={lesson} onFileRemove={() => onFileRemove(lesson.id)} />
-            )}
+          <FormField label="Description">
+            <textarea
+              value={description}
+              onChange={(e) => {
+                setDescription(e.target.value);
+                handleUpdateField("description", e.target.value);
+              }}
+              rows={3}
+              placeholder="What will students learn in this lesson?"
+              className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm resize-none"
+            />
           </FormField>
-
-          <div className="flex gap-3 pt-2">
-            <Button
-              type="primary"
-              size="small"
-              disabled={!dirty}
-              onClick={handleSave}
-            >
-              Save
-            </Button>
-            {dirty && (
-              <Button type="outline" size="small" onClick={handleCancelEdit}>
-                Cancel
-              </Button>
-            )}
-          </div>
         </div>
-      )}
+
+        <FormField label="Free Preview">
+          <div className="flex items-center gap-3">
+            <Switch
+              id={`preview-${lesson.id}`}
+              checked={visibility === 'public'}
+              onCheckedChange={handleVisibilityChange}
+              className="data-[state=checked]:bg-emerald-600 dark:data-[state=checked]:bg-emerald-500"
+            />
+            <label htmlFor={`preview-${lesson.id}`} className="text-sm text-slate-700 select-none">
+              {visibility === 'public' ? 'ON' : 'OFF'}
+            </label>
+          </div>
+        </FormField>
+
+        <FormField label="Lesson Video">
+          {!lesson.playbackId && !lesson.fileUrl ? (
+            <VideoUploader
+              lessonId={lesson.id}
+              onFileChange={onFileChange}
+              onDirectUploadComplete={onDirectUploadComplete}
+              onProcessingComplete={onProcessingComplete}
+              initialStatus={(() => {
+                const raw = (lesson.uploadStatus ?? '').toUpperCase();
+                if (raw === 'UPLOADING') return LESSON_UPLOAD_STATUS.UPLOADING;
+                if (raw === 'PROCESSING') return LESSON_UPLOAD_STATUS.PROCESSING;
+                if (raw === 'PENDING') return LESSON_UPLOAD_STATUS.UPLOADING;
+                return LESSON_UPLOAD_STATUS.IDLE;
+              })()}
+            />
+          ) : (
+            <VideoPreview lesson={lesson} onFileRemove={() => onFileRemove(lesson.id)} />
+          )}
+        </FormField>
+
+        <div className="flex gap-3 pt-2">
+          <Button
+            type="primary"
+            size="small"
+            disabled={!dirty}
+            onClick={handleSave}
+          >
+            Save
+          </Button>
+          {dirty && (
+            <Button type="outline" size="small" onClick={handleCancelEdit}>
+              Cancel
+            </Button>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
