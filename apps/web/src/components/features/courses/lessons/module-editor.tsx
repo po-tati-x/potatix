@@ -174,6 +174,13 @@ export function CourseModuleEditor({
       );
     });
 
+    // Persist to backend so refresh shows PROCESSING instead of UPLOADING
+    updateLessonMutation({
+      lessonId,
+      uploadStatus: 'processing',
+      courseId,
+    });
+
     // Trigger refetch to eventually get playbackId
     queryClient.invalidateQueries({ queryKey: courseKeys.detail(courseId) });
   };
