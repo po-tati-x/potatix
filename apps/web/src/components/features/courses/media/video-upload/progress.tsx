@@ -6,10 +6,11 @@ interface ProgressProps {
   status: LessonUploadStatus;
   progress: number;
   etaSeconds: number | null;
+  formatSeconds: (sec: number) => string;
 }
 
-export function UploadProgress({ status, progress, etaSeconds }: ProgressProps) {
-  const show = status === LESSON_UPLOAD_STATUS.UPLOADING || status === LESSON_UPLOAD_STATUS.PAUSED;
+export function UploadProgress({ status, progress, etaSeconds, formatSeconds }: ProgressProps) {
+  const show = status === LESSON_UPLOAD_STATUS.UPLOADING;
   if (!show) return null;
   return (
     <>
@@ -22,10 +23,4 @@ export function UploadProgress({ status, progress, etaSeconds }: ProgressProps) 
       </div>
     </>
   );
-}
-
-function formatSeconds(sec: number): string {
-  const m = Math.floor(sec / 60);
-  const s = Math.floor(sec % 60);
-  return `${m}m ${s}s`;
 } 
