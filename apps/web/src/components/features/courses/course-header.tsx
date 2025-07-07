@@ -3,6 +3,7 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/new-button";
 import { StatusBadge } from "@/components/features/courses/status-badge";
 import { useCourse } from "@/lib/client/hooks/use-courses";
+import { ReactNode } from "react";
 
 interface CourseHeaderProps {
   // Make courseId optional to support simple navigation
@@ -12,6 +13,7 @@ interface CourseHeaderProps {
   status?: string;
   // Status change handler remains optional
   onStatusChange?: (status: "draft" | "published" | "archived") => void;
+  action?: ReactNode;
 }
 
 export function CourseHeader({
@@ -20,6 +22,7 @@ export function CourseHeader({
   title = "Edit Course",
   status,
   onStatusChange,
+  action,
 }: CourseHeaderProps) {
   const router = useRouter();
 
@@ -50,7 +53,7 @@ export function CourseHeader({
         </Button>
       </div>
 
-      {/* Header with status and save */}
+      {/* Header with status and optional actions */}
       <header className="mb-6 border-b border-slate-200 pb-5">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -67,6 +70,8 @@ export function CourseHeader({
               </div>
             )}
           </div>
+
+          {action && <div className="shrink-0">{action}</div>}
         </div>
       </header>
     </>
