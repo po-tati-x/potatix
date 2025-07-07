@@ -14,8 +14,7 @@ interface UseVideoUploadParams {
   ) => void;
   /**
    * When rehydrating after a full page reload, pass the last known upload
-   * status from the database so the hook can resume polling instead of
-   * starting from scratch.
+   * status from the database so the hook can resume polling insteads from scratch.
    */
   initialStatus?: LessonUploadStatus;
 }
@@ -39,8 +38,6 @@ export function useVideoUpload({
   type UpChunkInstance = ReturnType<typeof UpChunk.createUpload>;
   const uploadRef = useRef<UpChunkInstance | null>(null);
   const startTimeRef = useRef<number | null>(null);
-  const pauseStartRef = useRef<number | null>(null);
-  const totalPausedTimeRef = useRef(0);
   const pollCancelRef = useRef<(() => void) | null>(null);
   const statusRef = useRef<LessonUploadStatus>(initialStatus);
 
@@ -52,10 +49,12 @@ export function useVideoUpload({
     };
   }, []);
 
+  // Resume-on-refresh disabled – no localStorage inspection
+
   // Kick off polling immediately if we mounted in PROCESSING state
   useEffect(() => {
     if (initialStatus === LESSON_UPLOAD_STATUS.PROCESSING) {
-      pollProcessing();
+      subscribeProcessing();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialStatus]);
@@ -73,8 +72,6 @@ export function useVideoUpload({
 
     // refs
     startTimeRef.current = null;
-    pauseStartRef.current = null;
-    totalPausedTimeRef.current = 0;
   }
 
   // Format utils (kept here to avoid re-export)
@@ -98,13 +95,14 @@ export function useVideoUpload({
       throw new Error("Only video files are allowed");
     }
     if (file.size > UPLOAD_CONFIG.MAX_FILE_SIZE_BYTES) {
-      throw new Error("File too large (max 2 GB)");
+      throw new Error(`File too large (max ${formatBytes(UPLOAD_CONFIG.MAX_FILE_SIZE_BYTES)})`);
     }
   }
 
   const selectFile = (file: File) => {
     try {
       validateFile(file);
+      // Always reset – resume is gone.
       resetState();
       setSelectedFile(file);
       onFileChange?.(file, lessonId);
@@ -115,7 +113,9 @@ export function useVideoUpload({
 
   // ------------- upload -----------------------
   const startUpload = async () => {
-    if (!selectedFile || status !== LESSON_UPLOAD_STATUS.IDLE) return;
+    if (!selectedFile) return;
+
+    if (status !== LESSON_UPLOAD_STATUS.IDLE) return;
 
     setStatus(LESSON_UPLOAD_STATUS.PREPARING);
     setError(null);
@@ -148,26 +148,35 @@ export function useVideoUpload({
       return;
     }
 
+    // persistence disabled
+
+    createAndStartUpload(uploadUrl);
+  };
+
+  // helper to create upload and wire events
+  function createAndStartUpload(endpoint: string) {
+    if (!selectedFile) return;
+
     const upload = UpChunk.createUpload({
-      endpoint: uploadUrl,
+      endpoint,
       file: selectedFile,
       chunkSize: UPLOAD_CONFIG.CHUNK_SIZE_BYTES / 1024, // KB
     });
-
     uploadRef.current = upload;
     startTimeRef.current = Date.now();
-    totalPausedTimeRef.current = 0;
     setStatus(LESSON_UPLOAD_STATUS.UPLOADING);
     statusRef.current = LESSON_UPLOAD_STATUS.UPLOADING;
 
     upload.on("progress", ({ detail }) => {
-      if (statusRef.current !== LESSON_UPLOAD_STATUS.UPLOADING) return; // ignore events while paused
+      if (statusRef.current !== LESSON_UPLOAD_STATUS.UPLOADING) return; // ignore events when not actively uploading
       const percent = detail as number;
       setProgress(percent);
 
+      // progress persistence disabled
+
       const start = startTimeRef.current;
       if (!start) return;
-      const elapsed = (Date.now() - start - totalPausedTimeRef.current) / 1000;
+      const elapsed = (Date.now() - start) / 1000;
       const bytesUploaded = (selectedFile.size * percent) / 100;
       const speed = bytesUploaded / Math.max(elapsed, 1);
       if (speed > 0) {
@@ -182,34 +191,26 @@ export function useVideoUpload({
     });
 
     upload.on("success", () => {
+      // no persistence cleanup needed
       setProgress(100);
       setEtaSeconds(0);
       setStatus(LESSON_UPLOAD_STATUS.PROCESSING);
-      onDirectUploadComplete?.(lessonId);
-      pollProcessing();
-    });
-  };
 
-  // ------------- pause / resume --------------
-  const togglePause = () => {
-    const upload = uploadRef.current;
-    if (!upload || (status !== LESSON_UPLOAD_STATUS.UPLOADING && status !== LESSON_UPLOAD_STATUS.PAUSED)) {
-      return;
-    }
-    if ((upload as any).paused === true) {
-      // resume
-      if (pauseStartRef.current) {
-        totalPausedTimeRef.current += Date.now() - pauseStartRef.current;
-        pauseStartRef.current = null;
-      }
-      upload.resume();
-      setStatus(LESSON_UPLOAD_STATUS.UPLOADING);
-    } else {
-      upload.pause();
-      pauseStartRef.current = Date.now();
-      setStatus(LESSON_UPLOAD_STATUS.PAUSED);
-    }
-  };
+      // Persist status immediately so a page refresh reflects "PROCESSING"
+      // Use keepalive to maximise chance the request completes even if user navigates away
+      fetch(`/api/courses/lessons/${lessonId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ uploadStatus: "processing" }),
+        keepalive: true,
+      }).catch(() => {
+        /* Network errors are non-fatal here – webhook will eventually update */
+      });
+
+      onDirectUploadComplete?.(lessonId);
+      subscribeProcessing();
+    });
+  }
 
   // ------------- cancel -----------------------
   const cancelUpload = async () => {
@@ -228,10 +229,74 @@ export function useVideoUpload({
     setSelectedFile(null);
   };
 
+  // ------------ processing updates via SSE / fallback polling ------------
+
+  function subscribeProcessing() {
+    // close existing listener / poller if any
+    pollCancelRef.current?.();
+
+    let retries = 0;
+    let es: EventSource | null = null;
+
+    const stop = () => {
+      es?.close();
+      es = null;
+    };
+
+    const connect = () => {
+      stop();
+      es = new EventSource(`/api/courses/lessons/${lessonId}/events`);
+      es.onmessage = (e) => {
+        try {
+          const data = JSON.parse(e.data);
+          const remoteStatus: string | undefined = data.status?.toUpperCase();
+          if (remoteStatus) setProcessingStatus(remoteStatus);
+
+          if (remoteStatus === "COMPLETED") {
+            setStatus(LESSON_UPLOAD_STATUS.COMPLETED);
+            onProcessingComplete?.(lessonId, data.lesson);
+            stop();
+          }
+          if (remoteStatus === "CANCELLED") {
+            setStatus(LESSON_UPLOAD_STATUS.CANCELLED);
+            stop();
+          }
+        } catch (err) {
+          console.error("SSE parse error", err);
+        }
+      };
+
+      es.onerror = () => {
+        stop();
+        retries += 1;
+        if (retries < 3) {
+          const delay = Math.min(2 ** retries * 1000, 30000);
+          setTimeout(connect, delay);
+        } else {
+          // fallback to polling
+          pollProcessing();
+        }
+      };
+    };
+
+    connect();
+
+    // expose canceller using same ref for cleanup consistency
+    pollCancelRef.current = () => {
+      stop();
+    };
+  }
+
   // ------------ processing polling ------------
   const pollProcessing = () => {
     let cancelled = false;
     let delay = 5000;
+    let timerId: ReturnType<typeof setTimeout> | null = null;
+
+    const stopPolling = () => {
+      cancelled = true;
+      if (timerId) clearTimeout(timerId);
+    };
 
     const tick = async () => {
       if (cancelled) return;
@@ -254,10 +319,12 @@ export function useVideoUpload({
           } catch {
             /* ignore */
           }
+          stopPolling();
           return; // stop polling
         }
         if (remoteStatus === "CANCELLED") {
           setStatus(LESSON_UPLOAD_STATUS.CANCELLED);
+          stopPolling();
           return;
         }
         // continue polling with back-off
@@ -266,18 +333,27 @@ export function useVideoUpload({
         console.error("Processing poll error", err);
         delay = Math.min(delay * 1.5, 30000);
       }
-      setTimeout(tick, delay);
+      timerId = setTimeout(tick, delay);
     };
 
-    setTimeout(tick, delay);
-    pollCancelRef.current = () => {
-      cancelled = true;
-    };
+    timerId = setTimeout(tick, delay);
+    pollCancelRef.current = stopPolling;
   };
 
   // Keep statusRef in sync with React state so event handlers read fresh value
   useEffect(() => {
     statusRef.current = status;
+    if (typeof window !== 'undefined') {
+      const handler = (e: BeforeUnloadEvent) => {
+        if (status === LESSON_UPLOAD_STATUS.UPLOADING) {
+          const msg = 'A lesson upload is in progress. Leaving this page will cancel the upload.';
+          e.preventDefault();
+          e.returnValue = msg;
+        }
+      };
+      window.addEventListener('beforeunload', handler);
+      return () => window.removeEventListener('beforeunload', handler);
+    }
   }, [status]);
 
   return {
@@ -294,7 +370,6 @@ export function useVideoUpload({
     // actions
     selectFile,
     startUpload,
-    togglePause,
     cancelUpload,
   } as const;
 } 
