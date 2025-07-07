@@ -27,8 +27,9 @@ export const courseApi = {
     return response.data.data;
   },
 
-  async getCourseBySlug(slug: string): Promise<Course> {
-    const response = await axios.get<ApiResponse<Course>>(`/api/courses/slug/${slug}`);
+  async getCourseBySlug(slug: string, includeUnpublished: boolean = false): Promise<Course> {
+    const query = includeUnpublished ? '?includeUnpublished=true' : '';
+    const response = await axios.get<ApiResponse<Course>>(`/api/courses/slug/${slug}${query}`);
     return response.data.data;
   },
 
@@ -69,7 +70,7 @@ export const courseApi = {
     return response.data.data;
   },
 
-  async updateLesson(data: { lessonId: string; title?: string; description?: string; visibility?: 'public' | 'enrolled'; playbackId?: string | null; uploadStatus?: string | null }): Promise<unknown> {
+  async updateLesson(data: { lessonId: string; title?: string; description?: string; visibility?: 'public' | 'enrolled'; playbackId?: string | null; uploadStatus?: string | null; transcriptData?: unknown }): Promise<unknown> {
     const { lessonId, ...updateData } = data;
     const response = await axios.patch<ApiResponse<unknown>>(`/api/courses/lessons/${lessonId}`, updateData);
     return response.data.data;
