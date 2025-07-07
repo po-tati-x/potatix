@@ -1,6 +1,5 @@
-import type { ReactNode } from 'react';
-import { AppSidebar } from '@/components/features/app-sidebar/app-sidebar';
-import { MainNav } from '@/components/features/app-sidebar/main-nav';
+import { Suspense, type ReactNode } from 'react';
+import { SidebarRoot } from '@/components/features/app-sidebar/sidebar-root';
 
 export async function generateMetadata() {
   return {
@@ -16,12 +15,12 @@ export default async function DashboardLayout({
 }) {
 
   return (
-    <div className="min-h-screen w-full bg-white">
-      <MainNav sidebar={AppSidebar}>
+    <Suspense fallback={null}>
+      <SidebarRoot>
         <main className="flex-1 overflow-y-auto">
           <div className="container py-6">{children}</div>
         </main>
-      </MainNav>
-    </div>
+      </SidebarRoot>
+    </Suspense>
   );
 } 
