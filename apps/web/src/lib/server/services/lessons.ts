@@ -22,6 +22,7 @@ export interface LessonUpdateInput {
   order?: number;
   uploadStatus?: string;
   visibility?: 'public' | 'enrolled';
+  transcriptData?: unknown; // JSON field
 }
 
 interface OwnershipFail {
@@ -57,6 +58,7 @@ export const lessonService = {
         width: courseSchema.lesson.width,
         height: courseSchema.lesson.height,
         aspectRatio: courseSchema.lesson.aspectRatio,
+        transcriptData: courseSchema.lesson.transcriptData,
         aiPrompts: courseSchema.lesson.aiPrompts,
       })
       .from(courseSchema.lesson)
@@ -82,6 +84,7 @@ export const lessonService = {
         width: courseSchema.lesson.width,
         height: courseSchema.lesson.height,
         aspectRatio: courseSchema.lesson.aspectRatio,
+        transcriptData: courseSchema.lesson.transcriptData,
         aiPrompts: courseSchema.lesson.aiPrompts,
       })
       .from(courseSchema.lesson)
@@ -132,6 +135,7 @@ export const lessonService = {
         ...(data.order !== undefined ? { order: data.order } : {}),
         ...(data.uploadStatus !== undefined ? { uploadStatus: data.uploadStatus } : {}),
         ...(data.visibility !== undefined ? { visibility: data.visibility } : {}),
+        ...(data.transcriptData !== undefined ? { transcriptData: data.transcriptData as any } : {}),
         updatedAt: new Date(),
       })
       .where(eq(courseSchema.lesson.id, lessonId))
