@@ -13,7 +13,6 @@ const envSchema = v.object({
 // eslint-disable-next-line perfectionist/sort-imports
 const env = v.parse(envSchema, process.env as Record<string, string>);
 
-// Normalize Supabase pooling URL (6543 -> 5432) if present
 const nonPoolingUrl = env.DATABASE_URL.replace(':6543', ':5432');
 
 export default {
