@@ -15,7 +15,6 @@ import {
 
 interface ControlsProps {
   status: LessonUploadStatus;
-  processingStatus: string | null;
   selectedFile: File | null;
   error: string | null;
   onStart: () => void;
@@ -44,7 +43,21 @@ export function UploadControls({
         </Button>
       )}
 
-      {(status === LESSON_UPLOAD_STATUS.UPLOADING || status === LESSON_UPLOAD_STATUS.PAUSED) && (
+      {status === LESSON_UPLOAD_STATUS.COMPLETED && (
+        <p className="text-xs text-emerald-700 dark:text-emerald-500 flex items-center gap-1">
+          <CheckCircle className="h-3.5 w-3.5" /> Video ready
+        </p>
+      )}
+
+      {status === LESSON_UPLOAD_STATUS.CANCELLED && (
+        <p className="text-xs text-slate-500">Upload cancelled</p>
+      )}
+
+      {error && status === LESSON_UPLOAD_STATUS.ERROR && (
+        <p className="text-xs text-red-600">{error}</p>
+      )}
+
+      {(status === LESSON_UPLOAD_STATUS.UPLOADING) && (
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
@@ -59,20 +72,6 @@ export function UploadControls({
             <p>Cancel</p>
           </TooltipContent>
         </Tooltip>
-      )}
-
-      {status === LESSON_UPLOAD_STATUS.COMPLETED && (
-        <p className="text-xs text-emerald-700 dark:text-emerald-500 flex items-center gap-1">
-          <CheckCircle className="h-3.5 w-3.5" /> Video ready
-        </p>
-      )}
-
-      {status === LESSON_UPLOAD_STATUS.CANCELLED && (
-        <p className="text-xs text-slate-500">Upload cancelled</p>
-      )}
-
-      {error && status === LESSON_UPLOAD_STATUS.ERROR && (
-        <p className="text-xs text-red-600">{error}</p>
       )}
     </div>
   );
