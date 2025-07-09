@@ -40,6 +40,24 @@ export interface CourseUpdateInput {
   prerequisites?: string[];
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Simple in-memory cache for course lookups by slug. 30 s TTL.
+// ─────────────────────────────────────────────────────────────────────────────
+type CacheEntry = { data: unknown; expires: number };
+// Generic map keyed by string, stores any payload — acceptable for ephemeral cache.
+const slugCache = new Map<string, CacheEntry>();
+
+// Helper – purge cached entries containing the given slug (both raw and outline)
+function purgeSlugCache(slug: string) {
+  // Two key shapes: `${slug}:${publishedOnly}` and `outline:${slug}:${publishedOnly}`
+  const keysToDelete: string[] = [];
+  for (const key of slugCache.keys()) {
+    if (key.startsWith(`${slug}:`) || key.startsWith(`outline:${slug}:`)) {
+      keysToDelete.push(key);
+    }
+  }
+  keysToDelete.forEach((k) => slugCache.delete(k));
+}
 // Course Service
 export const courseService = {
   // Course operations
@@ -232,7 +250,20 @@ export const courseService = {
     }
   },
 
-  async getCourseBySlug(slug: string, publishedOnly = true) {
+  // (cache defined at module scope)
+
+  async getCourseBySlug(slug: string, publishedOnly = true): Promise<any> {
+    // Skip cache when caller explicitly requests unpublished data (owner editing)
+    const shouldUseCache = publishedOnly;
+
+    const cacheKey = `${slug}:${publishedOnly}`;
+    if (shouldUseCache) {
+      const cached = slugCache.get(cacheKey);
+      if (cached && cached.expires > Date.now()) {
+        return cached.data as any;
+      }
+    }
+
     const query = publishedOnly
       ? and(
           eq(courseSchema.course.slug, slug),
@@ -246,11 +277,11 @@ export const courseService = {
 
     const course = courses[0]!;
 
-    // Fetch modules
-    const modules = await moduleService.getModulesByCourseId(course.id);
-
-    // Fetch lessons
-    const lessons = await lessonService.getLessonsByCourseId(course.id);
+    // Fetch modules and lessons in parallel to avoid cumulative latency
+    const [modules, lessons] = await Promise.all([
+      moduleService.getModulesByCourseId(course.id),
+      lessonService.getLessonsByCourseId(course.id),
+    ]);
 
     // Group lessons by module
     const modulesWithLessons = modules.map((module) => {
@@ -264,11 +295,64 @@ export const courseService = {
       };
     });
 
-    return {
+    const result = {
       ...course,
       modules: modulesWithLessons,
       lessons,
     };
+
+    // Cache fresh result only when serving public content
+    if (shouldUseCache) {
+      slugCache.set(cacheKey, { data: result, expires: Date.now() + 30_000 });
+    }
+    return result;
+  },
+
+  /**
+   * Lightweight outline (modules + lesson summaries) for sidebar.
+   */
+  async getCourseOutlineBySlug(slug: string, publishedOnly = true): Promise<any> {
+    const shouldUseCache = publishedOnly;
+
+    const cacheKey = `outline:${slug}:${publishedOnly}`;
+    if (shouldUseCache) {
+      const cached = slugCache.get(cacheKey);
+      if (cached && cached.expires > Date.now()) {
+        return cached.data as any;
+      }
+    }
+
+    const query = publishedOnly
+      ? and(
+          eq(courseSchema.course.slug, slug),
+          eq(courseSchema.course.status, "published"),
+        )
+      : eq(courseSchema.course.slug, slug);
+
+    const courses = await database.select().from(courseSchema.course).where(query);
+    if (!courses.length) return null;
+
+    const course = courses[0]!;
+
+    // Fetch in parallel: modules + lightweight lesson summaries
+    const [modules, lessonSummaries] = await Promise.all([
+      moduleService.getModulesByCourseId(course.id),
+      lessonService.getLessonSummariesByCourseId(course.id),
+    ]);
+
+    const modulesWithLessons = modules.map((m) => ({
+      ...m,
+      lessons: lessonSummaries
+        .filter((l) => l.moduleId === m.id)
+        .sort((a, b) => a.order - b.order),
+    }));
+
+    const outline = { ...course, modules: modulesWithLessons } as const;
+
+    if (shouldUseCache) {
+      slugCache.set(cacheKey, { data: outline, expires: Date.now() + 30_000 });
+    }
+    return outline;
   },
 
   async createCourse(data: CourseCreateInput) {
@@ -382,6 +466,13 @@ export const courseService = {
       );
       return null;
     }
+  },
+
+  /**
+   * Invalidate in-memory slug cache after mutative operations (e.g. reordering).
+   */
+  invalidateSlugCache(slug: string) {
+    purgeSlugCache(slug);
   },
 
   async deleteCourse(courseId: string) {

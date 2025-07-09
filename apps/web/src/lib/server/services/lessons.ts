@@ -235,6 +235,40 @@ export const lessonService = {
     // Return the reordered lessons
     return this.getLessonsByModuleId(moduleId);
   },
+
+  /**
+   * Reorder lessons across multiple modules in a single batch operation.
+   * Each lesson can move to a new module.
+   * @param courseId – Parent course (permission already validated upstream)
+   * @param moduleOrders – Array of { moduleId, lessonIds } representing final order per module.
+   */
+  async reorderLessonsAcrossModules(courseId: string, moduleOrders: { moduleId: string; lessonIds: string[] }[]) {
+    // Iterate over modules, build update promises
+    const promises: Promise<unknown>[] = [];
+
+    for (const { moduleId, lessonIds } of moduleOrders) {
+      lessonIds.forEach((lessonId, index) => {
+        // Update moduleId (in case of move) and order
+        const p = database
+          .update(courseSchema.lesson)
+          .set({ order: index, moduleId, updatedAt: new Date() })
+          .where(
+            and(
+              eq(courseSchema.lesson.id, lessonId),
+              eq(courseSchema.lesson.courseId, courseId),
+            ),
+          );
+        promises.push(p);
+      });
+    }
+
+    // Execute all updates in parallel
+    await Promise.all(promises);
+
+    // Return refreshed lessons grouped by module id for client convenience
+    const lessons = await this.getLessonsByCourseId(courseId);
+    return lessons;
+  },
   
   async getLessonPrompts(lessonId: string): Promise<string[] | null> {
     const lesson = await this.getLessonById(lessonId);
@@ -247,5 +281,20 @@ export const lessonService = {
       .update(courseSchema.lesson)
       .set({ aiPrompts: prompts, updatedAt: new Date() })
       .where(eq(courseSchema.lesson.id, lessonId));
+  },
+
+  async getLessonSummariesByCourseId(courseId: string) {
+    // Lightweight select for sidebar: id, title, visibility(status), order, moduleId
+    return database
+      .select({
+        id: courseSchema.lesson.id,
+        title: courseSchema.lesson.title,
+        visibility: courseSchema.lesson.visibility, // 'public' | 'enrolled'
+        order: courseSchema.lesson.order,
+        moduleId: courseSchema.lesson.moduleId,
+      })
+      .from(courseSchema.lesson)
+      .where(eq(courseSchema.lesson.courseId, courseId))
+      .orderBy(asc(courseSchema.lesson.order));
   }
 } 
