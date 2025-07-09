@@ -26,11 +26,20 @@ export function useCourses(options?: CoursesQueryOptions) {
 /**
  * Hook to get a single course by ID
  */
-export function useCourse(courseId: string) {
+export function useCourse(
+  courseId: string,
+  options?: { initialData?: Course; enabled?: boolean },
+) {
+  const hasInitial = options?.initialData !== undefined;
+
   return useQuery<Course, Error>({
     queryKey: courseKeys.detail(courseId),
+    // Skip network call when we already have initial data
     queryFn: () => courseApi.getCourse(courseId),
-    enabled: !!courseId,
+    enabled: options?.enabled ?? (!!courseId && !hasInitial),
+    initialData: options?.initialData,
+    // Keep fresh for a while when initial data provided
+    staleTime: hasInitial ? 5 * 60 * 1000 : 0,
   });
 }
 
@@ -229,7 +238,9 @@ export function useReorderLessons() {
   return useMutation<void, Error, { courseId: string; moduleId: string; orderedIds: string[] }>({
     mutationFn: courseApi.reorderLessons,
     onSuccess: (_, variables) => {
+      // Invalidate both detailed and outline queries so sidebars update instantly.
       queryClient.invalidateQueries({ queryKey: courseKeys.detail(variables.courseId) });
+      queryClient.invalidateQueries({ queryKey: ["course","outline"] });
     },
     onError: (error) => {
       toast.error(error.message || "Failed to reorder lessons");
@@ -263,5 +274,45 @@ export function useCourseBySlug(slug: string, options?: { includeUnpublished?: b
     queryKey: courseKeys.bySlug(slug),
     queryFn: () => courseApi.getCourseBySlug(slug, includeUnpublished),
     enabled: !!slug,
+  });
+}
+
+/**
+ * Hook to get lightweight course outline for sidebar
+ */
+export function useCourseOutline(slug: string, options?: { includeUnpublished?: boolean }) {
+  const includeUnpublished = options?.includeUnpublished ?? false;
+  return useQuery<Course, Error>({
+    queryKey: ["course","outline",slug,includeUnpublished],
+    queryFn: () => courseApi.getCourseOutlineBySlug(slug, includeUnpublished),
+    enabled: !!slug,
+  });
+}
+
+/**
+ * Hook to fetch single lesson details
+ */
+export function useLesson(courseId: string, lessonId: string) {
+  return useQuery<unknown, Error>({
+    queryKey: ["course","lesson",courseId,lessonId],
+    queryFn: () => courseApi.getLesson(courseId, lessonId),
+    enabled: !!courseId && !!lessonId,
+  });
+} 
+
+/**
+ * Hook to reorder lessons across modules.
+ */
+export function useReorderLessonsAcrossModules() {
+  const queryClient = useQueryClient();
+
+  return useMutation<void, Error, { courseId: string; modules: { moduleId: string; lessonIds: string[] }[] }>({
+    mutationFn: courseApi.reorderLessonsAcrossModules,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["course","outline"] });
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to reorder lessons");
+    },
   });
 } 
