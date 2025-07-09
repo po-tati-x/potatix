@@ -33,6 +33,13 @@ export const courseApi = {
     return response.data.data;
   },
 
+  // Lightweight outline (modules + lesson summaries)
+  async getCourseOutlineBySlug(slug: string, includeUnpublished: boolean = false): Promise<Course> {
+    const query = includeUnpublished ? '?includeUnpublished=true' : '';
+    const response = await axios.get<ApiResponse<Course>>(`/api/courses/outline/${slug}${query}`);
+    return response.data.data;
+  },
+
   async updateCourse(courseId: string, data: Partial<CreateCourseData>): Promise<Course> {
     const response = await axios.patch<ApiResponse<Course>>(`/api/courses/${courseId}`, data);
     return response.data.data;
@@ -90,11 +97,25 @@ export const courseApi = {
     });
   },
 
+  async reorderLessonsAcrossModules(data: { courseId: string; modules: { moduleId: string; lessonIds: string[] }[] }): Promise<void> {
+    await axios.post<ApiResponse<void>>(`/api/courses/reorder`, {
+      type: "lesson-multi",
+      courseId: data.courseId,
+      modules: data.modules,
+    });
+  },
+
   async reorderModules(data: { courseId: string; orderedIds: string[] }): Promise<void> {
     await axios.post<ApiResponse<void>>(`/api/courses/reorder`, {
       type: "module",
       courseId: data.courseId,
       orderedIds: data.orderedIds,
     });
+  },
+
+  // Fetch single lesson details
+  async getLesson(courseId: string, lessonId: string) {
+    const response = await axios.get<ApiResponse<unknown>>(`/api/courses/${courseId}/lessons/${lessonId}`);
+    return response.data.data;
   },
 };
