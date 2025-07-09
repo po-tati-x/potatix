@@ -1,8 +1,8 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
-import { courseApi } from "../api/courses";
-import type { Course, CreateCourseData } from "@/lib/shared/types/courses";
-import { courseKeys } from "@/lib/shared/constants/query-keys";
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { courseApi } from '../api/courses';
+import type { Course, CreateCourseData } from '@/lib/shared/types/courses';
+import { courseKeys } from '@/lib/shared/constants/query-keys';
 
 /**
  * Hook to get all courses for the current user
@@ -19,17 +19,14 @@ export function useCourses(options?: CoursesQueryOptions) {
     initialData: options?.initialData,
     enabled: options?.enabled ?? !options?.initialData,
     staleTime: options?.initialData ? 5 * 60 * 1000 : 0,
-    refetchOnWindowFocus: !(options?.initialData),
+    refetchOnWindowFocus: !options?.initialData,
   });
 }
 
 /**
  * Hook to get a single course by ID
  */
-export function useCourse(
-  courseId: string,
-  options?: { initialData?: Course; enabled?: boolean },
-) {
+export function useCourse(courseId: string, options?: { initialData?: Course; enabled?: boolean }) {
   const hasInitial = options?.initialData !== undefined;
 
   return useQuery<Course, Error>({
@@ -48,15 +45,15 @@ export function useCourse(
  */
 export function useCreateCourse() {
   const queryClient = useQueryClient();
-  
+
   return useMutation<Course, Error, CreateCourseData>({
     mutationFn: courseApi.createCourse,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: courseKeys.all() });
-      toast.success("Course created successfully");
+      toast.success('Course created successfully');
     },
-    onError: (error) => {
-      toast.error(error.message || "Failed to create course");
+    onError: error => {
+      toast.error(error.message || 'Failed to create course');
     },
   });
 }
@@ -66,16 +63,16 @@ export function useCreateCourse() {
  */
 export function useUpdateCourse(courseId: string) {
   const queryClient = useQueryClient();
-  
+
   return useMutation<Course, Error, Partial<CreateCourseData>>({
-    mutationFn: (data) => courseApi.updateCourse(courseId, data),
+    mutationFn: data => courseApi.updateCourse(courseId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: courseKeys.detail(courseId) });
       queryClient.invalidateQueries({ queryKey: courseKeys.all() });
-      toast.success("Course updated successfully");
+      toast.success('Course updated successfully');
     },
-    onError: (error) => {
-      toast.error(error.message || "Failed to update course");
+    onError: error => {
+      toast.error(error.message || 'Failed to update course');
     },
   });
 }
@@ -85,15 +82,15 @@ export function useUpdateCourse(courseId: string) {
  */
 export function useDeleteCourse() {
   const queryClient = useQueryClient();
-  
+
   return useMutation<void, Error, string>({
     mutationFn: courseApi.deleteCourse,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: courseKeys.all() });
-      toast.success("Course deleted successfully");
+      toast.success('Course deleted successfully');
     },
-    onError: (error) => {
-      toast.error(error.message || "Failed to delete course");
+    onError: error => {
+      toast.error(error.message || 'Failed to delete course');
     },
   });
 }
@@ -103,15 +100,15 @@ export function useDeleteCourse() {
  */
 export function useUploadCourseImage(courseId: string) {
   const queryClient = useQueryClient();
-  
+
   return useMutation<{ imageUrl: string }, Error, FormData>({
-    mutationFn: (formData) => courseApi.uploadCourseImage(courseId, formData),
+    mutationFn: formData => courseApi.uploadCourseImage(courseId, formData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: courseKeys.detail(courseId) });
-      toast.success("Image uploaded successfully");
+      toast.success('Image uploaded successfully');
     },
-    onError: (error) => {
-      toast.error(error.message || "Failed to upload image");
+    onError: error => {
+      toast.error(error.message || 'Failed to upload image');
     },
   });
 }
@@ -119,18 +116,21 @@ export function useUploadCourseImage(courseId: string) {
 /**
  * Hook to create a module
  */
-interface CreateModulePayload { courseId: string; title: string }
+interface CreateModulePayload {
+  courseId: string;
+  title: string;
+}
 export function useCreateModule() {
   const queryClient = useQueryClient();
-  
+
   return useMutation<unknown, Error, CreateModulePayload>({
     mutationFn: courseApi.createModule,
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: courseKeys.detail(variables.courseId) });
-      toast.success("Module created successfully");
+      toast.success('Module created successfully');
     },
-    onError: (error) => {
-      toast.error(error.message || "Failed to create module");
+    onError: error => {
+      toast.error(error.message || 'Failed to create module');
     },
   });
 }
@@ -138,18 +138,22 @@ export function useCreateModule() {
 /**
  * Hook to update a module
  */
-interface UpdateModulePayload { moduleId: string; title: string; courseId: string }
+interface UpdateModulePayload {
+  moduleId: string;
+  title: string;
+  courseId: string;
+}
 export function useUpdateModule() {
   const queryClient = useQueryClient();
-  
+
   return useMutation<unknown, Error, UpdateModulePayload>({
     mutationFn: ({ moduleId, title }) => courseApi.updateModule({ moduleId, title }),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: courseKeys.detail(variables.courseId) });
-      toast.success("Module updated successfully");
+      toast.success('Module updated successfully');
     },
-    onError: (error) => {
-      toast.error(error.message || "Failed to update module");
+    onError: error => {
+      toast.error(error.message || 'Failed to update module');
     },
   });
 }
@@ -157,18 +161,21 @@ export function useUpdateModule() {
 /**
  * Hook to delete a module
  */
-interface DeleteModulePayload { moduleId: string; courseId: string }
+interface DeleteModulePayload {
+  moduleId: string;
+  courseId: string;
+}
 export function useDeleteModule() {
   const queryClient = useQueryClient();
-  
+
   return useMutation<void, Error, DeleteModulePayload>({
     mutationFn: ({ moduleId }) => courseApi.deleteModule(moduleId),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: courseKeys.detail(variables.courseId) });
-      toast.success("Module deleted successfully");
+      toast.success('Module deleted successfully');
     },
-    onError: (error) => {
-      toast.error(error.message || "Failed to delete module");
+    onError: error => {
+      toast.error(error.message || 'Failed to delete module');
     },
   });
 }
@@ -176,18 +183,22 @@ export function useDeleteModule() {
 /**
  * Hook to create a lesson
  */
-interface CreateLessonPayload { moduleId: string; title: string; courseId: string }
+interface CreateLessonPayload {
+  moduleId: string;
+  title: string;
+  courseId: string;
+}
 export function useCreateLesson() {
   const queryClient = useQueryClient();
-  
+
   return useMutation<unknown, Error, CreateLessonPayload>({
     mutationFn: courseApi.createLesson,
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: courseKeys.detail(variables.courseId) });
-      toast.success("Lesson created successfully");
+      toast.success('Lesson created successfully');
     },
-    onError: (error) => {
-      toast.error(error.message || "Failed to create lesson");
+    onError: error => {
+      toast.error(error.message || 'Failed to create lesson');
     },
   });
 }
@@ -195,18 +206,44 @@ export function useCreateLesson() {
 /**
  * Hook to update a lesson
  */
-interface UpdateLessonPayload { lessonId: string; title?: string; description?: string; visibility?: 'public' | 'enrolled'; playbackId?: string | null; uploadStatus?: string | null; transcriptData?: unknown; courseId: string }
+interface UpdateLessonPayload {
+  lessonId: string;
+  title?: string;
+  description?: string;
+  visibility?: 'public' | 'enrolled';
+  playbackId?: string | null;
+  uploadStatus?: string | null;
+  transcriptData?: unknown;
+  courseId: string;
+}
 export function useUpdateLesson() {
   const queryClient = useQueryClient();
-  
+
   return useMutation<unknown, Error, UpdateLessonPayload>({
-    mutationFn: ({ lessonId, title, description, visibility, playbackId, uploadStatus, transcriptData }) => courseApi.updateLesson({ lessonId, title, description, visibility, playbackId, uploadStatus, transcriptData }),
+    mutationFn: ({
+      lessonId,
+      title,
+      description,
+      visibility,
+      playbackId,
+      uploadStatus,
+      transcriptData,
+    }) =>
+      courseApi.updateLesson({
+        lessonId,
+        title,
+        description,
+        visibility,
+        playbackId,
+        uploadStatus,
+        transcriptData,
+      }),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: courseKeys.detail(variables.courseId) });
-      toast.success("Lesson updated successfully");
+      toast.success('Lesson updated successfully');
     },
-    onError: (error) => {
-      toast.error(error.message || "Failed to update lesson");
+    onError: error => {
+      toast.error(error.message || 'Failed to update lesson');
     },
   });
 }
@@ -216,15 +253,15 @@ export function useUpdateLesson() {
  */
 export function useDeleteLesson() {
   const queryClient = useQueryClient();
-  
+
   return useMutation<void, Error, { lessonId: string; courseId: string }>({
     mutationFn: ({ lessonId }) => courseApi.deleteLesson(lessonId),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: courseKeys.detail(variables.courseId) });
-      toast.success("Lesson deleted successfully");
+      toast.success('Lesson deleted successfully');
     },
-    onError: (error) => {
-      toast.error(error.message || "Failed to delete lesson");
+    onError: error => {
+      toast.error(error.message || 'Failed to delete lesson');
     },
   });
 }
@@ -234,16 +271,17 @@ export function useDeleteLesson() {
  */
 export function useReorderLessons() {
   const queryClient = useQueryClient();
-  
+
   return useMutation<void, Error, { courseId: string; moduleId: string; orderedIds: string[] }>({
+    mutationKey: ['reorder', 'lessons'],
     mutationFn: courseApi.reorderLessons,
     onSuccess: (_, variables) => {
-      // Invalidate both detailed and outline queries so sidebars update instantly.
+      // Sync cache with server after successful reorder
+      queryClient.invalidateQueries({ queryKey: ['course', 'outline'] });
       queryClient.invalidateQueries({ queryKey: courseKeys.detail(variables.courseId) });
-      queryClient.invalidateQueries({ queryKey: ["course","outline"] });
     },
-    onError: (error) => {
-      toast.error(error.message || "Failed to reorder lessons");
+    onError: error => {
+      toast.error(error.message || 'Failed to reorder lessons');
     },
   });
 }
@@ -253,14 +291,15 @@ export function useReorderLessons() {
  */
 export function useReorderModules() {
   const queryClient = useQueryClient();
-  
+
   return useMutation<void, Error, { courseId: string; orderedIds: string[] }>({
+    mutationKey: ['reorder', 'modules'],
     mutationFn: courseApi.reorderModules,
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: courseKeys.detail(variables.courseId) });
     },
-    onError: (error) => {
-      toast.error(error.message || "Failed to reorder modules");
+    onError: error => {
+      toast.error(error.message || 'Failed to reorder modules');
     },
   });
 }
@@ -283,7 +322,7 @@ export function useCourseBySlug(slug: string, options?: { includeUnpublished?: b
 export function useCourseOutline(slug: string, options?: { includeUnpublished?: boolean }) {
   const includeUnpublished = options?.includeUnpublished ?? false;
   return useQuery<Course, Error>({
-    queryKey: ["course","outline",slug,includeUnpublished],
+    queryKey: ['course', 'outline', slug, includeUnpublished],
     queryFn: () => courseApi.getCourseOutlineBySlug(slug, includeUnpublished),
     enabled: !!slug,
   });
@@ -294,11 +333,11 @@ export function useCourseOutline(slug: string, options?: { includeUnpublished?: 
  */
 export function useLesson(courseId: string, lessonId: string) {
   return useQuery<unknown, Error>({
-    queryKey: ["course","lesson",courseId,lessonId],
+    queryKey: ['course', 'lesson', courseId, lessonId],
     queryFn: () => courseApi.getLesson(courseId, lessonId),
     enabled: !!courseId && !!lessonId,
   });
-} 
+}
 
 /**
  * Hook to reorder lessons across modules.
@@ -306,13 +345,20 @@ export function useLesson(courseId: string, lessonId: string) {
 export function useReorderLessonsAcrossModules() {
   const queryClient = useQueryClient();
 
-  return useMutation<void, Error, { courseId: string; modules: { moduleId: string; lessonIds: string[] }[] }>({
+  return useMutation<
+    void,
+    Error,
+    { courseId: string; modules: { moduleId: string; lessonIds: string[] }[] }
+  >({
+    mutationKey: ['reorder', 'lessons', 'cross-module'],
     mutationFn: courseApi.reorderLessonsAcrossModules,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["course","outline"] });
+    onSuccess: (_, variables) => {
+      // Sync cache with server after successful reorder
+      queryClient.invalidateQueries({ queryKey: ['course', 'outline'] });
+      queryClient.invalidateQueries({ queryKey: courseKeys.detail(variables.courseId) });
     },
-    onError: (error) => {
-      toast.error(error.message || "Failed to reorder lessons");
+    onError: error => {
+      toast.error(error.message || 'Failed to reorder lessons');
     },
   });
-} 
+}
