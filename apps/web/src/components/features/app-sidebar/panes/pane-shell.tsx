@@ -22,7 +22,7 @@ export function PaneShell({ header, children, footer, className }: PaneShellProp
       </div>
 
       {/* Scrollable body */}
-      <div className="grow overflow-y-auto scrollbar-hide">
+      <div className="grow overflow-auto scrollbar-hide overflow-x-hidden">
         {children}
       </div>
 

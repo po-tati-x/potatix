@@ -1,3 +1,6 @@
+import type { CollisionDetection } from '@dnd-kit/core';
+import { pointerWithin, rectIntersection, closestCenter } from '@dnd-kit/core';
+
 export interface ModuleRect {
   id: string;
   top: number;
@@ -45,4 +48,24 @@ export function computeInsertIndex(moduleEl: HTMLElement, pointerY: number): num
     if (pointerY < rect.top + rect.height / 2) return i;
   }
   return lessonEls.length; // append if nothing matched
-} 
+}
+
+/**
+ * A collision detection strategy tuned for multi-container sortable lists.
+ * 1. Prefer droppables that the pointer is actually inside (`pointerWithin`).
+ * 2. Fallback to bounding-box intersection (`rectIntersection`).
+ * 3. Finally fallback to centre-point distance (`closestCenter`).
+ *
+ * This yields much more intuitive feedback when dragging lessons between
+ * modules, especially in long lists where `closestCenter` alone tends to
+ * highlight containers far away from the pointer.
+ */
+export const moduleCollisionDetection: CollisionDetection = (args) => {
+  const pointerHits = pointerWithin(args);
+  if (pointerHits.length > 0) return pointerHits;
+
+  const rectHits = rectIntersection(args);
+  if (rectHits.length > 0) return rectHits;
+
+  return closestCenter(args);
+};

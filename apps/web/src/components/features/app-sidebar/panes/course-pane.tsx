@@ -1,19 +1,20 @@
-"use client";
+'use client';
 
 import { useParams } from 'next/navigation';
-import { useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Sparkles, Pencil } from 'lucide-react';
 import { useUpdateCourse } from '@/lib/client/hooks/use-courses';
 import type { Course } from '@/lib/shared/types/courses';
 import { toast } from 'sonner';
-import { ModuleList, AddModuleButton } from '../nav/module-list';
+import { ModuleList } from '../nav/module-list';
+import { AddModuleButton } from '../nav/ui';
 import { SidebarHeader } from '../chrome/sidebar-header';
 import { useCourseOutline } from '@/lib/client/hooks/use-courses';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PaneShell } from './pane-shell';
+import { useIsMutating } from '@tanstack/react-query';
 
 interface CoursePaneProps {
   /**
@@ -25,27 +26,44 @@ interface CoursePaneProps {
 export function CoursePane({ courseSlug }: CoursePaneProps) {
   // Resolve slug from props or route params
   const params = useParams() as { slug?: string; courseId?: string };
-  const slug = useMemo(() => {
-    return courseSlug && courseSlug.trim() !== ''
-      ? courseSlug
-      : (params.slug || params.courseId || 'course');
-  }, [courseSlug, params.slug, params.courseId]);
+  // Memoise slug so we don't recompute on every render
+  const slug = useMemo(
+    () => courseSlug?.trim() || params.slug || params.courseId || 'course',
+    [courseSlug, params.slug, params.courseId],
+  );
 
   // Data – lightweight outline
-  const { data: course, isLoading, error } = useCourseOutline(slug, {
+  const {
+    data: course,
+    isLoading,
+    error,
+    isFetching,
+  } = useCourseOutline(slug, {
     includeUnpublished: true,
   });
 
-  // Transform → UI-friendly
-  const modules = (course?.modules ?? []).map((mod) => ({
-    id: mod.id,
-    title: mod.title,
-    lessons: (mod.lessons ?? []).map((lsn) => ({
-      id: lsn.id,
-      title: lsn.title,
-      status: lsn.visibility === 'public' ? ('published' as const) : ('draft' as const),
-    })),
-  }));
+  // Check if any reorder mutations are in progress
+  const isReordering =
+    useIsMutating({
+      mutationKey: ['reorder'],
+    }) > 0;
+
+  // Transform → UI-friendly (memoized to prevent unnecessary re-renders)
+  const modules = useMemo(() => {
+    if (!course?.modules) return [];
+
+    return course.modules.map(mod => ({
+      id: mod.id,
+      title: mod.title,
+      lessons: (mod.lessons ?? [])
+        .filter((lsn): lsn is NonNullable<typeof lsn> => Boolean(lsn && (lsn as any).id))
+        .map(lsn => ({
+          id: lsn.id,
+          title: lsn.title,
+          status: lsn.visibility === 'public' ? ('published' as const) : ('draft' as const),
+        })),
+    }));
+  }, [course?.modules]);
 
   return (
     <nav
@@ -68,6 +86,13 @@ export function CoursePane({ courseSlug }: CoursePaneProps) {
             <p className="mt-4 rounded bg-red-50 p-2 text-sm text-red-600">
               Failed to load course. Please try again.
             </p>
+          )}
+
+          {(isFetching || isReordering) && !isLoading && (
+            <div className="flex items-center gap-2 text-xs text-slate-500">
+              <div className="h-3 w-3 animate-spin rounded-full border border-slate-300 border-t-slate-600" />
+              {isReordering ? 'Reordering...' : 'Updating...'}
+            </div>
           )}
 
           {modules.length ? (
@@ -115,23 +140,31 @@ function CourseHeaderCard({ course, slug }: { course: Course; slug: string }) {
 
   const { mutate: updateCourse, isPending: savingTitle } = useUpdateCourse(course.id);
 
+  // Update local title when course title changes
+  useMemo(() => {
+    setTitle(course.title);
+  }, [course.title]);
+
   function saveTitle() {
     if (!title.trim() || title.trim() === course.title) {
       setEditing(false);
       setTitle(course.title);
       return;
     }
-    updateCourse({ title: title.trim() }, {
-      onSuccess: () => {
-        toast.success('Course title updated');
-        setEditing(false);
+    updateCourse(
+      { title: title.trim() },
+      {
+        onSuccess: () => {
+          toast.success('Course title updated');
+          setEditing(false);
+        },
+        onError: err => {
+          toast.error(err.message || 'Failed to update title');
+          setTitle(course.title);
+          setEditing(false);
+        },
       },
-      onError: (err) => {
-        toast.error(err.message || 'Failed to update title');
-        setTitle(course.title);
-        setEditing(false);
-      },
-    });
+    );
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
@@ -170,7 +203,7 @@ function CourseHeaderCard({ course, slug }: { course: Course; slug: string }) {
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent transition-opacity group-hover:from-black/70" />
 
         {/* Click hint */}
-        <span className="pointer-events-none absolute top-2 right-2 flex items-center gap-1 rounded bg-white/80 px-1.5 py-0.5 text-[10px] font-medium text-slate-800 shadow-sm backdrop-blur-sm">
+        <span className="pointer-events-none absolute right-2 top-2 flex items-center gap-1 rounded bg-white/80 px-1.5 py-0.5 text-[10px] font-medium text-slate-800 shadow-sm backdrop-blur-sm">
           <Pencil className="size-3" /> Edit
         </span>
 
@@ -180,7 +213,7 @@ function CourseHeaderCard({ course, slug }: { course: Course; slug: string }) {
           {editing ? (
             <input
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={e => setTitle(e.target.value)}
               onBlur={saveTitle}
               onKeyDown={handleKeyDown}
               autoFocus
@@ -191,7 +224,7 @@ function CourseHeaderCard({ course, slug }: { course: Course; slug: string }) {
             <span
               onDoubleClick={() => setEditing(true)}
               title={course.title}
-              className="max-w-full break-words line-clamp-2 text-sm font-semibold text-white"
+              className="line-clamp-2 max-w-full break-words text-sm font-semibold text-white"
             >
               {savingTitle ? 'Saving…' : course.title}
             </span>
@@ -202,7 +235,7 @@ function CourseHeaderCard({ course, slug }: { course: Course; slug: string }) {
 
         {/* Status badge */}
         <span
-          className={`absolute top-2 left-2 flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-white ${course.status === 'published' ? 'bg-emerald-700/90' : 'bg-amber-600/90'}`}
+          className={`absolute left-2 top-2 flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-white ${course.status === 'published' ? 'bg-emerald-700/90' : 'bg-amber-600/90'}`}
         >
           {course.status === 'published' && <Sparkles className="size-3" />}
           {statusLabel}
@@ -212,4 +245,4 @@ function CourseHeaderCard({ course, slug }: { course: Course; slug: string }) {
       {/* Removed hidden file input */}
     </div>
   );
-} 
+}
