@@ -40,13 +40,14 @@ export async function POST(request: NextRequest) {
       return createErrorResponse("Missing 'courseId' parameter", 400);
     }
     
-    if (!orderedIds || !Array.isArray(orderedIds)) {
+    // Validate orderedIds only for single-module operations
+    if ((type === "module" || type === "lesson") && (!orderedIds || !Array.isArray(orderedIds))) {
       return createErrorResponse("Missing or invalid 'orderedIds' parameter (must be an array)", 400);
     }
-    
+
     // Make sure the type is valid
-    if (type !== "module" && type !== "lesson") {
-      return createErrorResponse("Type must be 'module' or 'lesson'", 400);
+    if (type !== "module" && type !== "lesson" && type !== "lesson-multi") {
+      return createErrorResponse("Type must be 'module', 'lesson' or 'lesson-multi'", 400);
     }
     
     // Check course ownership
@@ -65,9 +66,14 @@ export async function POST(request: NextRequest) {
       // Reorder modules
       const reorderedModules = await moduleService.reorderModules(
         courseId,
-        orderedIds
+        orderedIds,
       );
-      
+
+      const course = await courseService.getCourseById(courseId);
+      if (course?.slug) {
+        courseService.invalidateSlugCache(course.slug);
+      }
+
       return NextResponse.json({
         success: true,
         modules: reorderedModules,
@@ -99,13 +105,47 @@ export async function POST(request: NextRequest) {
       // Reorder lessons
       const reorderedLessons = await lessonService.reorderLessons(
         moduleId,
-        orderedIds
+        orderedIds,
       );
-      
+
+      // Invalidate in-memory slug caches so next fetch returns fresh order
+      const course = await courseService.getCourseById(courseId);
+      if (course?.slug) {
+        courseService.invalidateSlugCache(course.slug);
+      }
+
       return NextResponse.json({
         success: true,
         lessons: reorderedLessons,
       });
+    }
+
+    // Handle cross-module lesson reorder in one request
+    if (type === "lesson-multi") {
+      const modulesData = body.modules;
+      if (!Array.isArray(modulesData) || !modulesData.length) {
+        return createErrorResponse("'modules' array is required for lesson-multi", 400);
+      }
+
+      // Validate each module belongs to course
+      for (const mod of modulesData) {
+        if (!mod.moduleId || !Array.isArray(mod.lessonIds)) {
+          return createErrorResponse("Each module entry must have moduleId and lessonIds", 400);
+        }
+        const moduleRow = await moduleService.getModuleById(mod.moduleId);
+        if (!moduleRow || moduleRow.courseId !== courseId) {
+          return createErrorResponse("Module mismatch with course", 400);
+        }
+      }
+
+      // Perform reorder across modules
+      const normalized = modulesData.map((m: any)=>({ moduleId: m.moduleId, lessonIds: m.lessonIds }));
+      const updatedLessons = await lessonService.reorderLessonsAcrossModules(courseId, normalized);
+
+      const course = await courseService.getCourseById(courseId);
+      if (course?.slug) courseService.invalidateSlugCache(course.slug);
+
+      return NextResponse.json({ success: true, lessons: updatedLessons });
     }
     
     // Should never reach here due to type validation above
