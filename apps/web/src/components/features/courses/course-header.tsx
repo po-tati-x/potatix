@@ -8,6 +8,8 @@ import { ReactNode } from "react";
 interface CourseHeaderProps {
   // Make courseId optional to support simple navigation
   courseId?: string;
+  // If caller already knows course title, provide it to skip extra fetch
+  courseTitle?: string;
   backHref?: string;
   title?: string;
   status?: string;
@@ -23,16 +25,19 @@ export function CourseHeader({
   status,
   onStatusChange,
   action,
+  courseTitle,
 }: CourseHeaderProps) {
   const router = useRouter();
 
-  // The useCourse hook already has the enabled option built into it
-  // Just pass an empty string when courseId is undefined
-  const { data: course } = useCourse(courseId || "");
+  // Fetch only when we genuinely need it
+  const { data: course } = useCourse(courseId || "", {
+    enabled: !!courseId && !courseTitle,
+  });
+
+  const resolvedTitle = courseTitle ?? course?.title;
 
   // Determine back button text
-  const backButtonText =
-    courseId && course?.title ? `Back to ${course.title}` : "Back to courses";
+  const backButtonText = courseId && resolvedTitle ? `Back to ${resolvedTitle}` : "Back to courses";
 
   return (
     <>

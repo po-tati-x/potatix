@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import EditLessonClient from "@/components/features/courses/lessons/edit-lesson-client";
 import { auth } from "@/lib/auth/auth-server";
 import { courseService } from "@/lib/server/services/courses";
-import { lessonService } from "@/lib/server/services/lessons";
+import type { Course, Lesson } from "@/lib/shared/types/courses";
 
 interface Params {
   slug: string;
@@ -30,14 +30,14 @@ export default async function EditLessonPage({
   if (!session?.user) redirect("/login");
 
   // Get course (drafts allowed) by slug
-  const course = await courseService.getCourseBySlug(slug, false);
+  const course = (await courseService.getCourseBySlug(slug, false)) as Course;
   if (!course || course.userId !== session.user.id) {
     redirect("/courses");
   }
 
-  // Get lesson & verify it belongs to the course
-  const lesson = await lessonService.getLessonById(lessonId);
-  if (!lesson || lesson.courseId !== course.id) {
+  // Verify requested lesson belongs to the course
+  const lesson = course.lessons?.find((l: Lesson) => l.id === lessonId);
+  if (!lesson) {
     redirect(`/courses/${slug}/edit`);
   }
 
@@ -45,5 +45,11 @@ export default async function EditLessonPage({
   /*  Render client component                                           */
   /* ------------------------------------------------------------------ */
 
-  return <EditLessonClient courseId={course.id} lessonId={lesson.id} />;
+  return (
+    <EditLessonClient
+      courseId={course.id}
+      lessonId={lesson.id}
+      initialCourse={course as any}
+    />
+  );
 } 

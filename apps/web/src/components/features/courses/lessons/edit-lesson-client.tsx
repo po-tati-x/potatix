@@ -5,10 +5,27 @@ import { useRouter } from "next/navigation";
 import { Loader2, Trash2 } from "lucide-react";
 import { CourseHeader } from "@/components/features/courses/course-header";
 import { CourseErrorAlert } from "@/components/features/courses/course-error-alert";
-import { VideoUploader } from "@/components/features/courses/media/video-uploader";
-import { VideoPreview } from "@/components/features/courses/media/video-preview";
-import { LessonChaptersEditor } from "@/components/features/courses/lessons/lesson-chapters-editor";
-import { LessonPromptsEditor } from "@/components/features/courses/lessons/lesson-prompts-editor";
+import dynamic from "next/dynamic";
+
+// Heavy components lazy-loaded client side
+const VideoUploader = dynamic(
+  () => import("@/components/features/courses/media/video-uploader").then((m) => m.VideoUploader),
+  { ssr: false, loading: () => <div className="h-32 rounded-md border border-slate-200 flex items-center justify-center text-xs text-slate-500">Loading uploader…</div> },
+);
+
+const VideoPreview = dynamic(
+  () => import("@/components/features/courses/media/video-preview").then((m) => m.VideoPreview),
+  { ssr: false },
+);
+const LessonChaptersEditor = dynamic(
+  () => import("@/components/features/courses/lessons/lesson-chapters-editor").then((m) => m.LessonChaptersEditor),
+  { ssr: false },
+);
+
+const LessonPromptsEditor = dynamic(
+  () => import("@/components/features/courses/lessons/lesson-prompts-editor").then((m) => m.LessonPromptsEditor),
+  { ssr: false },
+);
 import { Button } from "@/components/ui/new-button";
 import {
   useCourse,
@@ -19,16 +36,18 @@ import { useQueryClient } from "@tanstack/react-query";
 import { courseKeys } from "@/lib/shared/constants/query-keys";
 import { LESSON_UPLOAD_STATUS } from "@/lib/config/upload";
 import { LessonDetailsEditor } from "@/components/features/courses/lessons/lesson-details-editor";
+import type { Course } from "@/lib/shared/types/courses";
 
 interface Props {
   courseId: string;
   lessonId: string;
+  initialCourse?: Course;
 }
 
 /**
  * Stand-alone lesson editing screen reusing existing LessonEditor UI.
  */
-export default function EditLessonClient({ courseId, lessonId }: Props) {
+export default function EditLessonClient({ courseId, lessonId, initialCourse }: Props) {
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -39,7 +58,7 @@ export default function EditLessonClient({ courseId, lessonId }: Props) {
     data: course,
     isLoading,
     error: fetchError,
-  } = useCourse(courseId);
+  } = useCourse(courseId, { initialData: initialCourse });
 
   const rawLesson = course?.lessons?.find((l) => l.id === lessonId);
 
@@ -93,7 +112,7 @@ export default function EditLessonClient({ courseId, lessonId }: Props) {
   /* ------------------------------------------------------------------ */
   /*  Render                                                            */
   /* ------------------------------------------------------------------ */
-  if (isLoading) {
+  if (isLoading && !initialCourse) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-3 text-slate-500">
         <Loader2 className="h-5 w-5 animate-spin" />
@@ -123,6 +142,7 @@ export default function EditLessonClient({ courseId, lessonId }: Props) {
       {/* Header with right-aligned delete button */}
       <CourseHeader
         courseId={courseId}
+        courseTitle={course.title}
         backHref={course.slug ? `/courses/${course.slug}/edit` : "/courses"}
         title="Edit Lesson"
         action={
