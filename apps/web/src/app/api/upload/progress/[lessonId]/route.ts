@@ -11,10 +11,10 @@ export async function GET(_request: Request, { params }: { params: Promise<{ les
       return NextResponse.json({ error: 'Lesson ID required' }, { status: 400 });
     }
     const raw = await redis.get<string | number>(`upload:progress:${lessonId}`);
-    const progress = raw == null ? 0 : Number(raw);
+    const progress = raw == undefined ? 0 : Number(raw);
     return NextResponse.json({ progress });
-  } catch (err) {
-    console.error('[upload:progress] GET error', err);
+  } catch (error) {
+    console.error('[upload:progress] GET error', error);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 } 
