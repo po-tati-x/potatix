@@ -1,5 +1,10 @@
 import React, { createContext, useContext, useRef, useState } from "react";
 
+// Minimal subset of Mux Player API we use
+interface MuxPlayerElement extends HTMLElement {
+  currentTime: number;
+}
+
 interface Chapter {
   id: string;
   title: string;
@@ -11,17 +16,17 @@ interface VideoContextValue {
   // Player state
   isLoading: boolean;
   isPlaying: boolean;
-  error: string | null;
+  error: string | undefined;
   currentTime: number;
   duration: number;
 
   // Meta
-  playbackId: string | null;
-  lessonId: string | null;
+  playbackId: string | undefined;
+  lessonId: string | undefined;
 
   // Chapters
   chapters: Chapter[];
-  activeChapterId: string | null;
+  activeChapterId: string | undefined;
 
   // Actions
   setVideoElement: (el: HTMLVideoElement) => void;
@@ -29,13 +34,13 @@ interface VideoContextValue {
   setDuration: (d: number) => void;
   setIsLoading: (v: boolean) => void;
   setIsPlaying: (v: boolean) => void;
-  setError: (msg: string | null) => void;
-  setplaybackId: (id: string | null) => void;
-  setLessonId: (id: string) => void;
+  setError: (msg: string | undefined) => void;
+  setplaybackId: (id: string | undefined) => void;
+  setLessonId: (id: string | undefined) => void;
   resetVideoState: () => void;
 
   setChapters: (c: Chapter[]) => void;
-  setActiveChapterId: (id: string | null) => void;
+  setActiveChapterId: (id: string | undefined) => void;
   seekTo: (time: number) => void;
 }
 
@@ -44,31 +49,31 @@ const VideoContext = createContext<VideoContextValue | undefined>(undefined);
 export function VideoProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | undefined>();
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [playbackId, setplaybackId] = useState<string | null>(null);
-  const [lessonId, setLessonId] = useState<string | null>(null);
+  const [playbackId, setplaybackId] = useState<string | undefined>();
+  const [lessonId, setLessonId] = useState<string | undefined>();
   const [chapters, setChapters] = useState<Chapter[]>([]);
-  const [activeChapterId, setActiveChapterId] = useState<string | null>(null);
+  const [activeChapterId, setActiveChapterId] = useState<string | undefined>();
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const muxPlayerRef = useRef<any | null>(null);
-  const pendingSeek = useRef<number | null>(null);
+  const muxPlayerRef = useRef<MuxPlayerElement | null>(null);
+  const pendingSeek = useRef<number | undefined>(undefined);
 
   const setVideoElement = (el: HTMLVideoElement) => {
     videoRef.current = el;
     const host = (el.getRootNode() as ShadowRoot).host as HTMLElement | undefined;
     if (host && host.tagName === 'MUX-PLAYER') {
-      muxPlayerRef.current = host as any;
+      muxPlayerRef.current = host as MuxPlayerElement;
     }
-    if (pendingSeek.current !== null) {
+    if (pendingSeek.current !== undefined) {
       const t = pendingSeek.current;
       try {
         if (muxPlayerRef.current) muxPlayerRef.current.currentTime = t;
         el.currentTime = t;
       } finally {
-        pendingSeek.current = null;
+        pendingSeek.current = undefined;
       }
     }
   };
@@ -102,7 +107,7 @@ export function VideoProvider({ children }: { children: React.ReactNode }) {
   const resetVideoState = () => {
     setIsLoading(false);
     setIsPlaying(false);
-    setError(null);
+    setError(undefined);
     setCurrentTime(0);
     setDuration(0);
   };

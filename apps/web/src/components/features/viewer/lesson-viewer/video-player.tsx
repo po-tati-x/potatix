@@ -48,7 +48,7 @@ export function VideoPlayer(props: VideoPlayerProps) {
     >
       {state === "empty" && <EmptyState />}
       {state === "error" && (
-        <VideoErrorState error={error} onRetry={() => setError(null)} />
+        <VideoErrorState error={error} onRetry={() => setError(undefined)} />
       )}
       {state === "loading" && <LoadingState />}
 

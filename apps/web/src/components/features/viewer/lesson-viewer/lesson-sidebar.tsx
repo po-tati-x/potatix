@@ -11,8 +11,8 @@ interface LessonSidebarProps {
   currentIndex: number;
   totalLessons: number;
   progress: number;
-  nextLesson: Lesson | null;
-  prevLesson: Lesson | null;
+  nextLesson?: Lesson;
+  prevLesson?: Lesson;
   courseSlug: string;
 }
 

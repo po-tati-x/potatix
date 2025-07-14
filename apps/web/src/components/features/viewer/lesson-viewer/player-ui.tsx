@@ -1,7 +1,7 @@
 import { Lock, AlertTriangle, RotateCcw } from 'lucide-react';
 
 interface VideoErrorProps {
-  error: string | null;
+  error: string | undefined;
   onRetry: () => void;
 }
 
@@ -26,7 +26,7 @@ export function VideoErrorState({ error, onRetry }: VideoErrorProps) {
   return (
     <div className="absolute inset-0 flex flex-col items-center justify-center">
       <AlertTriangle className="h-8 w-8 text-red-500 mb-4" />
-      <p className="mb-6 text-red-300">{error}</p>
+      <p className="mb-6 text-red-300">{error ?? 'Unknown error'}</p>
       <button
         className="inline-flex items-center gap-2 rounded-md bg-white px-4 py-2 text-slate-800 hover:bg-slate-100"
         onClick={onRetry}

@@ -37,7 +37,7 @@ export function useVideoController({ playbackId, lessonId, startAt, initialOrien
   /* Local refs / state                                         */
   /* ---------------------------------------------------------- */
   const playerWrapperRef = useRef<HTMLDivElement>(null);
-  const videoElementRef = useRef<HTMLVideoElement | null>(null);
+  const videoElementRef = useRef<HTMLVideoElement | undefined>(undefined);
   const hasSetInitialTime = useRef(false);
   const lastProgressSync = useRef(0);
 
@@ -49,24 +49,24 @@ export function useVideoController({ playbackId, lessonId, startAt, initialOrien
   /* ---------------------------------------------------------- */
   /* Helpers                                                    */
   /* ---------------------------------------------------------- */
-  const resolveVideoElement = useCallback(() => {
+  const resolveVideoElement = useCallback((): HTMLVideoElement | undefined => {
     if (videoElementRef.current) return videoElementRef.current;
-    if (!playerWrapperRef.current) return null;
+    if (!playerWrapperRef.current) return undefined;
 
-    const muxPlayer = playerWrapperRef.current.querySelector('mux-player');
+    const muxPlayer = playerWrapperRef.current.querySelector<HTMLMediaElement>('mux-player');
     const shadowVideo = muxPlayer?.shadowRoot?.querySelector('video');
     if (shadowVideo instanceof HTMLVideoElement) {
       videoElementRef.current = shadowVideo;
       setVideoElement(shadowVideo);
       return shadowVideo;
     }
-    return null;
+    return undefined;
   }, [setVideoElement]);
 
   const performSeek = useCallback(
     (time: number) => {
       // try mux-player public API
-      const muxEl = playerWrapperRef.current?.querySelector('mux-player') as any | null;
+      const muxEl = playerWrapperRef.current?.querySelector<HTMLMediaElement>('mux-player');
       if (muxEl) {
         try {
           muxEl.currentTime = time;
@@ -86,10 +86,16 @@ export function useVideoController({ playbackId, lessonId, startAt, initialOrien
   );
 
   /* ---------------------------------------------------------- */
+  /* Stable play / pause handlers                               */
+  /* ---------------------------------------------------------- */
+  const handlePlay = useCallback(() => setIsPlaying(true), [setIsPlaying]);
+  const handlePause = useCallback(() => setIsPlaying(false), [setIsPlaying]);
+
+  /* ---------------------------------------------------------- */
   /* Mount bookkeeping                                          */
   /* ---------------------------------------------------------- */
   useEffect(() => {
-    setplaybackId(playbackId ?? null);
+    setplaybackId(playbackId ?? undefined);
     setLessonId(lessonId);
     return () => resetVideoState();
   }, [playbackId, lessonId, setplaybackId, setLessonId, resetVideoState]);
@@ -110,7 +116,7 @@ export function useVideoController({ playbackId, lessonId, startAt, initialOrien
   useEffect(() => {
     if (!playbackId) return;
 
-    let cleanup: (() => void) | null = null;
+    let cleanup: (() => void) | undefined;
     let cancelled = false;
 
     const attach = () => {
@@ -147,25 +153,23 @@ export function useVideoController({ playbackId, lessonId, startAt, initialOrien
         const now = Date.now();
         if (now - lastProgressSync.current > 5000) {
           lastProgressSync.current = now;
-          updateProgress(lessonId, Math.floor(el.currentTime), Math.floor(el.duration));
+          void updateProgress(lessonId, Math.floor(el.currentTime), Math.floor(el.duration));
         }
       };
 
-      const play = () => setIsPlaying(true);
-      const pause = () => setIsPlaying(false);
-
       el.addEventListener('loadedmetadata', handleLoadedMetadata);
       el.addEventListener('timeupdate', handleTimeUpdate);
-      el.addEventListener('play', play);
-      el.addEventListener('pause', pause);
+      // Add/remove handlers defined once per hook instance to avoid re-creation
+      el.addEventListener('play', handlePlay);
+      el.addEventListener('pause', handlePause);
 
       if (el.readyState >= 1) handleLoadedMetadata();
 
       cleanup = () => {
         el.removeEventListener('loadedmetadata', handleLoadedMetadata);
         el.removeEventListener('timeupdate', handleTimeUpdate);
-        el.removeEventListener('play', play);
-        el.removeEventListener('pause', pause);
+        el.removeEventListener('play', handlePlay);
+        el.removeEventListener('pause', handlePause);
       };
     };
 
@@ -175,7 +179,7 @@ export function useVideoController({ playbackId, lessonId, startAt, initialOrien
       cancelled = true;
       if (cleanup) cleanup();
     };
-  }, [playbackId, lessonId, startAt, resolveVideoElement, setDuration, setCurrentTime, updateProgress, setIsPlaying]);
+  }, [playbackId, lessonId, startAt, resolveVideoElement, setDuration, setCurrentTime, updateProgress, handlePlay, handlePause]);
 
   /* ---------------------------------------------------------- */
   /* Derived data / styling                                     */
@@ -188,14 +192,23 @@ export function useVideoController({ playbackId, lessonId, startAt, initialOrien
     orientation === 'portrait' ? 'max-w-xs mx-auto' : undefined
   );
   const wrapperStyle: CSSProperties = { aspectRatio };
-  const playerStyles: CSSProperties = {
+  const playerStyles = {
     '--media-primary-color': 'rgb(241 245 249)',
     '--media-secondary-color': 'rgba(241 245 249 / 0.1)',
     '--media-accent-color': 'rgb(5 150 105)',
     aspectRatio,
   } as CSSProperties;
 
-  const state = !playbackId ? 'empty' : error ? 'error' : isLoading ? 'loading' : 'ready';
+  let state: 'empty' | 'error' | 'loading' | 'ready';
+  if (!playbackId) {
+    state = 'empty';
+  } else if (error) {
+    state = 'error';
+  } else if (isLoading) {
+    state = 'loading';
+  } else {
+    state = 'ready';
+  }
 
   /* ---------------------------------------------------------- */
   /* Callback wrappers                                          */

@@ -26,15 +26,15 @@ interface LessonViewerProps {
   lesson: Lesson;
   currentIndex: number;
   totalLessons: number;
-  nextLesson: Lesson | null;
-  prevLesson: Lesson | null;
+  nextLesson?: Lesson;
+  prevLesson?: Lesson;
   courseSlug: string;
 }
 
 export function LessonViewer(props: LessonViewerProps) {
   return (
     <VideoProvider>
-      <LessonViewerInner {...props} />
+      <LessonViewerInner key={props.lesson.id} {...props} />
     </VideoProvider>
   );
 }
@@ -53,16 +53,28 @@ function LessonViewerInner({
 
   // Video context state/actions
   const {
-    currentTime,
-    duration,
     resetVideoState,
     setplaybackId,
     setLessonId,
   } = useVideoStore();
 
-  // Local lesson progress/completion state
-  const [lessonProgress, setLessonProgress] = useState<number>(0);
-  const [isCompleted, setIsCompleted] = useState<boolean>(false);
+  // Local lesson progress/completion state – initialize from persisted store data
+  const [lessonProgress] = useState<number>(() => {
+    const { courseProgress, currentCourseId } = useCourseProgressStore.getState();
+    if (!currentCourseId) return 0;
+    const lp = courseProgress.get(currentCourseId)?.lessonProgress.get(lesson.id);
+    if (!lp) return 0;
+    const durationSec = lesson.transcriptData?.duration ?? 0;
+    const percent = durationSec ? (lp.lastPosition / durationSec) * 100 : 0;
+    return Math.min(percent, 99);
+  });
+
+  const [isCompleted, setIsCompleted] = useState<boolean>(() => {
+    const { courseProgress, currentCourseId } = useCourseProgressStore.getState();
+    if (!currentCourseId) return false;
+    const lp = courseProgress.get(currentCourseId)?.lessonProgress.get(lesson.id);
+    return lp ? lp.status === 'completed' || !!lp.completedAt : false;
+  });
 
   // Ensure course context is registered ASAP so VideoPlayer can resume correctly
   const { setCurrentCourse } = useCourseProgressStore();
@@ -74,29 +86,14 @@ function LessonViewerInner({
     }
   }, [lesson.courseId, setCurrentCourse]);
 
-  // Load saved progress when lesson changes
-  useEffect(() => {
-    const { courseProgress, currentCourseId } = useCourseProgressStore.getState();
-    if (!currentCourseId) return;
-    const cp = courseProgress.get(currentCourseId);
-    const lp = cp?.lessonProgress.get(lesson.id);
-    if (lp) {
-      const durationSec = lesson.transcriptData?.duration ?? 0;
-      const percent = durationSec ? (lp.lastPosition / durationSec) * 100 : 0;
-      setLessonProgress(Math.min(percent, 99));
-      setIsCompleted(lp.status === 'completed' || !!lp.completedAt);
-    } else {
-      setLessonProgress(0);
-      setIsCompleted(false);
-    }
-  }, [lesson.id, lesson.transcriptData?.duration]);
+  // No effect needed – component remount (keyed by lesson.id) resets state.
 
   const effectiveProgress = lessonProgress;
   const effectiveIsCompleted = isCompleted;
 
   // Update video and lesson IDs when they change
   useEffect(() => {
-    setplaybackId(lesson.playbackId || null);
+    setplaybackId(lesson.playbackId ?? undefined);
     setLessonId(lesson.id);
 
     // Cleanup
@@ -129,43 +126,22 @@ function LessonViewerInner({
 
     // Return cleanup function
     return () => {
-      unsubscribeFunctions.forEach((unsubscribe) => unsubscribe());
+      for (const unsubscribe of unsubscribeFunctions) {
+        unsubscribe();
+      }
     };
   }, [lesson.id]);
-
-  // Handle progress updates
-  const handleProgress = useCallback(
-    (newProgress: number) => {
-      if (newProgress > lessonProgress) {
-        setLessonProgress(newProgress);
-
-        // Auto mark complete at 95%
-        if (newProgress >= 95 && !effectiveIsCompleted) {
-          setIsCompleted(true);
-        }
-      }
-    },
-    [lessonProgress, effectiveIsCompleted, setLessonProgress, setIsCompleted],
-  );
-
-  // Update progress based on video currentTime/duration
-  useEffect(() => {
-    if (duration > 0) {
-      const percent = (currentTime / duration) * 100;
-      handleProgress(percent);
-    }
-  }, [currentTime, duration, handleProgress]);
 
   // Toggle chat visibility
   const toggleChat = () => setIsChatVisible(!isChatVisible);
 
   // Handle marking lesson as complete
-  const handleMarkComplete = async () => {
+  const handleMarkComplete = () => {
     if (isMarkingComplete || effectiveIsCompleted) return;
 
     setIsMarkingComplete(true);
     try {
-      setIsCompleted(true);
+      setIsCompleted(() => true);
     } finally {
       setIsMarkingComplete(false);
     }
@@ -193,7 +169,7 @@ function LessonViewerInner({
   const handleMouseMove = useCallback((e: MouseEvent) => {
     if (!isResizingRef.current) return;
     // Inverse width relative to right edge
-    const viewportWidth = window.innerWidth;
+    const viewportWidth = globalThis.window.innerWidth;
     const newWidth = Math.min(Math.max(viewportWidth - e.clientX, 300), 640);
     setChatWidth(newWidth);
   }, []);
@@ -207,11 +183,11 @@ function LessonViewerInner({
   };
 
   useEffect(() => {
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
+    globalThis.window.addEventListener('mousemove', handleMouseMove);
+    globalThis.window.addEventListener('mouseup', handleMouseUp);
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
+      globalThis.window.removeEventListener('mousemove', handleMouseMove);
+      globalThis.window.removeEventListener('mouseup', handleMouseUp);
     };
   }, [handleMouseMove]);
 
@@ -292,7 +268,7 @@ function LessonViewerInner({
                     return lesson.height > lesson.width ? 'portrait' : 'landscape';
                   }
                   return 'landscape';
-                })() as 'landscape' | 'portrait'}
+                })()}
                 initialAspectRatio={(() => {
                   if (
                     typeof lesson.width === 'number' &&
@@ -308,7 +284,7 @@ function LessonViewerInner({
                     const h = 1000;
                     return `${w} / ${h}`;
                   }
-                  return undefined;
+                  return;
                 })()}
               />
 
@@ -392,13 +368,14 @@ function LessonViewerInner({
         {/* Chat panel wrapper with resizer */}
         <div className={`relative ${isChatVisible ? 'flex' : 'hidden'} md:flex`} style={{ width: isChatVisible ? chatWidth : 0 }}>
           {/* Resizer handle */}
-          <div
+          <button
+            type="button"
+            aria-label="Resize chat panel"
             onMouseDown={handleMouseDown}
-            className={`hidden md:flex items-center justify-center w-2 bg-slate-100 hover:bg-emerald-200 transition-colors group ${isResizing ? 'cursor-grabbing' : 'cursor-ew-resize'}`}
-            title="Drag to resize chat"
+            className={`hidden md:flex items-center justify-center w-2 bg-slate-100 hover:bg-emerald-200 transition-colors group focus:outline-none ${isResizing ? 'cursor-grabbing' : 'cursor-ew-resize'}`}
           >
             <GripVertical className="h-3 w-3 text-slate-400 group-hover:text-emerald-700 select-none pointer-events-none" />
-          </div>
+          </button>
 
           {/* Chat panel */}
           <div

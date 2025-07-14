@@ -28,23 +28,26 @@ export function VideoChapters({ lessonId, playbackId }: VideoChaptersProps) {
   } = useVideoStore();
   
   // Local fetch state for chapters
-  const [chaptersData, setChaptersData] = useState<{ chapters: Chapter[] } | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const [chaptersData, setChaptersData] = useState<{ chapters: Chapter[] } | undefined>();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string>();
 
-  const fetchChapters = useCallback(async () => {
+  const fetchChapters = useCallback(async (): Promise<void> => {
     if (!playbackId) return;
     try {
       setIsLoading(true);
       const res = await fetch(`/api/ai/transcript?playbackId=${playbackId}&lessonId=${lessonId}`);
-      const json = await res.json();
-      if (res.ok) {
-        setChaptersData(json);
+      const json: unknown = await res.json();
+      if (res.ok && json && typeof json === 'object' && 'chapters' in json) {
+        setChaptersData(json as { chapters: Chapter[] });
+      } else if (json && typeof json === 'object' && 'error' in json) {
+        const { error: err } = json as { error?: string };
+        setError(err ?? 'Failed to load chapters');
       } else {
-        setError(json.error || 'Failed to load chapters');
+        setError('Failed to load chapters');
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load chapters');
+    } catch (error_) {
+      setError(error_ instanceof Error ? error_.message : 'Failed to load chapters');
     } finally {
       setIsLoading(false);
     }
@@ -52,7 +55,7 @@ export function VideoChapters({ lessonId, playbackId }: VideoChaptersProps) {
 
   // Fetch on mount / change
   useEffect(() => {
-    fetchChapters();
+    void fetchChapters();
   }, [fetchChapters]);
 
   const refetchChapters = fetchChapters;
@@ -70,7 +73,7 @@ export function VideoChapters({ lessonId, playbackId }: VideoChaptersProps) {
   
   // Manual update for active chapter based on current time
   useEffect(() => {
-    if (!chapters.length || currentTime === 0) return;
+    if (chapters.length === 0 || currentTime === 0) return;
     
     // Find the current chapter based on timestamp
     for (let i = chapters.length - 1; i >= 0; i--) {
@@ -122,7 +125,7 @@ export function VideoChapters({ lessonId, playbackId }: VideoChaptersProps) {
         <div className="flex flex-col items-center">
           <p className="text-sm text-slate-500 mb-3">Could not load video chapters.</p>
           <button
-            onClick={() => refetchChapters()}
+            onClick={() => { void refetchChapters(); }}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-700 rounded-md text-sm hover:bg-slate-200"
           >
             <RefreshCw size={14} />
@@ -133,7 +136,7 @@ export function VideoChapters({ lessonId, playbackId }: VideoChaptersProps) {
     );
   }
   
-  if (!chapters.length) {
+  if (chapters.length === 0) {
     return (
       <div className="mt-6 border border-slate-200 bg-white rounded-lg p-4 text-center">
         <p className="text-sm text-slate-500">No chapters available for this video.</p>
@@ -144,9 +147,17 @@ export function VideoChapters({ lessonId, playbackId }: VideoChaptersProps) {
   return (
     <div className="mt-6 border border-slate-200 overflow-hidden bg-white rounded-lg">
       {/* Header */}
-      <div 
+      <div
+        role="button"
+        tabIndex={0}
         className="flex justify-between items-center px-4 py-3 border-b border-slate-100 cursor-pointer"
         onClick={() => setIsExpanded(!isExpanded)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setIsExpanded((prev) => !prev);
+          }
+        }}
       >
         <div className="flex items-center gap-2">
           <Clock size={16} className="text-emerald-600" />
