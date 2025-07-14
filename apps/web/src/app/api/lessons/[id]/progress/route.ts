@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { apiAuth, createErrorResponse } from "@/lib/auth/api-auth";
 import type { AuthResult } from "@/lib/auth/api-auth";
-import { db, courseSchema } from "@potatix/db";
+import { database, courseSchema } from "@potatix/db";
 import { eq, and } from "drizzle-orm";
+import type { InferInsertModel } from "drizzle-orm";
 import { nanoid } from "nanoid";
 
 // Type guard – we reuse pattern from other routes
@@ -17,11 +18,11 @@ interface BodyInput {
 
 export async function PUT(request: NextRequest) {
   const pathParts = request.nextUrl.pathname.split("/").filter(Boolean);
-  const lessonIdMaybe = pathParts[pathParts.length - 2]; // /lessons/:id/progress
+  const lessonIdMaybe = pathParts.at(-2); // /lessons/:id/progress
   if (!lessonIdMaybe) {
     return createErrorResponse("Lesson ID not found in path", 400);
   }
-  const lessonId = lessonIdMaybe as string;
+  const lessonId = lessonIdMaybe;
 
   // Auth
   const auth = await apiAuth(request);
@@ -47,13 +48,13 @@ export async function PUT(request: NextRequest) {
   }
 
   // Get lesson to retrieve courseId
-  const lessonRows = await db!
+  const lessonRows = await database
     .select({ courseId: courseSchema.lesson.courseId })
     .from(courseSchema.lesson)
     .where(eq(courseSchema.lesson.id, lessonId))
     .limit(1);
 
-  if (!lessonRows.length) {
+  if (lessonRows.length === 0) {
     return createErrorResponse("Lesson not found", 404);
   }
 
@@ -61,7 +62,7 @@ export async function PUT(request: NextRequest) {
   const { lessonProgress } = courseSchema;
 
   // Check if progress row exists
-  const existingRows = await db!
+  const existingRows = await database
     .select()
     .from(lessonProgress)
     .where(
@@ -70,19 +71,21 @@ export async function PUT(request: NextRequest) {
     .limit(1);
 
   const now = new Date();
-  if (existingRows.length) {
+  if (existingRows.length > 0) {
     const existing = existingRows[0]!;
     const newWatch = Math.max(existing.watchTimeSeconds ?? 0, position);
-    await db!
+    await database
       .update(lessonProgress)
       .set({
         lastPosition: position,
         watchTimeSeconds: newWatch,
         updatedAt: now,
       })
-      .where(eq(lessonProgress.id, existing.id as string));
+      .where(eq(lessonProgress.id, existing.id));
   } else {
-    await db!.insert(lessonProgress).values({
+    type LessonProgressInsert = InferInsertModel<typeof lessonProgress>;
+
+    const newProgress: LessonProgressInsert = {
       id: `lp-${nanoid()}`,
       userId: auth.userId,
       lessonId,
@@ -91,7 +94,9 @@ export async function PUT(request: NextRequest) {
       watchTimeSeconds: position,
       createdAt: now,
       updatedAt: now,
-    } as any);
+    };
+
+    await database.insert(lessonProgress).values(newProgress);
   }
 
   return NextResponse.json({ success: true });
