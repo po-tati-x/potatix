@@ -35,7 +35,7 @@ export function useRefreshDashboard(): () => void {
   const queryClient = useQueryClient();
 
   return useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: dashboardKeys.all() });
+    void queryClient.invalidateQueries({ queryKey: dashboardKeys.all() });
   }, [queryClient]);
 }
 
@@ -48,7 +48,7 @@ export function useSignOut(): UseMutationResult<void, Error, void, unknown> {
   return useMutation({
     mutationFn: async () => {
       await signOut();
-      window.location.href = "/login";
+      globalThis.location.href = "/login";
     },
     onSuccess: () => {
       queryClient.clear();

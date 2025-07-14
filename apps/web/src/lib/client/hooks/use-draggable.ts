@@ -35,7 +35,7 @@ export function useDraggable<T extends { id: string }>(
 ) {
   // Default reorder function that moves an item from sourceIndex to destIndex
   const defaultReorderFn: ReorderFunction<T> = useCallback((list, sourceIndex, destIndex) => {
-    const reorderedItems = Array.from(list);
+    const reorderedItems = [...list];
     const [removed] = reorderedItems.splice(sourceIndex, 1);
     if (!removed) return reorderedItems;
     reorderedItems.splice(destIndex, 0, removed);

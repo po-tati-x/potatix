@@ -10,6 +10,8 @@ import type {
   UpcomingEvent,
   Note,
   CertificateRequirement,
+  Achievement,
+  CourseProgress,
   LearningStats,
 } from '@/components/features/viewer/course-hub/types';
 import type {
@@ -18,6 +20,7 @@ import type {
   Achievement as BackendAchievement,
   UserNote as BackendUserNote,
   CertificateRequirement as BackendCertificateRequirement,
+  LessonProgress,
 } from '@/lib/shared/types/progress';
 import { useCourseProgressStore } from '@/lib/client/stores/course-progress-store';
 import {
@@ -55,8 +58,36 @@ function ensureMap<V>(value: unknown): Map<string, V> {
   return new Map();
 }
 
+// Shape returned by useCourseData – explicit to avoid `any` leakage
+export interface UseCourseDataResult {
+  // Course data
+  course: Course | undefined;
+  modules: CourseModule[];
+
+  // Progress data
+  progress: CourseProgress;
+
+  // Supplementary data
+  resources: Resource[];
+  discussions: DiscussionThread[];
+  achievements: Achievement[];
+  upcomingEvents: UpcomingEvent[];
+  notes: Note[];
+  certificateRequirements: CertificateRequirement[];
+
+  // Loading / error states
+  isLoading: boolean;
+  isLoadingSupplementary: boolean;
+  error: Error | undefined;
+  hasSupplementaryError: boolean;
+
+  // Mutations
+  refetch: () => void;
+  refetchProgress: () => void;
+}
+
 // Main hook for course data
-export function useCourseData(courseSlug: string) {
+export function useCourseData(courseSlug: string): UseCourseDataResult {
   const { currentCourseId, setCurrentCourse } = useCourseProgressStore();
 
   // Fetch course data
@@ -65,7 +96,7 @@ export function useCourseData(courseSlug: string) {
     error: courseError,
     isLoading: courseLoading,
     mutate: mutateCourse,
-  } = useSWR<Course>(courseSlug ? `/api/courses/slug/${courseSlug}` : null, fetcher, {
+  } = useSWR<Course, Error>(courseSlug ? `/api/courses/slug/${courseSlug}` : undefined, fetcher, {
     revalidateOnFocus: false,
     revalidateOnReconnect: true,
   });
@@ -76,11 +107,11 @@ export function useCourseData(courseSlug: string) {
     error: progressError,
     isLoading: progressLoading,
     mutate: mutateProgress,
-  } = useSWR<BackendCourseProgress>(
-    course?.id ? `/api/progress/courses/${course.id}` : null,
+  } = useSWR<BackendCourseProgress, Error>(
+    course?.id ? `/api/progress/courses/${course.id}` : undefined,
     fetcher,
     {
-      refreshInterval: 30000, // Refresh every 30 seconds
+      refreshInterval: 30_000, // Refresh every 30 seconds
     },
   );
 
@@ -89,18 +120,18 @@ export function useCourseData(courseSlug: string) {
     data: resources,
     error: resourcesError,
     isLoading: resourcesLoading,
-  } = useSWR<Resource[]>(course?.id ? `/api/courses/${course.id}/resources` : null, fetcher);
+  } = useSWR<Resource[], Error>(course?.id ? `/api/courses/${course.id}/resources` : undefined, fetcher);
 
   // Fetch discussions
   const {
     data: discussions,
     error: discussionsError,
     isLoading: discussionsLoading,
-  } = useSWR<DiscussionThread[]>(
-    course?.id ? `/api/courses/${course.id}/discussions?limit=10` : null,
+  } = useSWR<DiscussionThread[], Error>(
+    course?.id ? `/api/courses/${course.id}/discussions?limit=10` : undefined,
     fetcher,
     {
-      refreshInterval: 60000, // Refresh every minute
+      refreshInterval: 60_000, // Refresh every minute
     },
   );
 
@@ -109,8 +140,8 @@ export function useCourseData(courseSlug: string) {
     data: achievements,
     error: achievementsError,
     isLoading: achievementsLoading,
-  } = useSWR<BackendAchievement[]>(
-    course?.id ? `/api/users/me/achievements?courseId=${course.id}` : null,
+  } = useSWR<BackendAchievement[], Error>(
+    course?.id ? `/api/users/me/achievements?courseId=${course.id}` : undefined,
     fetcher,
   );
 
@@ -119,11 +150,11 @@ export function useCourseData(courseSlug: string) {
     data: events,
     error: eventsError,
     isLoading: eventsLoading,
-  } = useSWR<UpcomingEvent[]>(
-    course?.id ? `/api/courses/${course.id}/events?upcoming=true` : null,
+  } = useSWR<UpcomingEvent[], Error>(
+    course?.id ? `/api/courses/${course.id}/events?upcoming=true` : undefined,
     fetcher,
     {
-      refreshInterval: 300000, // Refresh every 5 minutes
+      refreshInterval: 300_000, // Refresh every 5 minutes
     },
   );
 
@@ -132,8 +163,8 @@ export function useCourseData(courseSlug: string) {
     data: notes,
     error: notesError,
     isLoading: notesLoading,
-  } = useSWR<BackendUserNote[]>(
-    course?.id ? `/api/courses/${course.id}/notes` : null,
+  } = useSWR<BackendUserNote[], Error>(
+    course?.id ? `/api/courses/${course.id}/notes` : undefined,
     fetcher,
   );
 
@@ -142,8 +173,8 @@ export function useCourseData(courseSlug: string) {
     data: certificateRequirements,
     error: certificateError,
     isLoading: certificateLoading,
-  } = useSWR<BackendCertificateRequirement[]>(
-    course?.id ? `/api/courses/${course.id}/certificate-requirements` : null,
+  } = useSWR<BackendCertificateRequirement[], Error>(
+    course?.id ? `/api/courses/${course.id}/certificate-requirements` : undefined,
     fetcher,
   );
 
@@ -159,10 +190,8 @@ export function useCourseData(courseSlug: string) {
       // Normalise lessonProgress to a real Map so downstream code can safely call .get()
       const normalisedProgress: BackendCourseProgress = {
         ...progressData,
-        lessonProgress: progressData.lessonProgress instanceof Map
-          ? progressData.lessonProgress
-          : new Map(progressData.lessonProgress as any),
-      } as BackendCourseProgress;
+        lessonProgress: ensureMap<LessonProgress>(progressData.lessonProgress),
+      };
 
       const map = ensureMap<BackendCourseProgress>(
         useCourseProgressStore.getState().courseProgress,
@@ -176,7 +205,7 @@ export function useCourseData(courseSlug: string) {
   const rawCourseProgressMap = useCourseProgressStore(state => state.courseProgress);
   const courseProgressMap = ensureMap<BackendCourseProgress>(rawCourseProgressMap);
 
-  const courseProgress = course?.id ? courseProgressMap.get(course.id) : null;
+  const courseProgress = course?.id ? courseProgressMap.get(course.id) : undefined;
   // If we had to coerce the map (i.e., store held plain object), write it back once to keep consistency
   useEffect(() => {
     if (!(useCourseProgressStore.getState().courseProgress instanceof Map)) {
@@ -211,14 +240,15 @@ export function useCourseData(courseSlug: string) {
 
   // Only treat course fetch errors as fatal; auxiliary endpoints can fail silently
   const error = courseError;
-  const hasSupplementaryError =
+  const hasSupplementaryError = Boolean(
     progressError ||
     resourcesError ||
     discussionsError ||
     achievementsError ||
     eventsError ||
     notesError ||
-    certificateError;
+    certificateError,
+  );
 
   return {
     // Course data
@@ -228,24 +258,22 @@ export function useCourseData(courseSlug: string) {
     // Progress data
     progress: mapCourseProgress(
       progressData
-        ? ({
+        ? {
             ...progressData,
-            lessonProgress: progressData.lessonProgress instanceof Map
-              ? progressData.lessonProgress
-              : new Map(progressData.lessonProgress as any),
-          } as BackendCourseProgress)
-        : null,
+            lessonProgress: ensureMap<LessonProgress>(progressData.lessonProgress),
+          }
+        : undefined,
       course,
     ),
 
     // Supplementary data with defaults
-    resources: (resources || []) as Resource[],
-    discussions: (discussions || []) as DiscussionThread[],
+    resources: (resources || []),
+    discussions: (discussions || []),
     achievements: achievements?.map(mapAchievement) || [],
-    upcomingEvents: (events || []) as UpcomingEvent[],
-    notes: (notes?.map(mapUserNote) || []) as Note[],
+    upcomingEvents: (events || []),
+    notes: (notes?.map(mapUserNote) || []),
     certificateRequirements:
-      (certificateRequirements?.map(mapCertificateRequirement) || []) as CertificateRequirement[],
+      (certificateRequirements?.map(mapCertificateRequirement) || []),
 
     // Loading states
     isLoading,
@@ -257,17 +285,19 @@ export function useCourseData(courseSlug: string) {
 
     // Mutations
     refetch: () => {
-      mutateCourse();
-      mutateProgress();
+      void mutateCourse();
+      void mutateProgress();
     },
-    refetchProgress: mutateProgress,
+    refetchProgress: () => {
+      void mutateProgress();
+    },
   };
 }
 
 // Hook for learning statistics
 export function useLearningStats(): {
   stats: LearningStats;
-  error: any;
+  error: unknown;
   isLoading: boolean;
   refetch: () => void;
 } {
@@ -276,15 +306,17 @@ export function useLearningStats(): {
     error,
     isLoading,
     mutate,
-  } = useSWR<LearningStatistics>('/api/users/me/stats', fetcher, {
+  } = useSWR<LearningStatistics, Error>('/api/users/me/stats', fetcher, {
     revalidateOnFocus: false,
   });
 
   return {
-    stats: mapLearningStats(stats ?? null),
+    stats: mapLearningStats(stats),
     error,
     isLoading,
-    refetch: mutate,
+    refetch: () => {
+      void mutate();
+    },
   };
 }
 

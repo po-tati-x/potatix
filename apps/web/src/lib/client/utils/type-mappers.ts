@@ -19,7 +19,7 @@ import type {
 
 // Map backend course progress to frontend format
 export function mapCourseProgress(
-  backendProgress: BackendCourseProgress | null,
+  backendProgress: BackendCourseProgress | null | undefined,
   course?: Course
 ): CourseProgress {
   if (!backendProgress || !course) {
@@ -65,7 +65,7 @@ export function mapCourseProgress(
     lastWatchedAt: backendProgress.lastAccessedAt,
     lastWatchedPosition: getCurrentLessonPosition(backendProgress),
     totalDuration: lessonDuration,
-    completedLessons: Array.from(lessonProgressMap.values())
+    completedLessons: [...lessonProgressMap.values()]
       .filter(lp => lp.status === 'completed')
       .map(lp => lp.lessonId),
     totalLessons: backendProgress.totalLessons,
@@ -97,7 +97,7 @@ export function createDefaultProgress(course?: Course): CourseProgress {
 }
 
 // Map backend learning statistics to frontend format
-export function mapLearningStats(backendStats: LearningStatistics | null): LearningStats {
+export function mapLearningStats(backendStats: LearningStatistics | null | undefined): LearningStats {
   if (!backendStats) {
     return createDefaultStats();
   }
@@ -235,7 +235,7 @@ export function transformCourseToModules(
         ? module.lessons
         : (course.lessons || []).filter((l) => l.moduleId === module.id);
 
-      const lessons = rawLessons.map(mapLesson);
+      const lessons = rawLessons.map((l) => mapLesson(l));
       const completedCount = lessons.filter((l) => l.isCompleted).length;
 
       return {
@@ -250,7 +250,7 @@ export function transformCourseToModules(
   }
 
   // Fallback for legacy courses without modules – bundle everything into one
-  const lessons = (course.lessons || []).map(mapLesson);
+  const lessons = (course.lessons || []).map((l) => mapLesson(l));
   return [
     {
       id: 'default-module',

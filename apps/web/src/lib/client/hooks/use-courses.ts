@@ -15,7 +15,7 @@ interface CoursesQueryOptions {
 export function useCourses(options?: CoursesQueryOptions) {
   return useQuery<Course[], Error>({
     queryKey: courseKeys.all(),
-    queryFn: courseApi.getAllCourses,
+    queryFn: () => courseApi.getAllCourses(),
     initialData: options?.initialData,
     enabled: options?.enabled ?? !options?.initialData,
     staleTime: options?.initialData ? 5 * 60 * 1000 : 0,
@@ -47,9 +47,9 @@ export function useCreateCourse() {
   const queryClient = useQueryClient();
 
   return useMutation<Course, Error, CreateCourseData>({
-    mutationFn: courseApi.createCourse,
+    mutationFn: (data) => courseApi.createCourse(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: courseKeys.all() });
+      void queryClient.invalidateQueries({ queryKey: courseKeys.all() });
       toast.success('Course created successfully');
     },
     onError: error => {
@@ -65,10 +65,10 @@ export function useUpdateCourse(courseId: string) {
   const queryClient = useQueryClient();
 
   return useMutation<Course, Error, Partial<CreateCourseData>>({
-    mutationFn: data => courseApi.updateCourse(courseId, data),
+    mutationFn: (data) => courseApi.updateCourse(courseId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: courseKeys.detail(courseId) });
-      queryClient.invalidateQueries({ queryKey: courseKeys.all() });
+      void queryClient.invalidateQueries({ queryKey: courseKeys.detail(courseId) });
+      void queryClient.invalidateQueries({ queryKey: courseKeys.all() });
       toast.success('Course updated successfully');
     },
     onError: error => {
@@ -84,9 +84,9 @@ export function useDeleteCourse() {
   const queryClient = useQueryClient();
 
   return useMutation<void, Error, string>({
-    mutationFn: courseApi.deleteCourse,
+    mutationFn: (id) => courseApi.deleteCourse(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: courseKeys.all() });
+      void queryClient.invalidateQueries({ queryKey: courseKeys.all() });
       toast.success('Course deleted successfully');
     },
     onError: error => {
@@ -102,9 +102,9 @@ export function useUploadCourseImage(courseId: string) {
   const queryClient = useQueryClient();
 
   return useMutation<{ imageUrl: string }, Error, FormData>({
-    mutationFn: formData => courseApi.uploadCourseImage(courseId, formData),
+    mutationFn: (formData) => courseApi.uploadCourseImage(courseId, formData),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: courseKeys.detail(courseId) });
+      void queryClient.invalidateQueries({ queryKey: courseKeys.detail(courseId) });
       toast.success('Image uploaded successfully');
     },
     onError: error => {
@@ -124,9 +124,10 @@ export function useCreateModule() {
   const queryClient = useQueryClient();
 
   return useMutation<unknown, Error, CreateModulePayload>({
-    mutationFn: courseApi.createModule,
+    mutationFn: (payload) => courseApi.createModule(payload),
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: courseKeys.detail(variables.courseId) });
+      void queryClient.invalidateQueries({ queryKey: courseKeys.detail(variables.courseId) });
+      void queryClient.invalidateQueries({ queryKey: ['course', 'outline'] });
       toast.success('Module created successfully');
     },
     onError: error => {
@@ -149,7 +150,7 @@ export function useUpdateModule() {
   return useMutation<unknown, Error, UpdateModulePayload>({
     mutationFn: ({ moduleId, title }) => courseApi.updateModule({ moduleId, title }),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: courseKeys.detail(variables.courseId) });
+      void queryClient.invalidateQueries({ queryKey: courseKeys.detail(variables.courseId) });
       toast.success('Module updated successfully');
     },
     onError: error => {
@@ -171,7 +172,7 @@ export function useDeleteModule() {
   return useMutation<void, Error, DeleteModulePayload>({
     mutationFn: ({ moduleId }) => courseApi.deleteModule(moduleId),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: courseKeys.detail(variables.courseId) });
+      void queryClient.invalidateQueries({ queryKey: courseKeys.detail(variables.courseId) });
       toast.success('Module deleted successfully');
     },
     onError: error => {
@@ -192,9 +193,11 @@ export function useCreateLesson() {
   const queryClient = useQueryClient();
 
   return useMutation<unknown, Error, CreateLessonPayload>({
-    mutationFn: courseApi.createLesson,
+    mutationFn: (payload) => courseApi.createLesson(payload),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: courseKeys.detail(variables.courseId) });
+      void queryClient.invalidateQueries({ queryKey: courseKeys.detail(variables.courseId) });
+      // also refresh lightweight outline used by sidebar
+      void queryClient.invalidateQueries({ queryKey: ['course', 'outline'] });
       toast.success('Lesson created successfully');
     },
     onError: error => {
@@ -211,8 +214,8 @@ interface UpdateLessonPayload {
   title?: string;
   description?: string;
   visibility?: 'public' | 'enrolled';
-  playbackId?: string | null;
-  uploadStatus?: string | null;
+  playbackId?: string | undefined;
+  uploadStatus?: string | undefined;
   transcriptData?: unknown;
   courseId: string;
 }
@@ -239,7 +242,7 @@ export function useUpdateLesson() {
         transcriptData,
       }),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: courseKeys.detail(variables.courseId) });
+      void queryClient.invalidateQueries({ queryKey: courseKeys.detail(variables.courseId) });
       toast.success('Lesson updated successfully');
     },
     onError: error => {
@@ -257,7 +260,7 @@ export function useDeleteLesson() {
   return useMutation<void, Error, { lessonId: string; courseId: string }>({
     mutationFn: ({ lessonId }) => courseApi.deleteLesson(lessonId),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: courseKeys.detail(variables.courseId) });
+      void queryClient.invalidateQueries({ queryKey: courseKeys.detail(variables.courseId) });
       toast.success('Lesson deleted successfully');
     },
     onError: error => {
@@ -274,11 +277,11 @@ export function useReorderLessons() {
 
   return useMutation<void, Error, { courseId: string; moduleId: string; orderedIds: string[] }>({
     mutationKey: ['reorder', 'lessons'],
-    mutationFn: courseApi.reorderLessons,
+    mutationFn: (payload) => courseApi.reorderLessons(payload),
     onSuccess: (_, variables) => {
       // Sync cache with server after successful reorder
-      queryClient.invalidateQueries({ queryKey: ['course', 'outline'] });
-      queryClient.invalidateQueries({ queryKey: courseKeys.detail(variables.courseId) });
+      void queryClient.invalidateQueries({ queryKey: ['course', 'outline'] });
+      void queryClient.invalidateQueries({ queryKey: courseKeys.detail(variables.courseId) });
     },
     onError: error => {
       toast.error(error.message || 'Failed to reorder lessons');
@@ -294,9 +297,9 @@ export function useReorderModules() {
 
   return useMutation<void, Error, { courseId: string; orderedIds: string[] }>({
     mutationKey: ['reorder', 'modules'],
-    mutationFn: courseApi.reorderModules,
+    mutationFn: (payload) => courseApi.reorderModules(payload),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: courseKeys.detail(variables.courseId) });
+      void queryClient.invalidateQueries({ queryKey: courseKeys.detail(variables.courseId) });
     },
     onError: error => {
       toast.error(error.message || 'Failed to reorder modules');
@@ -351,11 +354,11 @@ export function useReorderLessonsAcrossModules() {
     { courseId: string; modules: { moduleId: string; lessonIds: string[] }[] }
   >({
     mutationKey: ['reorder', 'lessons', 'cross-module'],
-    mutationFn: courseApi.reorderLessonsAcrossModules,
+    mutationFn: (payload) => courseApi.reorderLessonsAcrossModules(payload),
     onSuccess: (_, variables) => {
       // Sync cache with server after successful reorder
-      queryClient.invalidateQueries({ queryKey: ['course', 'outline'] });
-      queryClient.invalidateQueries({ queryKey: courseKeys.detail(variables.courseId) });
+      void queryClient.invalidateQueries({ queryKey: ['course', 'outline'] });
+      void queryClient.invalidateQueries({ queryKey: courseKeys.detail(variables.courseId) });
     },
     onError: error => {
       toast.error(error.message || 'Failed to reorder lessons');

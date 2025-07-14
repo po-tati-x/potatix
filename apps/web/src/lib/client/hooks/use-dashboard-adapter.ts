@@ -51,8 +51,8 @@ export function useRevenueInsightsData() {
   const { data, isLoading, error } = useDashboardData();
 
   // Coerce once to preserve reference.
-  const revenueData: UiRevenueData | null = useMemo(
-    () => (data?.revenueData as UiRevenueData | undefined) ?? null,
+  const revenueData: UiRevenueData | undefined = useMemo(
+    () => data?.revenueData as UiRevenueData | undefined,
     [data?.revenueData]
   );
 

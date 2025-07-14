@@ -17,7 +17,7 @@ export function useUpdateEnrollment(courseId: string): UseMutationResult<void, E
   return useMutation({
     mutationFn: ({ enrollmentId, status }) => enrollmentApi.updateEnrollment(enrollmentId, status),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [...courseKeys.detail(courseId), "students"] });
+      void queryClient.invalidateQueries({ queryKey: [...courseKeys.detail(courseId), "students"] });
     },
   });
 } 

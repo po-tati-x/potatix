@@ -8,34 +8,34 @@ import { useSession } from '@/lib/auth/auth';
 
 interface CourseContextValue {
   // Course data
-  course: Course | null;
+  course: Course | undefined;
   isLoading: boolean;
-  error: Error | null;
-  
+  error: Error | undefined;
+
   // Auth state
   isAuthenticated: boolean;
-  
+
   // Enrollment state
   isEnrolled: boolean;
-  enrollmentStatus: "active" | "pending" | "rejected" | null;
+  enrollmentStatus: 'active' | 'pending' | 'rejected' | undefined;
   isEnrolling: boolean;
   enroll: () => Promise<void>;
-  
+
   // Viewer state
   isViewerMode: boolean;
   completedLessons: string[];
-  
+
   // UI state
   isSidebarCollapsed: boolean;
   toggleSidebarCollapsed: () => void;
   isMobileSidebarOpen: boolean;
   toggleMobileSidebar: () => void;
-  
+
   // Current lesson
   currentLessonId: string;
 }
 
-const CourseContext = createContext<CourseContextValue | null>(null);
+const CourseContext = createContext<CourseContextValue | undefined>(undefined);
 
 export function CourseProvider({ 
   children, 
@@ -64,8 +64,8 @@ export function CourseProvider({
     error: courseError,
   } = useCourseBySlug(courseSlug);
 
-  // Ensure course is never undefined to match our type definition
-  const course = courseData || null;
+  // Course may be undefined until fetch completes
+  const course = courseData;
 
   // Enrollment state
   const {
@@ -84,14 +84,14 @@ export function CourseProvider({
     // Course data
     course,
     isLoading: courseLoading || isEnrollmentLoading,
-    error: courseError,
+    error: courseError ?? undefined,
     
     // Auth state
     isAuthenticated,
     
     // Enrollment state
     isEnrolled,
-    enrollmentStatus,
+    enrollmentStatus: enrollmentStatus ?? undefined,
     isEnrolling,
     enroll,
     
@@ -125,7 +125,7 @@ export function CourseProvider({
 
 export function useCourseContext() {
   const context = useContext(CourseContext);
-  if (!context) {
+  if (context === undefined) {
     throw new Error('useCourseContext must be used within a CourseProvider');
   }
   return context;

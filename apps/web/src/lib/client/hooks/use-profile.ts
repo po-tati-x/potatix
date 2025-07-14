@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { userApi } from "../api/user";
+import { userApi, type NotificationPreferences } from "../api/user";
 import type { UserProfile } from "@/lib/shared/types/profile";
 import { userKeys } from "@/lib/shared/constants/query-keys";
 import { profileApi } from '../api/profile';
@@ -19,13 +19,13 @@ export function useProfile(initialData?: UserProfile) {
     refetch,
   } = useQuery({
     queryKey: userKeys.profile(),
-    queryFn: profileApi.getMe,
+    queryFn: () => profileApi.getMe(),
     initialData,
   });
 
   // Update profile
   const { mutate: updateProfile, isPending: isUpdating } = useMutation({
-    mutationFn: userApi.updateProfile,
+    mutationFn: (payload: Partial<UserProfile>) => userApi.updateProfile(payload),
     onSuccess: (data) => {
       queryClient.setQueryData(userKeys.profile(), data);
       toast.success("Profile updated successfully");
@@ -38,7 +38,7 @@ export function useProfile(initialData?: UserProfile) {
   // Update notifications
   const { mutate: updateNotifications, isPending: isUpdatingNotifications } =
     useMutation({
-      mutationFn: userApi.updateNotifications,
+      mutationFn: (prefs: NotificationPreferences) => userApi.updateNotifications(prefs),
       onSuccess: (data) => {
         queryClient.setQueryData(userKeys.profile(), data);
         toast.success("Notification preferences updated");
@@ -51,7 +51,7 @@ export function useProfile(initialData?: UserProfile) {
   // Update password
   const { mutate: updatePassword, isPending: isUpdatingPassword } = useMutation(
     {
-      mutationFn: userApi.updatePassword,
+      mutationFn: (payload: { currentPassword: string; newPassword: string }) => userApi.updatePassword(payload),
       onSuccess: () => {
         toast.success("Password updated successfully");
       },
@@ -63,7 +63,7 @@ export function useProfile(initialData?: UserProfile) {
 
   // Upload profile image
   const { mutate: uploadImage, isPending: isUploading } = useMutation({
-    mutationFn: userApi.uploadProfileImage,
+    mutationFn: (file: File) => userApi.uploadProfileImage(file),
     onSuccess: async () => {
       await refetch();
       toast.success("Profile image updated successfully");
@@ -75,7 +75,7 @@ export function useProfile(initialData?: UserProfile) {
 
   // Delete account
   const { mutate: deleteAccount, isPending: isDeleting } = useMutation({
-    mutationFn: userApi.deleteAccount,
+    mutationFn: () => userApi.deleteAccount(),
     onSuccess: () => {
       toast.success("Account deleted successfully");
       // Note: Redirection should be handled by the component
@@ -117,7 +117,7 @@ export function useUpdateProfile() {
   return useMutation<UserProfile, Error, Partial<UserProfile>>({
     mutationFn: (payload) => profileApi.updateMe(payload),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: userKeys.profile() });
+      void qc.invalidateQueries({ queryKey: userKeys.profile() });
     },
   });
 }

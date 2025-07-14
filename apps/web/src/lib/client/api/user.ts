@@ -47,34 +47,45 @@ export interface PasswordUpdateData {
  */
 export const userApi = {
   async getProfile(): Promise<UserProfile> {
-    const response = await axios.get("/api/user/profile");
+    const response = await axios.get<UserProfile>("/api/user/profile");
     return response.data;
   },
 
   async updateProfile(data: ProfileUpdateData): Promise<UserProfile> {
-    const response = await axios.patch("/api/user/profile", data);
+    const response = await axios.patch<UserProfile>("/api/user/profile", data);
     return response.data;
   },
 
-  async updateNotifications(data: NotificationPreferences): Promise<UserProfile> {
-    const response = await axios.patch("/api/user/notifications", data);
+  async updateNotifications(
+    data: NotificationPreferences,
+  ): Promise<UserProfile> {
+    const response = await axios.patch<UserProfile>(
+      "/api/user/notifications",
+      data,
+    );
     return response.data;
   },
 
   async updatePassword(data: PasswordUpdateData): Promise<{ success: boolean }> {
-    const response = await axios.post("/api/user/password", data);
+    const response = await axios.post<{ success: boolean }>(
+      "/api/user/password",
+      data,
+    );
     return response.data;
   },
 
   async uploadProfileImage(file: File): Promise<{ imageUrl: string }> {
     const formData = new FormData();
     formData.append("file", file);
-    const response = await axios.post("/api/user/profile/image", formData);
+    const response = await axios.post<{ imageUrl: string }>(
+      "/api/user/profile/image",
+      formData,
+    );
     return response.data;
   },
 
   async deleteAccount(): Promise<{ success: boolean }> {
-    const response = await axios.delete("/api/user");
+    const response = await axios.delete<{ success: boolean }>("/api/user");
     return response.data;
   },
 };

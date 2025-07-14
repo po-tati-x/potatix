@@ -10,7 +10,7 @@ export function useChatWithLesson(
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | undefined>();
 
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -33,7 +33,7 @@ export function useChatWithLesson(
       setMessages((prev) => [...prev, userMessage]);
       setInput('');
       setIsLoading(true);
-      setError(null);
+      setError(undefined);
 
       try {
         const resp = await fetch('/api/chat/lesson', {
@@ -75,8 +75,8 @@ export function useChatWithLesson(
             return copy;
           });
         }
-      } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : 'Failed to get response';
+      } catch (error_: unknown) {
+        const message = error_ instanceof Error ? error_.message : 'Failed to get response';
         setError(message);
       } finally {
         setIsLoading(false);
@@ -87,7 +87,7 @@ export function useChatWithLesson(
 
   const clearChat = useCallback(() => {
     setMessages([]);
-    setError(null);
+    setError(undefined);
   }, []);
 
   return {

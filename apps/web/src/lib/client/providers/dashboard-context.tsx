@@ -14,7 +14,7 @@ import type { DashboardData as ApiDashboardData } from '@/lib/client/api/dashboa
 // Base context type with shared status and actions
 interface DashboardBaseContext {
   isLoading: boolean;
-  error: Error | null;
+  error: Error | undefined;
   refreshDashboard: () => void;
 }
 
@@ -57,8 +57,8 @@ type DashboardContextType = StatsContext &
 const DashboardContext = createContext<DashboardContextType | undefined>(undefined);
 
 export type DashboardPayload = Partial<ApiDashboardData> & {
-  stats?: StatsData | null;
-  profile?: UserProfile | null;
+  stats?: StatsData | undefined;
+  profile?: UserProfile | undefined;
   courses?: Course[];
   progressData?: CourseProgressData[];
   revenueData?: RevenueData;
@@ -78,11 +78,11 @@ export function DashboardContextProvider({ children, initialData }: DashboardCon
 
   const dashboardData = (initialData as ApiDashboardData | undefined) ?? queryResult.data;
   const isLoading = initialData ? false : queryResult.isLoading;
-  const error = queryResult.error;
+  const error = queryResult.error ?? undefined;
 
   // Refresh function
   const refreshDashboard = () => {
-    queryClient.fetchQuery({
+    void queryClient.fetchQuery({
       queryKey: dashboardKeys.all(),
       queryFn: () => dashboardApi.getAllDashboardData(),
       staleTime: 0,
@@ -103,7 +103,7 @@ export function DashboardContextProvider({ children, initialData }: DashboardCon
     
     // Status
     isLoading,
-    error: error || null,
+    error,
     
     // Actions
     refreshDashboard,

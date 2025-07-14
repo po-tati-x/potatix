@@ -15,7 +15,10 @@ export interface Enrollment {
 
 export const enrollmentApi = {
   async getStudents(courseId: string): Promise<Enrollment[]> {
-    const { data } = await axios.get(`/api/courses/enrollments?courseId=${courseId}`);
+    // Explicitly type the axios response to avoid implicit `any`
+    const { data } = await axios.get<Enrollment[]>(
+      `/api/courses/enrollments?courseId=${courseId}`,
+    );
     return data;
   },
   async updateEnrollment(

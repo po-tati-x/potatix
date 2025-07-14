@@ -9,8 +9,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
  * Keeps the enrollment fetch & mutate logic in one place so components don\'t repeat themselves.
  */
 interface UseEnrollmentResult {
-  /** Current enrollment status – null when the user isn\'t enrolled */
-  enrollmentStatus: "active" | "pending" | "rejected" | null;
+  /** Current enrollment status – undefined when the user isn\'t enrolled */
+  enrollmentStatus: "active" | "pending" | "rejected" | undefined;
   /** Convenience flag for `enrollmentStatus === \"active\"` */
   isEnrolled: boolean;
   /** GET request is in-flight */
@@ -31,17 +31,17 @@ export function useEnrollment(courseSlug: string): UseEnrollmentResult {
   const {
     data,
     isLoading,
-  } = useQuery<{ status: "active" | "pending" | "rejected" | null }, Error>({
+  } = useQuery<{ status: "active" | "pending" | "rejected" | undefined }, Error>({
     queryKey: ["course", courseSlug, "enrollment"],
     queryFn: async () => {
       const res = await axios.get<{
         isEnrolled: boolean;
-        enrollment: { status: "active" | "pending" | "rejected" } | null;
+        enrollment: { status: "active" | "pending" | "rejected" } | undefined;
       }>(`/api/courses/enrollment?slug=${courseSlug}`);
 
       return res.data.enrollment
         ? { status: res.data.enrollment.status }
-        : { status: null };
+        : { status: undefined };
     },
     enabled: isAuthenticated && !!courseSlug,
     staleTime: 30_000,
@@ -56,12 +56,11 @@ export function useEnrollment(courseSlug: string): UseEnrollmentResult {
       await axios.post("/api/courses/enrollment", { courseSlug });
     },
     onSuccess: () => {
-      // Refetch after successful enrollment to update status
-      queryClient.invalidateQueries({ queryKey: ["course", courseSlug, "enrollment"] });
+      void queryClient.invalidateQueries({ queryKey: ["course", courseSlug, "enrollment"] });
     },
   });
 
-  const enrollmentStatus = data?.status ?? null;
+  const enrollmentStatus = data?.status;
   return useMemo<UseEnrollmentResult>(
     () => ({
       enrollmentStatus,
