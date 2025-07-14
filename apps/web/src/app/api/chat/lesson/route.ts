@@ -45,7 +45,7 @@ export async function POST(req: Request) {
       .join('\n');
     const prompt = `You are an AI tutor helping with the lesson "${lessonTitle}" from the course "${course.title}". Answer clearly and reference the lesson when helpful.\n\nWhen referring to a specific moment in the lesson video, ALWAYS embed the timestamp in square brackets using the exact five-character format [MM:SS] (two-digit minutes colon two-digit seconds). Example: [02:15]. Do NOT wrap the timestamp in backticks or any other markup.\n\nConversation so far:\n${conversation}\n\nTutor:`;
 
-    const textStream = await streamLessonAnswer(prompt);
+    const textStream = streamLessonAnswer(prompt);
     return new Response(textStream, {
       headers: {
         'Content-Type': 'text/plain; charset=utf-8',
