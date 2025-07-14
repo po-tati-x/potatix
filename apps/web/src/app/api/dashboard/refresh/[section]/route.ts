@@ -1,4 +1,4 @@
-import { courseSchema, authSchema, profileSchema, getDb } from "@potatix/db";
+import { courseSchema, authSchema, profileSchema, getDatabase } from "@potatix/db";
 import { eq, and, count, sql, gte, lt, inArray, desc } from "drizzle-orm";
 import { subMonths, startOfDay } from "date-fns";
 import { NextRequest, NextResponse } from "next/server";
@@ -6,7 +6,7 @@ import { auth } from "@/lib/auth/auth-server";
 import { env } from "@/env.server";
 
 // Create a connection to the database
-const db = getDb(env.DATABASE_URL);
+const db = getDatabase(env.DATABASE_URL);
 
 /**
  * API endpoint for refreshing specific sections of dashboard data
@@ -45,21 +45,26 @@ export async function GET(request: NextRequest) {
     let result = {};
 
     switch(section) {
-      case "stats":
+      case "stats": {
         result = { stats: await fetchDashboardStats(userId) };
         break;
-      case "courses":
+      }
+      case "courses": {
         result = { courses: await fetchUserCourses(userId) };
         break;
-      case "progress":
+      }
+      case "progress": {
         result = { progressData: await fetchCourseProgress(userId) };
         break;
-      case "revenue":
+      }
+      case "revenue": {
         result = { revenueData: await fetchRevenueInsights(userId) };
         break;
-      case "profile":
+      }
+      case "profile": {
         result = { profile: await fetchUserProfile(userId) };
         break;
+      }
     }
 
     return NextResponse.json(result);
@@ -81,8 +86,8 @@ async function fetchUserProfile(userId: string) {
       .where(eq(authSchema.user.id, userId))
       .limit(1);
 
-    if (!users.length) {
-      return null;
+    if (users.length === 0) {
+      return;
     }
 
     const user = users[0]!;
@@ -94,7 +99,7 @@ async function fetchUserProfile(userId: string) {
       .where(eq(profileSchema.userProfile.userId, userId))
       .limit(1);
 
-    const profile = profiles.length > 0 ? profiles[0] : null;
+    const profile = profiles.length > 0 ? profiles[0] : undefined;
     
     // Merge user and profile data
     return {
@@ -103,12 +108,12 @@ async function fetchUserProfile(userId: string) {
       email: user.email,
       image: user.image,
       createdAt: user.createdAt,
-      bio: profile?.bio || null,
+      bio: profile?.bio,
       tier: "Free" // Default tier, replace with actual tier logic if available
     };
   } catch (error) {
     console.error("Error fetching user profile:", error);
-    return null;
+    return;
   }
 }
 
@@ -335,7 +340,7 @@ async function fetchCourseProgress(userId: string) {
     .from(courseSchema.course)
     .where(eq(courseSchema.course.userId, userId));
 
-  if (!courses.length) {
+  if (courses.length === 0) {
     return [];
   }
 
@@ -414,9 +419,9 @@ async function fetchCourseProgress(userId: string) {
         .groupBy(courseSchema.lessonProgress.lessonId)
         .orderBy(
           sql`
-          SUM(CASE WHEN ${courseSchema.lessonProgress.completed} IS NOT NULL THEN 1 ELSE 0 END)::float /
-          COUNT(DISTINCT ${courseSchema.lessonProgress.userId}) * 100 ASC
-        `,
+            SUM(CASE WHEN ${courseSchema.lessonProgress.completed} IS NOT NULL THEN 1 ELSE 0 END)::float /
+            COUNT(DISTINCT ${courseSchema.lessonProgress.userId}) * 100 ASC
+          `,
         )
         .limit(1);
 
@@ -499,8 +504,8 @@ async function fetchRevenueInsights(userId: string) {
     .from(courseSchema.course)
     .where(eq(courseSchema.course.userId, userId));
 
-  if (!courses.length) {
-    return null;
+  if (courses.length === 0) {
+    return;
   }
 
   // Get all course IDs
