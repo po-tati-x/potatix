@@ -4,11 +4,22 @@ import type { AuthResult } from "@/lib/auth/api-auth";
 import { courseService } from "@/lib/server/services/courses";
 import { moduleService } from "@/lib/server/services/modules";
 import type { ModuleUpdateInput } from "@/lib/server/services/modules";
+import { z } from "zod";
 
 // Type guard to check if auth result has userId
 function hasUserId(auth: AuthResult): auth is { userId: string } {
-  return 'userId' in auth && typeof auth.userId === 'string'
+  return 'userId' in auth && typeof auth.userId === 'string';
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Validation schema – partial update allowed, all fields optional
+// ─────────────────────────────────────────────────────────────────────────────
+
+const modulePatchSchema = z.object({
+  title: z.string().min(1).optional(),
+  description: z.string().nullish().optional(),
+  order: z.number().int().optional(),
+});
 
 /**
  * GET /api/courses/modules/[id]
@@ -81,14 +92,13 @@ export async function PATCH(request: NextRequest) {
       return createErrorResponse(err?.error ?? "Access denied", err?.status ?? 403);
     }
     
-    // Parse request body
-    const body = await request.json();
-    
-    // Create update input
+    // Parse and validate request body
+    const data = modulePatchSchema.parse(await request.json());
+
     const updateInput: ModuleUpdateInput = {
-      title: body.title,
-      description: body.description,
-      order: body.order,
+      ...('title' in data ? { title: data.title } : {}),
+      ...('description' in data ? { description: data.description ?? undefined } : {}),
+      ...('order' in data ? { order: data.order } : {}),
     };
     
     // Update module
