@@ -16,7 +16,7 @@ interface SocialLoginProps {
 export default function SocialLogin({
   callbackUrl = "/dashboard",
 }: SocialLoginProps) {
-  const [isLoading, setIsLoading] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState<string | undefined>();
 
   const handleSocialLogin = async (provider: SocialProvider) => {
     setIsLoading(provider);
@@ -39,7 +39,7 @@ export default function SocialLogin({
         error instanceof Error ? error.message : "Unknown error";
       toast.error(`Authentication failed: ${errorMessage}`);
     } finally {
-      setIsLoading(null);
+      setIsLoading(undefined);
     }
   };
 
@@ -59,7 +59,9 @@ export default function SocialLogin({
           size="small"
           className="border-slate-200 font-medium text-slate-800"
           disabled={Boolean(isLoading)}
-          onClick={() => handleSocialLogin("github")}
+          onClick={() => {
+            void handleSocialLogin("github");
+          }}
           iconLeft={
             isLoading === "github" ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -76,7 +78,9 @@ export default function SocialLogin({
           size="small"
           className="border-slate-200 font-medium text-slate-800"
           disabled={Boolean(isLoading)}
-          onClick={() => handleSocialLogin("google")}
+          onClick={() => {
+            void handleSocialLogin("google");
+          }}
           iconLeft={
             isLoading === "google" ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />

@@ -88,8 +88,8 @@ export default function AuthForm({
         // Handle sign up
         const response = await signUp.email({
           name: (values.name || (values.email ?? "").split("@")[0]) as string,
-          email: values.email!,
-          password: values.password!,
+          email: values.email,
+          password: values.password,
           callbackURL: callbackUrl,
         });
 
@@ -103,8 +103,8 @@ export default function AuthForm({
       } else {
         // Handle sign in
         const response = await signIn.email({
-          email: values.email!,
-          password: values.password!,
+          email: values.email,
+          password: values.password,
           callbackURL: callbackUrl,
           rememberMe: true,
         });
@@ -130,6 +130,17 @@ export default function AuthForm({
     }
   };
 
+  // ------------------------------------------------------------------
+  //  Event handlers (synchronous wrappers for ESLint compliance)
+  // ------------------------------------------------------------------
+
+  const handleFormSubmit: React.FormEventHandler<HTMLFormElement> = (event) => {
+    // Delegate to react-hook-form – ensure we don’t leak the Promise
+    void form.handleSubmit((values) => {
+      void onSubmit(values);
+    })(event);
+  };
+
   return (
     <div className="w-full">
       <div className="mb-6">
@@ -145,7 +156,10 @@ export default function AuthForm({
       </div>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <form
+          onSubmit={handleFormSubmit}
+          className="space-y-4"
+        >
           {isSignUp && (
             <FormField
               control={form.control}
@@ -253,7 +267,11 @@ export default function AuthForm({
         {onToggleMode ? (
           <button
             type="button"
-            onClick={onToggleMode}
+            onClick={() => {
+              if (typeof onToggleMode === 'function') {
+                void onToggleMode();
+              }
+            }}
             className="text-sm text-emerald-600 hover:text-emerald-700 font-medium transition-colors"
           >
             {isSignUp
