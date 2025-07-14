@@ -60,12 +60,8 @@ export async function checkCourseOwnership(courseId: string, userId: string) {
   const ownershipCheck = await courseService.checkCourseOwnership(courseId, userId);
   
   if (!ownershipCheck.owned) {
-    // The service returns the error details as an object { error, status }
-    const err = ownershipCheck.error as { error: string; status: number } | null;
-    throw {
-      message: (err?.error ?? "Access denied"),
-      status: (err?.status ?? 403),
-    };
+    const err = ownershipCheck.error as { error: string; status: number } | undefined;
+    throw new ApiError(err?.error ?? "Access denied", err?.status ?? 403);
   }
   
   return ownershipCheck.course;
@@ -79,11 +75,22 @@ export async function checkLessonOwnership(lessonId: string, courseId: string, u
   const ownershipCheck = await lessonService.checkLessonOwnership(lessonId, courseId, userId);
   
   if (!ownershipCheck.owned) {
-    throw { 
-      message: ownershipCheck.error || "Access denied", 
-      status: ownershipCheck.status || 403 
-    };
+    throw new ApiError(ownershipCheck.error || "Access denied", ownershipCheck.status || 403);
   }
   
   return ownershipCheck.lesson;
+} 
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Custom error type preserving HTTP status
+// ─────────────────────────────────────────────────────────────────────────────
+
+export class ApiError extends Error {
+  public readonly status: number;
+
+  constructor(message: string, status = 500) {
+    super(message);
+    this.status = status;
+    Object.setPrototypeOf(this, new.target.prototype);
+  }
 } 
