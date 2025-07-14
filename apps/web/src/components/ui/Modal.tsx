@@ -53,7 +53,7 @@ const Modal = ({
       setIsVisible(false);
       setTimeout(() => {
         onClose();
-      }, 200); // Match the transition duration
+      }, 200);
     }
   };
 
