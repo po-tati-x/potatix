@@ -3,8 +3,8 @@ import { nanoid } from "nanoid";
 import { apiAuth, createErrorResponse } from "@/lib/auth/api-auth";
 import type { AuthResult } from "@/lib/auth/api-auth";
 import { uploadFile, deleteFile, extractKeyFromUrl } from "@/lib/server/utils/r2-client";
-import { db, authSchema } from "@potatix/db";
-import { eq } from "drizzle-orm";
+import { database, authSchema } from "@potatix/db";
+import { eq, sql } from "drizzle-orm";
 
 // Type guard to check if auth result has userId
 function hasUserId(auth: AuthResult): auth is { userId: string } {
@@ -25,14 +25,10 @@ export async function POST(request: NextRequest) {
     return createErrorResponse(auth.error, auth.status);
   }
   
-  if (!db) {
-    return createErrorResponse("Database not initialized", 500);
-  }
-  
   try {
     // Get form data with the file
     const formData = await request.formData();
-    const file = formData.get("file") as File | null;
+    const file = formData.get("file") as File | undefined;
 
     if (!file) {
       return createErrorResponse("No file provided", 400);
@@ -63,13 +59,13 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(await file.arrayBuffer());
 
     // Get the user to check if they already have a profile image
-    const users = await db
+    const users = await database
       .select()
       .from(authSchema.user)
       .where(eq(authSchema.user.id, auth.userId))
       .limit(1);
 
-    if (!users.length) {
+    if (users.length === 0) {
       return createErrorResponse("User not found", 404);
     }
 
@@ -92,7 +88,7 @@ export async function POST(request: NextRequest) {
     const imageUrl = await uploadFile(buffer, fileName, file.type);
 
     // Update user record with new image URL
-    await db
+    await database
       .update(authSchema.user)
       .set({
         image: imageUrl,
@@ -122,19 +118,17 @@ export async function DELETE(request: NextRequest) {
     return createErrorResponse(auth.error, auth.status);
   }
   
-  if (!db) {
-    return createErrorResponse("Database not initialized", 500);
-  }
+  // `database` singleton is always defined via @potatix/db
   
   try {
     // Get the user to check if they have a profile image
-    const users = await db
+    const users = await database
       .select()
       .from(authSchema.user)
       .where(eq(authSchema.user.id, auth.userId))
       .limit(1);
 
-    if (!users.length) {
+    if (users.length === 0) {
       return createErrorResponse("User not found", 404);
     }
 
@@ -155,10 +149,10 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Update user record to remove image reference
-    await db
+    await database
       .update(authSchema.user)
       .set({
-        image: null,
+        image: sql`NULL`,
         updatedAt: new Date(),
       })
       .where(eq(authSchema.user.id, auth.userId));
