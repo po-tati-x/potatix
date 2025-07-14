@@ -37,8 +37,11 @@ export async function GET(
       }
     }
     
-    // Get course by slug
-    const course = await courseService.getCourseBySlug(slug, !includeUnpublished);
+    // Get course by slug – returned value is serialized server-side
+    const course = await courseService.getCourseBySlug(
+      slug,
+      !includeUnpublished,
+    );
     
     if (!course) {
       return createErrorResponse("Course not found", 404);
@@ -52,7 +55,7 @@ export async function GET(
       }
     }
     
-    return NextResponse.json({ data: course, error: null });
+    return NextResponse.json({ data: course, error: undefined });
   } catch (error) {
     console.error("[API] Failed to get course by slug:", error);
     return createErrorResponse("Failed to fetch course", 500);

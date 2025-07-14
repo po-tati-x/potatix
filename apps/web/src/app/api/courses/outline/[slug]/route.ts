@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createErrorResponse } from "@/lib/auth/api-auth";
 import { courseService } from "@/lib/server/services/courses";
+import type { Course } from "@/lib/shared/types/courses";
 
 interface RouteParams {
   params: Promise<{ slug: string }>;
@@ -17,13 +18,20 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   const { searchParams } = new URL(request.url);
   const includeUnpublished = searchParams.get("includeUnpublished") === "true";
   try {
-    const outline = await courseService.getCourseOutlineBySlug(slug, !includeUnpublished);
-    if (!outline) {
+    const result = (await courseService.getCourseOutlineBySlug(
+      slug,
+      !includeUnpublished,
+    )) as unknown;
+
+    if (!result) {
       return createErrorResponse("Course not found", 404);
     }
-    return NextResponse.json({ data: outline, error: null });
-  } catch (err) {
-    console.error("[API] course outline", err);
+
+    const outline = result as Course;
+
+    return NextResponse.json({ data: outline });
+  } catch (error) {
+    console.error("[API] course outline", error);
     return createErrorResponse("Failed to fetch course outline", 500);
   }
 } 
