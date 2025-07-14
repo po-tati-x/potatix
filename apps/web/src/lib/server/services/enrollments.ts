@@ -1,4 +1,4 @@
-import { db, courseSchema, authSchema } from "@potatix/db";
+import { database as databaseCore, courseSchema, authSchema } from "@potatix/db";
 import { eq, and, desc } from "drizzle-orm";
 import { nanoid } from "nanoid";
 
@@ -17,7 +17,7 @@ export interface PaginationParams {
   limit: number;
 }
 
-const database = db!; // assume singleton initialized
+const database = databaseCore; // assume singleton initialized
 
 // Enrollment Service
 export const enrollmentService = {
@@ -38,7 +38,7 @@ export const enrollmentService = {
       .orderBy(desc(courseSchema.courseEnrollment.createdAt))
       .limit(1);
     
-    if (!enrollments.length) {
+    if (enrollments.length === 0) {
       return { enrolled: false };
     }
     
@@ -157,4 +157,4 @@ export const enrollmentService = {
     
     return enrollments;
   }
-} 
+}; 

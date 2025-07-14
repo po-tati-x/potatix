@@ -1,26 +1,14 @@
-import { getDb } from '@potatix/db';
+import { getDatabase } from '@potatix/db';
 import { sql } from 'drizzle-orm';
 import { startOfDay, startOfMonth } from 'date-fns';
-
-export interface HeroMetrics {
-  revenueToday: number;
-  revenueMTD: number;
-  revenueAll: number;
-  enrollmentsToday: number;
-  enrollmentsMTD: number;
-  enrollmentsAll: number;
-  activeStudents: number;
-  avgRating: number | null;
-  revenueTrend: number[];
-  enrollmentTrend: number[];
-}
+import type { HeroMetrics } from '@/components/features/dashboard/types';
 
 /**
  * Service to provide top-line hero metrics for the creator dashboard.
  */
 export const dashboardHeroService = {
   async getHeroMetrics(userId: string): Promise<HeroMetrics> {
-    const db = getDb();
+    const db = getDatabase();
 
     const today = startOfDay(new Date());
     const monthStart = startOfMonth(new Date());
@@ -97,7 +85,7 @@ export const dashboardHeroService = {
     const row = result.rows?.[0] as Row | undefined;
 
     if (!row) {
-      const emptyArr: number[] = Array(30).fill(0);
+      const emptyArr = Array.from({ length: 30 }, () => 0);
       return {
         revenueToday: 0,
         revenueMTD: 0,
@@ -106,7 +94,7 @@ export const dashboardHeroService = {
         enrollmentsMTD: 0,
         enrollmentsAll: 0,
         activeStudents: 0,
-        avgRating: null,
+        avgRating: undefined,
         revenueTrend: emptyArr,
         enrollmentTrend: emptyArr,
       };
@@ -120,7 +108,7 @@ export const dashboardHeroService = {
       enrollmentsMTD: row.enrollments_mtd ?? 0,
       enrollmentsAll: row.enrollments_all ?? 0,
       activeStudents: row.active_students ?? 0,
-      avgRating: null, // Ratings not implemented yet
+      avgRating: undefined, // Ratings not implemented yet
       revenueTrend: row.revenue_daily ?? [],
       enrollmentTrend: row.enrollments_daily ?? [],
     };

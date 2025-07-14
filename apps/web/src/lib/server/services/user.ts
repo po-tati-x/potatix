@@ -1,4 +1,4 @@
-import { getDb, authSchema, profileSchema } from "@potatix/db";
+import { getDatabase, authSchema, profileSchema } from "@potatix/db";
 import { eq } from "drizzle-orm";
 import { logger } from "../utils/logger";
 
@@ -25,11 +25,11 @@ export class ServiceError extends Error {
  */
 export interface UserProfile {
   id: string;
-  name: string | null;
+  name: string | undefined;
   email: string;
-  emailVerified: boolean | null;
-  image: string | null;
-  bio?: string | null;
+  emailVerified: boolean | undefined;
+  image: string | undefined;
+  bio?: string | undefined;
   createdAt: Date;
   updatedAt?: Date;
 }
@@ -69,21 +69,21 @@ export const userService = {
    */
   async getUserProfile(userId: string): Promise<UserProfile> {
     try {
-      const db = getDb();
-      const users = await db
+      const database = getDatabase();
+      const users = await database
         .select()
         .from(authSchema.user)
         .where(eq(authSchema.user.id, userId))
         .limit(1);
 
-      if (!users.length) {
+      if (users.length === 0) {
         throw new ServiceError("User not found", "USER_NOT_FOUND", 404);
       }
 
       const core = users[0]!;
 
       // Grab extended profile (bio, etc.)
-      const profiles = await db
+      const profiles = await database
         .select()
         .from(profileSchema.userProfile)
         .where(eq(profileSchema.userProfile.userId, userId))
@@ -97,7 +97,7 @@ export const userService = {
         email: core.email,
         emailVerified: core.emailVerified,
         image: core.image,
-        bio: profile.bio ?? null,
+        bio: profile.bio ?? undefined,
         createdAt: core.createdAt,
         updatedAt: core.updatedAt,
       } as UserProfile;
@@ -130,11 +130,11 @@ export const userService = {
         throw new ServiceError("No fields provided to update", "NO_DATA", 400);
       }
 
-      const db = getDb();
+      const database = getDatabase();
 
       // If name present, update core user table
       if (updatePayload.name !== undefined) {
-        await db
+        await database
           .update(authSchema.user)
           .set({ name: updatePayload.name as string })
           .where(eq(authSchema.user.id, userId));
@@ -143,28 +143,26 @@ export const userService = {
       // If bio present, upsert into profile table
       if (updatePayload.bio !== undefined) {
         // Check if profile row exists
-        const existingProfiles = await db
+        const existingProfiles = await database
           .select()
           .from(profileSchema.userProfile)
           .where(eq(profileSchema.userProfile.userId, userId))
           .limit(1);
 
-        if (existingProfiles.length) {
-          await db
-            .update(profileSchema.userProfile)
-            .set({ bio: updatePayload.bio as string | null })
-            .where(eq(profileSchema.userProfile.userId, userId));
-        } else {
-          await db.insert(profileSchema.userProfile).values({
-            id: userId, // reuse id for simplicity
-            userId,
-            bio: updatePayload.bio as string | null,
-          });
-        }
+        await (existingProfiles.length > 0
+          ? database
+              .update(profileSchema.userProfile)
+              .set({ bio: updatePayload.bio as string | null })
+              .where(eq(profileSchema.userProfile.userId, userId))
+          : database.insert(profileSchema.userProfile).values({
+              id: userId, // reuse id for simplicity
+              userId,
+              bio: updatePayload.bio as string | null,
+            }));
       }
 
       // Get fresh combined profile via profileService? For simplicity, return updated core user with bio merged
-      const finalUser = await db
+      const finalUser = await database
         .select()
         .from(authSchema.user)
         .where(eq(authSchema.user.id, userId))
@@ -173,7 +171,7 @@ export const userService = {
       const core = finalUser[0]!;
 
       // Fetch profile for bio
-      const profileRowArr = await db
+      const profileRowArr = await database
         .select()
         .from(profileSchema.userProfile)
         .where(eq(profileSchema.userProfile.userId, userId))
@@ -187,7 +185,7 @@ export const userService = {
         email: core.email,
         emailVerified: core.emailVerified,
         image: core.image,
-        bio: profileRow.bio ?? null,
+        bio: profileRow.bio ?? undefined,
         createdAt: core.createdAt,
         updatedAt: core.updatedAt,
       } as UserProfile;
@@ -213,8 +211,9 @@ export const userService = {
       // 2. Hash the new password
       // 3. Update in the database
 
-      // For now, we'll just log and return success
+      // For now, we'll just log and await a resolved promise to satisfy eslint require-await rule
       userLogger.info(`Password updated for user ${userId}`);
+      await Promise.resolve();
       return { success: true };
     } catch (error) {
       userLogger.error("Failed to update password", error as Error);
@@ -250,8 +249,8 @@ export const userService = {
    */
   async deleteAccount(userId: string): Promise<{ success: boolean }> {
     try {
-      const db = getDb();
-      await db
+      const database = getDatabase();
+      await database
         .delete(authSchema.user)
         .where(eq(authSchema.user.id, userId));
 

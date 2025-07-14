@@ -27,7 +27,7 @@ export async function uploadFile(file: Buffer, key: string, contentType: string)
     await s3Client.send(command);
     return `${PUBLIC_URL}/${key}`;
   } catch (error) {
-    console.error(`Failed to upload file to R2: ${error}`);
+    console.error(`Failed to upload file to R2: ${String(error)}`);
     throw new Error('Storage upload failed');
   }
 }
@@ -41,7 +41,7 @@ export async function deleteFile(key: string): Promise<void> {
 
     await s3Client.send(command);
   } catch (error) {
-    console.error(`Failed to delete file from R2: ${error}`);
+    console.error(`Failed to delete file from R2: ${String(error)}`);
     throw new Error('Storage deletion failed');
   }
 }
@@ -55,7 +55,7 @@ export function extractKeyFromUrl(url: string): string {
   
   // Get the key after the public URL
   if (url.startsWith(PUBLIC_URL)) {
-    return url.substring(PUBLIC_URL.length + 1);
+    return url.slice(PUBLIC_URL.length + 1);
   }
   
   // If it's already a key, return it directly

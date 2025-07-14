@@ -7,8 +7,23 @@ import { env } from '@/env.server';
 /**
  * Get Mux asset ID from a playback ID
  */
-export async function getMuxAssetId(playbackId: string): Promise<string | null> {
-  if (!playbackId) return null;
+// Type for Mux playback ID -> asset ID response
+interface MuxPlaybackResponse {
+  data?: {
+    object?: {
+      id?: string;
+    };
+  };
+}
+
+interface MuxAssetDetailsResponse {
+  data?: {
+    tracks?: MuxTrack[];
+  }; 
+}
+
+export async function getMuxAssetId(playbackId: string): Promise<string | undefined> {
+  if (!playbackId) return undefined;
   
   try {
     const muxToken = Buffer.from(
@@ -27,16 +42,16 @@ export async function getMuxAssetId(playbackId: string): Promise<string | null> 
     
     if (!playbackResponse.ok) {
       console.error(`Failed to get asset ID: ${playbackResponse.status}`);
-      return null;
+      return undefined;
     }
     
-    const playbackData = await playbackResponse.json();
-    const assetId = playbackData?.data?.object?.id;
+    const playbackData = (await playbackResponse.json()) as MuxPlaybackResponse;
+    const assetId = playbackData.data?.object?.id;
     
-    return assetId || null;
+    return assetId;
   } catch (error) {
     console.error('Error getting Mux asset ID:', error);
-    return null;
+    return undefined;
   }
 }
 
@@ -142,8 +157,8 @@ export async function fetchMuxTranscript(playbackId: string): Promise<{
       };
     }
     
-    const assetData = await assetResponse.json();
-    const tracks = assetData?.data?.tracks || [];
+    const assetData = (await assetResponse.json()) as MuxAssetDetailsResponse;
+    const tracks: MuxTrack[] = assetData.data?.tracks ?? [];
     
     // Find the subtitle track
     const subtitleTrack = tracks.find((track: MuxTrack) => 
@@ -191,7 +206,12 @@ async function fetchMuxTranscriptDirectly(playbackId: string): Promise<{
   try {
     // Check if video exists first
     const videoUrl = `https://stream.mux.com/${playbackId}.m3u8`;
-    const videoCheck = await fetch(videoUrl, { method: 'HEAD' }).catch(() => null);
+    let videoCheck: Response | undefined;
+    try {
+      videoCheck = await fetch(videoUrl, { method: 'HEAD' });
+    } catch {
+      videoCheck = undefined;
+    }
     
     if (!videoCheck || !videoCheck.ok) {
       return {

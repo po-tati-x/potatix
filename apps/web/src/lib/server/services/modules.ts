@@ -1,20 +1,18 @@
-import { db, courseSchema } from '@potatix/db';
+import { database, courseSchema } from '@potatix/db';
 import { eq, desc, asc, sql } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
-
-const database = db!;
 
 // Types
 export interface ModuleCreateInput {
   title: string;
-  description?: string | null;
+  description?: string | undefined;
   order?: number;
   courseId: string;
 }
 
 export interface ModuleUpdateInput {
   title?: string;
-  description?: string | null;
+  description?: string | undefined;
   order?: number;
 }
 
@@ -43,7 +41,8 @@ export const moduleService = {
       .where(eq(courseSchema.courseModule.id, moduleId))
       .limit(1);
 
-    return modules[0] || null;
+    // Return the first module when found; otherwise undefined
+    return modules[0];
   },
 
   async createModule(data: ModuleCreateInput) {
@@ -66,8 +65,9 @@ export const moduleService = {
       .values({
         id: moduleId,
         title: data.title,
-        description: data.description || null,
-        order: data.order !== undefined ? data.order : nextOrder,
+        // Store description when provided; leave undefined otherwise
+        description: data.description ?? undefined,
+        order: data.order === undefined ? nextOrder : data.order,
         courseId: data.courseId,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -82,9 +82,9 @@ export const moduleService = {
     const updatedModule = await database
       .update(courseSchema.courseModule)
       .set({
-        ...(data.title !== undefined ? { title: data.title } : {}),
-        ...(data.description !== undefined ? { description: data.description } : {}),
-        ...(data.order !== undefined ? { order: data.order } : {}),
+        ...(data.title === undefined ? {} : { title: data.title }),
+        ...(data.description === undefined ? {} : { description: data.description }),
+        ...(data.order === undefined ? {} : { order: data.order }),
         updatedAt: new Date(),
       })
       .where(eq(courseSchema.courseModule.id, moduleId))

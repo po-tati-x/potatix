@@ -1,4 +1,4 @@
-import { getDb } from "@potatix/db";
+import { getDatabase } from "@potatix/db";
 import { sql } from "drizzle-orm";
 import { subMonths } from "date-fns";
 import { RevenueData } from '@/components/features/dashboard/types';
@@ -10,9 +10,9 @@ export const dashboardRevenueService = {
   /**
    * Get revenue insights
    */
-  async getRevenueInsights(userId: string): Promise<RevenueData | null> {
+  async getRevenueInsights(userId: string): Promise<RevenueData | undefined> {
     try {
-      const db = getDb();
+      const db = getDatabase();
 
       const now = new Date();
       const oneMonthAgo = subMonths(now, 1);
@@ -48,8 +48,8 @@ export const dashboardRevenueService = {
 
       const rows = result.rows as RevenueRow[];
 
-      if (!rows.length) {
-        return null;
+      if (rows.length === 0) {
+        return undefined;
       }
 
       // Aggregate totals
@@ -77,9 +77,9 @@ export const dashboardRevenueService = {
 
         const growth = prevEnrollments
           ? Math.round(((monthEnrollments - prevEnrollments) / prevEnrollments) * 100)
-          : monthEnrollments > 0
+          : (monthEnrollments > 0
             ? 100
-            : 0;
+            : 0);
 
         return {
           id: row.id,
@@ -98,9 +98,9 @@ export const dashboardRevenueService = {
         ? Math.round(
             ((currentMonthRevenue - previousMonthRevenue) / previousMonthRevenue) * 100,
           )
-        : currentMonthRevenue > 0
+        : (currentMonthRevenue > 0
           ? 100
-          : 0;
+          : 0);
 
       const avgRevenuePerStudent = totalStudents
         ? Math.round(totalRevenue / totalStudents)

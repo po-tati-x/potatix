@@ -1,18 +1,46 @@
-import { db, instructorSchema } from '@potatix/db';
+import { database, instructorSchema } from '@potatix/db';
 import { eq, and, sql } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { logger } from '../utils/logger';
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Helper types
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface CourseInstructorDbRow {
+  id: string;
+  role: 'primary' | 'co' | 'guest';
+  sortOrder: number;
+  titleOverride: string | undefined;
+  instructorId: string;
+  name: string;
+  title: string | undefined;
+  bio: string | undefined;
+  avatarUrl: string | undefined;
+  credentials: string[] | undefined;
+  userId: string | undefined;
+  totalStudents: number | string | undefined;
+}
+
+interface PublicInstructorDbRow {
+  id: string;
+  name: string;
+  title: string | undefined;
+  bio: string | undefined;
+  avatarUrl: string | undefined;
+  credentials: string[] | undefined;
+  totalStudents: number | string | undefined;
+}
+
 const instructorLogger = logger.child('InstructorService');
-const database = db!;
 
 export interface CreateInstructorInput {
   name: string;
-  title?: string | null;
-  bio?: string | null;
-  avatarUrl?: string | null;
-  credentials?: string[] | null;
-  userId?: string | null;
+  title?: string | undefined;
+  bio?: string | undefined;
+  avatarUrl?: string | undefined;
+  credentials?: string[] | undefined;
+  userId?: string | undefined;
 }
 
 export const instructorService = {
@@ -25,16 +53,24 @@ export const instructorService = {
       await database.insert(instructorSchema.instructor).values({
         id,
         name: data.name,
-        title: data.title,
-        bio: data.bio,
-        avatarUrl: data.avatarUrl,
+        title: data.title ?? undefined,
+        bio: data.bio ?? undefined,
+        avatarUrl: data.avatarUrl ?? undefined,
         credentials: data.credentials ?? [],
-        userId: data.userId ?? null,
+        userId: data.userId ?? undefined,
       });
-      return { id, ...data, credentials: data.credentials ?? [] };
-    } catch (err) {
-      instructorLogger.error('Failed to create instructor', err as Error);
-      throw err;
+      return {
+        id,
+        name: data.name,
+        title: data.title ?? undefined,
+        bio: data.bio ?? undefined,
+        avatarUrl: data.avatarUrl ?? undefined,
+        credentials: data.credentials ?? [],
+        userId: data.userId ?? undefined,
+      };
+    } catch (error) {
+      instructorLogger.error('Failed to create instructor', error as Error);
+      throw error;
     }
   },
 
@@ -49,7 +85,7 @@ export const instructorService = {
     instructorId: string;
     role?: 'primary' | 'co' | 'guest';
     sortOrder?: number;
-    titleOverride?: string | null;
+    titleOverride?: string | undefined;
   }) {
     const id = nanoid();
     try {
@@ -62,9 +98,9 @@ export const instructorService = {
         titleOverride,
       });
       return { id, courseId, instructorId, role, sortOrder, titleOverride };
-    } catch (err) {
-      instructorLogger.error('Failed to link instructor to course', err as Error);
-      throw err;
+    } catch (error) {
+      instructorLogger.error('Failed to link instructor to course', error as Error);
+      throw error;
     }
   },
 
@@ -79,9 +115,9 @@ export const instructorService = {
           ),
         );
       return result.rowCount ?? 0;
-    } catch (err) {
-      instructorLogger.error('Failed to unlink instructor', err as Error);
-      throw err;
+    } catch (error) {
+      instructorLogger.error('Failed to unlink instructor', error as Error);
+      throw error;
     }
   },
 
@@ -90,7 +126,7 @@ export const instructorService = {
     data: Partial<{
       role: 'primary' | 'co' | 'guest';
       sortOrder: number;
-      titleOverride: string | null;
+      titleOverride: string | undefined;
     }>,
   ) {
     try {
@@ -100,15 +136,15 @@ export const instructorService = {
         .where(eq(instructorSchema.courseInstructor.id, id))
         .returning();
       return row;
-    } catch (err) {
-      instructorLogger.error('Failed to update course instructor', err as Error);
-      throw err;
+    } catch (error) {
+      instructorLogger.error('Failed to update course instructor', error as Error);
+      throw error;
     }
   },
 
   async getInstructorsByCourse(courseId: string) {
     try {
-      const rows = (await database.execute(sql/* sql */`
+      const queryResult = await database.execute(sql/* sql */`
         SELECT ci.id,
                ci.role,
                ci.sort_order        AS "sortOrder",
@@ -127,12 +163,14 @@ export const instructorService = {
         WHERE ci.course_id = ${courseId}
         GROUP BY ci.id, i.id
         ORDER BY ci.sort_order ASC;
-      `)).rows as Array<any>;
+      `);
+
+      const rows = queryResult.rows as unknown as CourseInstructorDbRow[];
       return rows.map((r) => ({
         id: r.id,
         courseId,
         instructorId: r.instructorId,
-        role: r.role as 'primary' | 'co' | 'guest',
+        role: r.role,
         sortOrder: r.sortOrder,
         titleOverride: r.titleOverride ?? undefined,
         instructor: {
@@ -140,28 +178,28 @@ export const instructorService = {
           name: r.name,
           title: r.title ?? undefined,
           bio: r.bio ?? undefined,
-          avatarUrl: r.avatarUrl ?? null,
+          avatarUrl: r.avatarUrl ?? undefined,
           credentials: r.credentials ?? [],
-          userId: r.userId ?? null,
+          userId: r.userId ?? undefined,
           totalStudents: Number(r.totalStudents ?? 0),
         },
       }));
-    } catch (err) {
+    } catch (error) {
       instructorLogger.error(
         `Failed to fetch instructors for course ${courseId}`,
-        err as Error,
+        error as Error,
       );
-      throw err;
+      throw error;
     }
   },
 
   async updateInstructor(id: string, data: Partial<{
     name: string;
-    title: string | null;
-    bio: string | null;
-    avatarUrl: string | null;
-    credentials: string[] | null;
-    userId: string | null;
+    title: string | undefined;
+    bio: string | undefined;
+    avatarUrl: string | undefined;
+    credentials: string[] | undefined;
+    userId: string | undefined;
   }>) {
     try {
       const [row] = await database
@@ -170,16 +208,16 @@ export const instructorService = {
         .where(eq(instructorSchema.instructor.id, id))
         .returning();
       return row;
-    } catch (err) {
-      instructorLogger.error('Failed to update instructor', err as Error);
-      throw err;
+    } catch (error) {
+      instructorLogger.error('Failed to update instructor', error as Error);
+      throw error;
     }
   },
 
   async updateCourseInstructorByKeys(courseId: string, instructorId: string, data: Partial<{
     role: 'primary' | 'co' | 'guest';
     sortOrder: number;
-    titleOverride: string | null;
+    titleOverride: string | undefined;
   }>) {
     try {
       const [row] = await database
@@ -193,9 +231,9 @@ export const instructorService = {
         )
         .returning();
       return row;
-    } catch (err) {
-      instructorLogger.error('Failed to update course_instructor', err as Error);
-      throw err;
+    } catch (error) {
+      instructorLogger.error('Failed to update course_instructor', error as Error);
+      throw error;
     }
   },
 
@@ -205,7 +243,7 @@ export const instructorService = {
 
   async getPublicInstructor(instructorOrUserId: string) {
     try {
-      const [row] = (await database.execute(sql/* sql */`
+      const result = await database.execute(sql/* sql */`
         SELECT i.id,
                i.name,
                i.title,
@@ -219,30 +257,24 @@ export const instructorService = {
         WHERE i.id = ${instructorOrUserId} OR i.user_id = ${instructorOrUserId}
         GROUP BY i.id
         LIMIT 1;
-      `)).rows as Array<any>;
+      `);
 
-      if (!row) return null;
+      const [row] = result.rows as unknown as PublicInstructorDbRow[];
+
+      if (!row) return;
 
       return {
         id: row.id,
         name: row.name,
-        title: row.title ?? undefined,
-        bio: row.bio ?? undefined,
-        avatarUrl: row.avatarUrl ?? null,
+        ...(row.title ? { title: row.title } : {}),
+        ...(row.bio ? { bio: row.bio } : {}),
+        ...(row.avatarUrl ? { avatarUrl: row.avatarUrl } : {}),
         credentials: row.credentials ?? [],
         totalStudents: Number(row.totalStudents ?? 0),
-      } as {
-        id: string;
-        name: string;
-        title?: string;
-        bio?: string;
-        avatarUrl?: string | null;
-        credentials: string[];
-        totalStudents: number;
-      };
-    } catch (err) {
-      instructorLogger.error('Failed to fetch public instructor', err as Error);
-      throw err;
+      } as const;
+    } catch (error) {
+      instructorLogger.error('Failed to fetch public instructor', error as Error);
+      throw error;
     }
   },
 }; 

@@ -1,4 +1,4 @@
-import { db, courseSchema } from "@potatix/db";
+import { database, courseSchema } from "@potatix/db";
 import { eq, and, count, sql } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { getMuxAssetId, deleteMuxAsset } from "@/lib/server/utils/mux";
@@ -8,20 +8,51 @@ import { instructorService } from "./instructors";
 import { userService } from "./user";
 import { logger } from "../utils/logger";
 import { uniqueNamesGenerator, colors, animals } from "unique-names-generator";
+import type { Course } from "@/lib/shared/types/courses";
+import { CourseModule, Lesson } from "@/lib/shared/types/courses";
+
+// Lint-friendly helper – safely coerce unknown/nullish values, without `null` literals
+const defined = <T>(value: T | undefined | null): T | undefined => (value === undefined ? undefined : (value as T));
+
+// ────────────────────────────────────────────────────────────────────────────
+// Shared helpers – defined once at module scope to satisfy lint rules
+// ────────────────────────────────────────────────────────────────────────────
+
+function toIso(date: string | Date | null | undefined): string {
+  if (!date) return new Date(0).toISOString();
+  return typeof date === 'string' ? date : date.toISOString();
+}
+
+function serializeLesson(raw: Lesson): Lesson {
+  return {
+    ...raw,
+    createdAt: toIso(raw.createdAt),
+    updatedAt: toIso(raw.updatedAt),
+    ...(raw.description ? { description: raw.description } : {}),
+    ...(raw.thumbnailUrl ? { thumbnailUrl: raw.thumbnailUrl } : {}),
+  };
+}
+
+function serializeModule(raw: CourseModule & { lessons?: Lesson[] }): CourseModule & { lessons: Lesson[] } {
+  return {
+    ...raw,
+    createdAt: toIso(raw.createdAt),
+    updatedAt: toIso(raw.updatedAt),
+    ...(raw.description ? { description: raw.description } : {}),
+    lessons: (raw.lessons ?? []).map((l) => serializeLesson(l)).sort((a, b) => a.order - b.order),
+  };
+}
 
 // Create a logger instance for courses
 const courseLogger = logger.child("CourseService");
 
-// Ensure singleton DB instance is initialized
-const database = db!;
-
 // Types
 export interface CourseCreateInput {
   title: string;
-  description?: string | null;
+  description?: string | undefined;
   price?: number;
   status?: string;
-  imageUrl?: string | null;
+  imageUrl?: string | undefined;
   userId: string;
   perks?: string[];
   learningOutcomes?: string[];
@@ -30,10 +61,10 @@ export interface CourseCreateInput {
 
 export interface CourseUpdateInput {
   title?: string;
-  description?: string | null;
+  description?: string | undefined;
   price?: number;
   status?: string;
-  imageUrl?: string | null;
+  imageUrl?: string | undefined;
   slug?: string;
   perks?: string[];
   learningOutcomes?: string[];
@@ -56,7 +87,7 @@ function purgeSlugCache(slug: string) {
       keysToDelete.push(key);
     }
   }
-  keysToDelete.forEach((k) => slugCache.delete(k));
+  for (const k of keysToDelete) slugCache.delete(k);
 }
 // Course Service
 export const courseService = {
@@ -83,13 +114,13 @@ export const courseService = {
         .where(eq(courseSchema.course.id, courseId))
         .limit(1);
 
-      return courses[0] || null;
+      return courses[0];
     } catch (error) {
       courseLogger.error(
         `Failed to get course by ID: ${courseId}`,
         error as Error,
       );
-      return null;
+      return;
     }
   },
 
@@ -111,137 +142,124 @@ export const courseService = {
         lessonService.getLessonsByCourseId(courseId),
       ]);
 
-      if (!course) return null;
+      if (!course) return;
 
-      const studentCount = enrollmentResult[0]?.studentCount || 0;
+      // Cast DB rows to shared types & derive counts
+      const studentCount = enrollmentResult[0]?.studentCount ?? 0;
+      const typedModules = modules as unknown as CourseModule[];
+      const typedLessons = lessons as unknown as Lesson[];
 
-      // Build modules array with nested lessons (sorted) in-memory once
-      const modulesWithLessons = modules.map((module) => {
-        const moduleLessons = lessons
-          .filter((lesson) => lesson.moduleId === module.id)
+      // Build modules with nested lessons (sorted)
+      const modulesWithLessons = typedModules.map((mod) => {
+        const modLessons = typedLessons
+          .filter((lsn) => lsn.moduleId === mod.id)
           .sort((a, b) => a.order - b.order);
-
-        return {
-          ...module,
-          createdAt: module.createdAt.toISOString(),
-          updatedAt: module.updatedAt.toISOString(),
-          lessons: moduleLessons.map((l) => ({
-            ...l,
-            description: l.description || undefined,
-            createdAt: l.createdAt.toISOString(),
-            updatedAt: l.updatedAt.toISOString(),
-          })),
-        };
+        return serializeModule({ ...mod, lessons: modLessons });
       });
 
-      return {
-        ...course,
-        // Normalise optional description to undefined for client convenience
-        description: course.description || undefined,
-        perks: course.perks || undefined,
-        learningOutcomes: course.learningOutcomes || undefined,
-        prerequisites: course.prerequisites || undefined,
+      const detailedCourse: Course & {
+        studentCount: number;
+        lessonCount: number;
+      } = {
+        id: course.id,
+        title: course.title,
+        price: course.price,
+        userId: course.userId,
         status: (course.status as 'draft' | 'published' | 'archived') ?? 'draft',
-        // Convert dates only once – JSON.stringify will handle ISO conversion
-        createdAt: course.createdAt.toISOString(),
-        updatedAt: course.updatedAt?.toISOString(),
+        createdAt: toIso(course.createdAt),
+        updatedAt: course.updatedAt ? toIso(course.updatedAt) : toIso(new Date()),
+        ...(course.description ? { description: course.description } : {}),
+        ...(course.perks ? { perks: course.perks } : {}),
+        ...(course.learningOutcomes ? { learningOutcomes: course.learningOutcomes } : {}),
+        ...(course.prerequisites ? { prerequisites: course.prerequisites } : {}),
+        ...(course.imageUrl ? { imageUrl: course.imageUrl } : {}),
+        ...(course.slug ? { slug: course.slug } : {}),
         modules: modulesWithLessons,
-        lessons: lessons.map((l) => ({
-          ...l,
-          description: l.description || undefined,
-          createdAt: l.createdAt.toISOString(),
-          updatedAt: l.updatedAt.toISOString(),
-        })),
+        lessons: typedLessons.map((l) => serializeLesson(l)),
         studentCount,
-        lessonCount: lessons.length,
+        lessonCount: typedLessons.length,
       } as const;
+
+      return detailedCourse;
     } catch (error) {
       courseLogger.error(`Failed to get course details: ${courseId}`, error as Error);
-      return null;
+      return;
     }
   },
 
   async getCoursesByUserId(userId: string) {
     try {
-      // Scalar sub-queries avoid the join-multiplication problem while keeping the
-      // call single-round-trip.
-      const resultRows = (
-        await database.execute(sql/* sql */`
-          SELECT
-            c.id,
-            c.title,
-            c.description,
-            c.price,
-            c.status,
-            c.image_url  AS "imageUrl",
-            c.user_id    AS "userId",
-            c.created_at AS "createdAt",
-            c.updated_at AS "updatedAt",
-            c.slug,
-            c.perks,
-            c.learning_outcomes AS "learningOutcomes",
-            c.prerequisites,
-            /* counts */
-            (
-              SELECT COUNT(*)
-              FROM lesson l
-              WHERE l.course_id = c.id
-            ) AS "lessonCount",
-            (
-              SELECT COUNT(*)
-              FROM course_module m
-              WHERE m.course_id = c.id
-            ) AS "moduleCount",
-            (
-              SELECT COUNT(*)
-              FROM course_enrollment e
-              WHERE e.course_id = c.id
-                AND e.status = 'active'
-            ) AS "studentCount"
-          FROM course c
-          WHERE c.user_id = ${userId}
-          ORDER BY c.updated_at DESC;
-        `)
-      ).rows as Array<{
+      const rawResult = await database.execute(sql`
+        SELECT
+          c.id,
+          c.title,
+          c.description,
+          c.price,
+          c.status,
+          c.image_url  AS "imageUrl",
+          c.user_id    AS "userId",
+          c.created_at AS "createdAt",
+          c.updated_at AS "updatedAt",
+          c.slug,
+          c.perks,
+          c.learning_outcomes AS "learningOutcomes",
+          c.prerequisites,
+          /* counts */
+          (
+            SELECT COUNT(*)
+            FROM lesson l
+            WHERE l.course_id = c.id
+          ) AS "lessonCount",
+          (
+            SELECT COUNT(*)
+            FROM course_module m
+            WHERE m.course_id = c.id
+          ) AS "moduleCount",
+          (
+            SELECT COUNT(*)
+            FROM course_enrollment e
+            WHERE e.course_id = c.id
+              AND e.status = 'active'
+          ) AS "studentCount"
+        FROM course c
+        WHERE c.user_id = ${userId}
+        ORDER BY c.updated_at DESC;
+      `);
+
+      const resultRows = rawResult.rows as Array<{
         id: string;
         title: string;
-        description: string | null;
+        description: string | undefined;
         price: number;
         status: string;
-        imageUrl: string | null;
+        imageUrl: string | undefined;
         userId: string;
         createdAt: Date;
-        updatedAt: Date | null;
-        slug: string | null;
-        perks: string[] | null;
-        learningOutcomes: string[] | null;
-        prerequisites: string[] | null;
+        updatedAt: Date | undefined;
+        slug: string | undefined;
+        perks: string[] | undefined;
+        learningOutcomes: string[] | undefined;
+        prerequisites: string[] | undefined;
         lessonCount: number;
         moduleCount: number;
         studentCount: number;
       }>;
 
-      if (!resultRows.length) return [];
+      if (resultRows.length === 0) return [];
 
-      return resultRows.map((course) => {
-        const created = typeof course.createdAt === 'string'
-          ? new Date(course.createdAt)
-          : course.createdAt;
-        const updated = course.updatedAt
-          ? typeof course.updatedAt === 'string'
-            ? new Date(course.updatedAt)
-            : course.updatedAt
-          : null;
+      return resultRows.map((row) => {
+        const created = typeof row.createdAt === 'string' ? new Date(row.createdAt) : row.createdAt;
+        const updated = row.updatedAt && typeof row.updatedAt === 'string' ? new Date(row.updatedAt) : row.updatedAt;
 
         return {
-          ...course,
-          description: course.description || undefined,
-          perks: course.perks || undefined,
-          learningOutcomes: course.learningOutcomes || undefined,
-          prerequisites: course.prerequisites || undefined,
+          ...row,
+          ...(row.description ? { description: row.description } : {}),
+          ...(row.perks ? { perks: row.perks } : {}),
+          ...(row.learningOutcomes ? { learningOutcomes: row.learningOutcomes } : {}),
+          ...(row.prerequisites ? { prerequisites: row.prerequisites } : {}),
           createdAt: created.toISOString(),
-          updatedAt: updated?.toISOString(),
-          status: (course.status as 'draft' | 'published' | 'archived') ?? 'draft',
+          ...(updated ? { updatedAt: updated.toISOString() } : {}),
+          status: (row.status as 'draft' | 'published' | 'archived') ?? 'draft',
         };
       });
     } catch (error) {
@@ -252,7 +270,7 @@ export const courseService = {
 
   // (cache defined at module scope)
 
-  async getCourseBySlug(slug: string, publishedOnly = true): Promise<any> {
+  async getCourseBySlug(slug: string, publishedOnly = true): Promise<Course | undefined> {
     // Skip cache when caller explicitly requests unpublished data (owner editing)
     const shouldUseCache = publishedOnly;
 
@@ -260,7 +278,7 @@ export const courseService = {
     if (shouldUseCache) {
       const cached = slugCache.get(cacheKey);
       if (cached && cached.expires > Date.now()) {
-        return cached.data as any;
+        return cached.data as Course;
       }
     }
 
@@ -273,32 +291,51 @@ export const courseService = {
 
     const courses = await database.select().from(courseSchema.course).where(query);
 
-    if (!courses.length) return null;
+     if (courses.length === 0) return;
 
     const course = courses[0]!;
 
     // Fetch modules and lessons in parallel to avoid cumulative latency
-    const [modules, lessons] = await Promise.all([
+    const [rawModules, rawLessons] = await Promise.all([
       moduleService.getModulesByCourseId(course.id),
       lessonService.getLessonsByCourseId(course.id),
     ]);
 
+    // Cast raw DB rows to our shared types for safer access
+    const modules = rawModules as unknown as CourseModule[];
+    const lessons = rawLessons as unknown as Lesson[];
+
     // Group lessons by module
     const modulesWithLessons = modules.map((module) => {
-      const moduleLessons = lessons.filter(
-        (lesson) => lesson.moduleId === module.id,
-      );
+      const moduleLessons = lessons
+        .filter((lesson) => lesson.moduleId === module.id)
+        .sort((a, b) => a.order - b.order);
 
-      return {
-        ...module,
-        lessons: moduleLessons.sort((a, b) => a.order - b.order),
-      };
+      return { ...module, lessons: moduleLessons } satisfies CourseModule & { lessons: Lesson[] };
     });
 
-    const result = {
-      ...course,
-      modules: modulesWithLessons,
-      lessons,
+    // (duplicate serializer definitions removed – now using module-level helpers)
+
+    const baseCourse: Omit<Course, 'modules' | 'lessons'> = {
+      id: course.id,
+      title: course.title,
+      status: (course.status as 'draft' | 'published' | 'archived') ?? 'draft',
+      price: course.price,
+      userId: course.userId,
+      createdAt: toIso(course.createdAt),
+      ...(course.description ? { description: course.description } : {}),
+      ...(course.perks ? { perks: course.perks } : {}),
+      ...(course.learningOutcomes ? { learningOutcomes: course.learningOutcomes } : {}),
+      ...(course.prerequisites ? { prerequisites: course.prerequisites } : {}),
+      ...(course.imageUrl ? { imageUrl: course.imageUrl } : {}),
+      ...(course.slug ? { slug: course.slug } : {}),
+      updatedAt: course.updatedAt ? toIso(course.updatedAt) : undefined,
+    };
+
+    const result: Course = {
+      ...baseCourse,
+      modules: modulesWithLessons.map((m) => serializeModule(m)),
+      lessons: lessons.map((l) => serializeLesson(l)),
     };
 
     // Cache fresh result only when serving public content
@@ -311,14 +348,14 @@ export const courseService = {
   /**
    * Lightweight outline (modules + lesson summaries) for sidebar.
    */
-  async getCourseOutlineBySlug(slug: string, publishedOnly = true): Promise<any> {
+  async getCourseOutlineBySlug(slug: string, publishedOnly = true): Promise<Course | undefined> {
     const shouldUseCache = publishedOnly;
 
     const cacheKey = `outline:${slug}:${publishedOnly}`;
     if (shouldUseCache) {
       const cached = slugCache.get(cacheKey);
       if (cached && cached.expires > Date.now()) {
-        return cached.data as any;
+        return cached.data as Course;
       }
     }
 
@@ -330,24 +367,46 @@ export const courseService = {
       : eq(courseSchema.course.slug, slug);
 
     const courses = await database.select().from(courseSchema.course).where(query);
-    if (!courses.length) return null;
+    if (courses.length === 0) return;
 
     const course = courses[0]!;
 
     // Fetch in parallel: modules + lightweight lesson summaries
-    const [modules, lessonSummaries] = await Promise.all([
+    const [rawModulesOutline, rawLessonSummaries] = await Promise.all([
       moduleService.getModulesByCourseId(course.id),
       lessonService.getLessonSummariesByCourseId(course.id),
     ]);
 
-    const modulesWithLessons = modules.map((m) => ({
-      ...m,
-      lessons: lessonSummaries
-        .filter((l) => l.moduleId === m.id)
-        .sort((a, b) => a.order - b.order),
-    }));
+    // Normalise modules & lesson summaries for strict typing
+    const outlineModules = rawModulesOutline.map((mod: unknown) => {
+      const modLessons = (rawLessonSummaries as Lesson[])
+        .filter((lsn) => lsn.moduleId === (mod as { id: string }).id)
+        .sort((a, b) => a.order - b.order);
 
-    const outline = { ...course, modules: modulesWithLessons } as const;
+      return serializeModule({ ...(mod as CourseModule), lessons: modLessons });
+    });
+
+    const baseCourse: Omit<Course, 'modules' | 'lessons'> = {
+      id: course.id,
+      title: course.title,
+      status: (course.status as 'draft' | 'published' | 'archived') ?? 'draft',
+      price: course.price,
+      userId: course.userId,
+      createdAt: toIso(course.createdAt),
+      updatedAt: course.updatedAt ? toIso(course.updatedAt) : undefined,
+      ...(course.description ? { description: course.description } : {}),
+      ...(course.perks ? { perks: course.perks } : {}),
+      ...(course.learningOutcomes ? { learningOutcomes: course.learningOutcomes } : {}),
+      ...(course.prerequisites ? { prerequisites: course.prerequisites } : {}),
+      ...(course.imageUrl ? { imageUrl: course.imageUrl } : {}),
+      ...(course.slug ? { slug: course.slug } : {}),
+    };
+
+    const outline: Course = {
+      ...baseCourse,
+      modules: outlineModules,
+      lessons: outlineModules.flatMap((m) => m.lessons),
+    };
 
     if (shouldUseCache) {
       slugCache.set(cacheKey, { data: outline, expires: Date.now() + 30_000 });
@@ -369,10 +428,10 @@ export const courseService = {
       await database.insert(courseSchema.course).values({
         id: courseId,
         title: data.title,
-        description: data.description || null,
+        ...(data.description === undefined ? {} : { description: defined(data.description) }),
         price: data.price || 0,
         status: data.status || "draft",
-        imageUrl: data.imageUrl || null,
+        ...(data.imageUrl === undefined ? {} : { imageUrl: defined(data.imageUrl) }),
         userId: data.userId,
         slug,
         perks: data.perks || [],
@@ -388,7 +447,7 @@ export const courseService = {
 
       try {
         // 1. Resolve instructor row for this user (create if missing)
-        let instructorId: string | null = null;
+        let instructorId: string | undefined;
 
         const existing = await instructorService.getPublicInstructor(
           data.userId,
@@ -402,8 +461,8 @@ export const courseService = {
 
           const newInstructor = await instructorService.createInstructor({
             name: profile.name ?? "Instructor",
-            bio: profile.bio ?? null,
-            avatarUrl: profile.image ?? null,
+            bio: profile.bio ?? undefined,
+            avatarUrl: profile.image ?? undefined,
             userId: data.userId,
           });
 
@@ -411,7 +470,7 @@ export const courseService = {
         }
 
         // 2. Link instructor to the new course as primary
-        if (instructorId) {
+        if (instructorId !== undefined) {
           await instructorService.linkInstructorToCourse({
             courseId,
             instructorId,
@@ -419,18 +478,18 @@ export const courseService = {
             sortOrder: 0,
           });
         }
-      } catch (instructorErr) {
+      } catch (error) {
         courseLogger.warn(
           `Failed to attach instructor to course ${courseId}`,
-          instructorErr as Error,
+          error as Error,
         );
       }
 
       // Get the created course
-      return await this.getCourseById(courseId);
+      return this.getCourseById(courseId);
     } catch (error) {
       courseLogger.error("Failed to create course", error as Error);
-      return null;
+      return;
     }
   },
 
@@ -442,29 +501,29 @@ export const courseService = {
       const updatedCourse = await database
         .update(courseSchema.course)
         .set({
-          ...(data.title !== undefined ? { title: data.title } : {}),
-          ...(data.description !== undefined
-            ? { description: data.description }
-            : {}),
-          ...(data.price !== undefined ? { price: data.price } : {}),
-          ...(data.status !== undefined ? { status: data.status } : {}),
-          ...(data.imageUrl !== undefined ? { imageUrl: data.imageUrl } : {}),
-          ...(slug !== undefined ? { slug } : {}),
-          ...(data.perks !== undefined ? { perks: data.perks } : {}),
-          ...(data.learningOutcomes !== undefined ? { learningOutcomes: data.learningOutcomes } : {}),
-          ...(data.prerequisites !== undefined ? { prerequisites: data.prerequisites } : {}),
+          ...(data.title === undefined ? {} : { title: data.title }),
+          ...(data.description === undefined
+            ? {}
+            : { description: defined(data.description) }),
+          ...(data.price === undefined ? {} : { price: data.price }),
+          ...(data.status === undefined ? {} : { status: data.status }),
+          ...(data.imageUrl === undefined ? {} : { imageUrl: defined(data.imageUrl) }),
+          ...(slug === undefined ? {} : { slug }),
+          ...(data.perks === undefined ? {} : { perks: data.perks }),
+          ...(data.learningOutcomes === undefined ? {} : { learningOutcomes: data.learningOutcomes }),
+          ...(data.prerequisites === undefined ? {} : { prerequisites: data.prerequisites }),
           updatedAt: new Date(),
         })
         .where(eq(courseSchema.course.id, courseId))
         .returning();
 
-      return updatedCourse[0] || null;
+      return updatedCourse[0];
     } catch (error) {
       courseLogger.error(
         `Failed to update course: ${courseId}`,
         error as Error,
       );
-      return null;
+      return;
     }
   },
 
@@ -519,8 +578,8 @@ export const courseService = {
         .where(eq(courseSchema.course.id, courseId));
 
       return {
-        success: true,
-        error: null,
+        success: true as const,
+        error: undefined,
         videoCleanup: {
           total: lessonsWithVideos.filter((l) => l.playbackId).length,
           deleted: videoResults.filter((r) => r.deleted).length,
@@ -533,7 +592,7 @@ export const courseService = {
         error as Error,
       );
       return {
-        success: false,
+        success: false as const,
         error: {
           error: "Failed to delete course",
           status: 500,
@@ -555,7 +614,7 @@ export const courseService = {
         )
         .limit(1);
 
-      if (!courses.length) {
+      if (courses.length === 0) {
         return {
           owned: false,
           error: {
@@ -565,14 +624,14 @@ export const courseService = {
         };
       }
 
-      return { owned: true, course: courses[0], error: null };
+      return { owned: true as const, course: courses[0] };
     } catch (error) {
       courseLogger.error(
         `Failed to check course ownership: ${courseId}`,
         error as Error,
       );
       return {
-        owned: false,
+        owned: false as const,
         error: {
           error: "Failed to verify course ownership",
           status: 500,

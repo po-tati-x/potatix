@@ -1,4 +1,4 @@
-import { getDb } from "@potatix/db";
+import { getDatabase } from "@potatix/db";
 import { sql } from "drizzle-orm";
 import { CourseProgressData } from '@/components/features/dashboard/types';
 
@@ -10,7 +10,7 @@ export const dashboardProgressService = {
    * Get course progress metrics
    */
   async getCourseProgress(userId: string): Promise<CourseProgressData[]> {
-    const db = getDb();
+    const db = getDatabase();
 
     type ProgressRow = {
       id: string;
@@ -18,7 +18,7 @@ export const dashboardProgressService = {
       active_students: number;
       completion_rate: number;
       avg_engagement: number;
-      bottleneck_lesson: string | null;
+      bottleneck_lesson: string | undefined;
       dropoff_rate: number;
     };
 

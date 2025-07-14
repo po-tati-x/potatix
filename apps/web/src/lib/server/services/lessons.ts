@@ -1,15 +1,20 @@
-import { db, courseSchema } from '@potatix/db';
-import { eq, and, asc, sql } from 'drizzle-orm';
+import { database as databaseCore, courseSchema } from '@potatix/db';
+import { eq, and, asc, sql, type InferInsertModel } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { getMuxAssetId, deleteMuxAsset } from '@/lib/server/utils/mux';
 
-const database = db!; // assume initialized elsewhere
+// Validate that the database is initialized to avoid runtime surprises
+if (!databaseCore) {
+  throw new Error('Database instance is not initialized');
+}
+
+const database = databaseCore;
 
 // Types
 export interface LessonCreateInput {
   title: string;
-  description?: string | null;
-  playbackId?: string | null;
+  description?: string | undefined;
+  playbackId?: string | undefined;
   order: number;
   moduleId: string;
   courseId: string;
@@ -17,10 +22,10 @@ export interface LessonCreateInput {
 
 export interface LessonUpdateInput {
   title?: string;
-  description?: string | null;
-  playbackId?: string | null;
+  description?: string | null | undefined;
+  playbackId?: string | null | undefined;
   order?: number;
-  uploadStatus?: string;
+  uploadStatus?: string | null | undefined;
   visibility?: 'public' | 'enrolled';
   transcriptData?: unknown; // JSON field
 }
@@ -99,7 +104,7 @@ export const lessonService = {
       .where(eq(courseSchema.lesson.id, lessonId))
       .limit(1);
 
-    return lessons[0] || null;
+    return lessons[0]; // undefined when not found
   },
 
   async createLesson(data: LessonCreateInput) {
@@ -111,8 +116,8 @@ export const lessonService = {
       .values({
         id: lessonId,
         title: data.title,
-        description: data.description || null,
-        playbackId: data.playbackId || null,
+        ...(data.description === undefined ? {} : { description: data.description }),
+        ...(data.playbackId === undefined ? {} : { playbackId: data.playbackId }),
         order: data.order,
         moduleId: data.moduleId,
         courseId: data.courseId,
@@ -126,20 +131,22 @@ export const lessonService = {
   },
 
   async updateLesson(lessonId: string, data: LessonUpdateInput) {
+    const updateValues: Record<string, unknown> = { updatedAt: new Date() };
+
+    if (data.title !== undefined) updateValues.title = data.title;
+    if (data.description !== undefined) updateValues.description = data.description;
+    if (data.playbackId !== undefined) updateValues.playbackId = data.playbackId;
+    if (data.order !== undefined) updateValues.order = data.order;
+    if (data.uploadStatus !== undefined) updateValues.uploadStatus = data.uploadStatus;
+    if (data.visibility !== undefined) updateValues.visibility = data.visibility;
+    if (data.transcriptData !== undefined) {
+      updateValues.transcriptData = data.transcriptData as unknown;
+    }
+
+    type LessonInsert = InferInsertModel<typeof courseSchema.lesson>;
     const updatedLesson = await database
       .update(courseSchema.lesson)
-      .set({
-        ...(data.title !== undefined ? { title: data.title } : {}),
-        ...(data.description !== undefined ? { description: data.description } : {}),
-        ...(data.playbackId !== undefined ? { playbackId: data.playbackId } : {}),
-        ...(data.order !== undefined ? { order: data.order } : {}),
-        ...(data.uploadStatus !== undefined ? { uploadStatus: data.uploadStatus } : {}),
-        ...(data.visibility !== undefined ? { visibility: data.visibility } : {}),
-        ...(data.transcriptData !== undefined
-          ? { transcriptData: data.transcriptData as any }
-          : {}),
-        updatedAt: new Date(),
-      })
+      .set(updateValues as Partial<LessonInsert>)
       .where(eq(courseSchema.lesson.id, lessonId))
       .returning();
 
@@ -157,15 +164,13 @@ export const lessonService = {
     // Delete lesson from database
     await database.delete(courseSchema.lesson).where(eq(courseSchema.lesson.id, lessonId));
 
-    // If the lesson has a video, delete it from Mux
     if (lesson.playbackId) {
-      // Get the Mux asset ID (properly await the Promise)
       const muxAssetId = await getMuxAssetId(lesson.playbackId);
       if (muxAssetId) {
         try {
           await deleteMuxAsset(muxAssetId);
-        } catch (err) {
-          console.error('Failed to delete Mux asset:', err);
+        } catch (error) {
+          console.error('Failed to delete Mux asset:', error);
         }
       }
     }
@@ -205,7 +210,7 @@ export const lessonService = {
         )
         .limit(1);
 
-      if (!rows.length) {
+      if (rows.length === 0) {
         return { owned: false, error: 'Lesson not found or access denied', status: 403 };
       }
 
@@ -256,9 +261,9 @@ export const lessonService = {
 
     // Flatten all updates into a single array
     for (const { moduleId, lessonIds } of moduleOrders) {
-      lessonIds.forEach((lessonId, index) => {
+      for (const [index, lessonId] of lessonIds.entries()) {
         allUpdates.push({ lessonId, moduleId, order: index });
-      });
+      }
     }
 
     if (allUpdates.length === 0) {
@@ -287,10 +292,11 @@ export const lessonService = {
     return lessons;
   },
 
-  async getLessonPrompts(lessonId: string): Promise<string[] | null> {
+  async getLessonPrompts(lessonId: string): Promise<string[] | undefined> {
     const lesson = await this.getLessonById(lessonId);
-    if (!lesson) return null;
-    return (lesson as any).aiPrompts ?? null;
+    if (!lesson) return undefined;
+    const prompts = (lesson as { aiPrompts?: string[] | undefined }).aiPrompts;
+    return prompts;
   },
 
   async saveLessonPrompts(lessonId: string, prompts: string[]): Promise<void> {

@@ -7,7 +7,7 @@ import { env } from "@/env.server";
 import { redirect } from "next/navigation";
 
 export interface ViewerAccessResult {
-  course: Course | null;
+  course: Course | undefined;
   session: Awaited<ReturnType<typeof auth.api.getSession>>;
   /** `true` when the user is enrolled (session may still be null) */
   isEnrolled: boolean;
@@ -21,7 +21,8 @@ const APP_ORIGIN = env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? "https://potat
  * Must be called in a Next.js Server Component or Route Handler.
  */
 export async function ensureCourseSubdomain(slug: string): Promise<void> {
-  const hostHeader = (await headers()).get("host") ?? "";
+  const headerList = await headers();
+  const hostHeader = headerList.get("host") ?? "";
   if (!hostHeader.startsWith(`${slug}.`)) {
     const url = new URL(APP_ORIGIN);
     const target = `${url.protocol}//${slug}.${url.host}`;
@@ -40,17 +41,21 @@ export async function getViewerAccess(courseSlug: string): Promise<ViewerAccessR
   // Capture headers synchronously before any async work (Next.js dynamic API requirement)
   const headerList = await headers();
 
-  // Parallelise course + session fetches
-  const [course, session] = await Promise.all([
-    courseService.getCourseBySlug(courseSlug, true),
-    auth.api.getSession({ headers: headerList as any }),
-  ]);
+  // Prepare typed promises to preserve useful types and avoid `any` inference
+  const coursePromise = courseService.getCourseBySlug(courseSlug, true);
+  const sessionPromise = auth.api.getSession({ headers: headerList });
+
+  const [course, session] = await Promise.all([coursePromise, sessionPromise]);
 
   let isEnrolled = false;
-  if (course && session?.user) {
-    const enrollment = await enrollmentService.checkEnrollment(session.user.id, course.id);
-    isEnrolled = enrollment.enrolled;
+  if (course) {
+    const typedSession = session as { user?: { id: string } };
+    const userId = typedSession.user?.id;
+    if (userId) {
+      const enrollment = await enrollmentService.checkEnrollment(userId, course.id);
+      isEnrolled = enrollment.enrolled;
+    }
   }
 
-  return { course: course as unknown as Course | null, session, isEnrolled };
+  return { course: course ?? undefined, session, isEnrolled };
 } 

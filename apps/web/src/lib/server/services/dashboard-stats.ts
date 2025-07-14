@@ -1,4 +1,4 @@
-import { getDb } from "@potatix/db";
+import { getDatabase } from "@potatix/db";
 import { sql } from "drizzle-orm";
 import { subMonths, startOfDay } from "date-fns";
 import { StatsData } from '@/components/features/dashboard/types';
@@ -21,7 +21,7 @@ export const dashboardStatsService = {
    * Get dashboard stats
    */
   async getDashboardStats(userId: string): Promise<StatsData> {
-    const db = getDb();
+    const db = getDatabase();
 
     const now = new Date();
     const oneMonthAgo = startOfDay(subMonths(now, 1));
@@ -91,15 +91,15 @@ export const dashboardStatsService = {
           ((enrollments_this_month - prev_month_enrollments) / prev_month_enrollments) *
             100,
         )
-      : enrollments_this_month > 0
+      : (enrollments_this_month > 0
         ? 100
-        : 0;
+        : 0);
 
     const revenueChange = revenue_prev
       ? Math.round(((revenue_current - revenue_prev) / revenue_prev) * 100)
-      : revenue_current > 0
+      : (revenue_current > 0
         ? 100
-        : 0;
+        : 0);
 
     return {
       totalStudents: total_students,

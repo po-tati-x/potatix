@@ -11,14 +11,23 @@ import { dashboardProgressService } from "./dashboard-progress";
 import { dashboardRevenueService } from "./dashboard-revenue";
 import { dashboardHeroService } from './dashboard-hero';
 
-// Dashboard response interface to fix implicit typing issues
+// Dashboard response interface with explicit optional fields (avoid `null`)
 interface DashboardData {
-  profile: UserProfile | null;
+  profile?: UserProfile;
   courses: Course[];
-  stats: StatsData | null;
+  stats?: StatsData;
   progressData: CourseProgressData[];
-  revenueData: RevenueData | null;
+  revenueData?: RevenueData;
   heroMetrics: HeroMetrics;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Helper – unwrap a PromiseSettledResult with a fallback
+// Defined at module scope to satisfy unicorn/consistent-function-scoping.
+// ─────────────────────────────────────────────────────────────────────────────
+
+function unwrap<T>(res: PromiseSettledResult<T>, fallback: T): T {
+  return res.status === 'fulfilled' ? res.value : fallback;
 }
 
 /**
@@ -39,28 +48,32 @@ export const dashboardService = {
       dashboardHeroService.getHeroMetrics(userId),
     ]);
 
-    // Helper to unwrap settled results with fallback
-    const unwrap = <T,>(res: PromiseSettledResult<T>, fallback: T): T =>
-      res.status === 'fulfilled' ? res.value : fallback;
+    const profile = profileRes.status === 'fulfilled' ? profileRes.value : undefined;
+    const stats =
+      statsRes.status === 'fulfilled' && statsRes.value !== null ? statsRes.value : undefined;
+    const revenueData =
+      revenueRes.status === 'fulfilled' && revenueRes.value !== undefined ? revenueRes.value : undefined;
+
+    const heroMetricsDefault: HeroMetrics = {
+      revenueToday: 0,
+      revenueMTD: 0,
+      revenueAll: 0,
+      enrollmentsToday: 0,
+      enrollmentsMTD: 0,
+      enrollmentsAll: 0,
+      activeStudents: 0,
+      avgRating: undefined,
+      revenueTrend: [],
+      enrollmentTrend: [],
+    };
 
     return {
-      profile: unwrap(profileRes, null),
+      profile,
       courses: unwrap(coursesRes, []),
-      stats: unwrap(statsRes, null),
+      stats,
       progressData: unwrap(progressRes, []),
-      revenueData: unwrap(revenueRes, null),
-      heroMetrics: unwrap(heroRes, {
-        revenueToday: 0,
-        revenueMTD: 0,
-        revenueAll: 0,
-        enrollmentsToday: 0,
-        enrollmentsMTD: 0,
-        enrollmentsAll: 0,
-        activeStudents: 0,
-        avgRating: null,
-        revenueTrend: [],
-        enrollmentTrend: [],
-      }),
+      revenueData,
+      heroMetrics: unwrap(heroRes, heroMetricsDefault),
     };
   }
 };

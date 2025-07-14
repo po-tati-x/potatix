@@ -35,8 +35,8 @@ export async function generateChaptersFromTranscript(transcript: string) {
   return object;
 }
 
-export async function streamLessonAnswer(prompt: string) {
-  const { textStream } = await streamText({ model: chatModel, prompt });
+export function streamLessonAnswer(prompt: string) {
+  const { textStream } = streamText({ model: chatModel, prompt });
   return textStream;
 }
 

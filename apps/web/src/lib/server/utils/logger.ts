@@ -34,18 +34,22 @@ class ServerLogger {
     const logPrefix = `[${timestamp}] [${this.prefix}:${level}]`;
 
     switch (level) {
-      case 'debug':
+      case 'debug': {
         console.debug(logPrefix, message, ...args);
         break;
-      case 'info':
+      }
+      case 'info': {
         console.log(logPrefix, message, ...args);
         break;
-      case 'warn':
+      }
+      case 'warn': {
         console.warn(logPrefix, message, ...args);
         break;
-      case 'error':
+      }
+      case 'error': {
         console.error(logPrefix, message, ...args);
         break;
+      }
     }
   }
 

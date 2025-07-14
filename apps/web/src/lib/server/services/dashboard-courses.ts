@@ -1,4 +1,4 @@
-import { getDb, courseSchema } from "@potatix/db";
+import { getDatabase, courseSchema } from "@potatix/db";
 import { eq, sql, desc } from "drizzle-orm";
 import { Course } from '@/lib/shared/types/courses';
 
@@ -10,7 +10,7 @@ export const dashboardCoursesService = {
    * Get user courses for dashboard
    */
   async getUserCourses(userId: string): Promise<Course[]> {
-    const db = getDb();
+    const db = getDatabase();
 
     // Single aggregated query – no N+1
     const rows = await db
