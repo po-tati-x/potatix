@@ -5,7 +5,7 @@ import { Upload, Film as FilmIcon } from "lucide-react";
 import { cn } from "@/lib/shared/utils/cn";
 
 interface DropzoneProps {
-  selectedFile: File | null;
+  selectedFile?: File;
   onSelect: (file: File) => void;
   formatBytes: (bytes: number) => string;
   disabled?: boolean;
@@ -33,9 +33,9 @@ export function UploadDropzone({ selectedFile, onSelect, formatBytes, disabled =
         disabled ? disabledStyles : interactiveStyles,
         isDragActive
           ? "border-emerald-500 bg-emerald-50/20"
-          : disabled
+          : (disabled
             ? "border-slate-300 dark:border-slate-600"
-            : "border-slate-300 hover:border-emerald-500 dark:border-slate-600 dark:hover:border-emerald-500",
+            : "border-slate-300 hover:border-emerald-500 dark:border-slate-600 dark:hover:border-emerald-500"),
       )}
       tabIndex={0}
       role="button"

@@ -34,13 +34,15 @@ export function VideoPreview({ lesson, onFileRemove }: VideoPreviewProps) {
     const posterSrc = lesson.fileUrl || (playbackId ? `https://image.mux.com/${playbackId}/thumbnail.jpg` : "");
     const w = typeof lesson.width === 'number' ? lesson.width : undefined;
     const h = typeof lesson.height === 'number' ? lesson.height : undefined;
-    const ratio = typeof lesson.aspectRatio === 'number'
-      ? lesson.aspectRatio
-      : w && h
-        ? w / h
-        : 16 / 9;
+    // Calculate video aspect ratio without nested ternaries for readability
+    let ratio = 16 / 9; // sensible default
+    if (typeof lesson.aspectRatio === 'number') {
+      ratio = lesson.aspectRatio;
+    } else if (w && h) {
+      ratio = w / h;
+    }
     const orientation: 'landscape' | 'portrait' = ratio < 1 ? 'portrait' : 'landscape';
-    const initialAspectRatio = lesson.width && lesson.height ? `${lesson.width} / ${lesson.height}` : undefined;
+    const initialAspectRatio = w && h ? `${w} / ${h}` : undefined;
 
     return (
       <div className="border border-slate-200 rounded-md overflow-hidden">
@@ -69,7 +71,19 @@ export function VideoPreview({ lesson, onFileRemove }: VideoPreviewProps) {
           ) : (
             // Thumbnail with play button
             <>
-              <div className="relative w-full h-full cursor-pointer" onClick={handleTogglePlay}>
+              <div
+                role="button"
+                tabIndex={0}
+                className="relative w-full h-full cursor-pointer outline-none"
+                onClick={handleTogglePlay}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleTogglePlay();
+                  }
+                }}
+                aria-label="Play video"
+              >
                 <Image
                   src={posterSrc}
                   alt={`Preview for ${lesson.title}`}
@@ -82,9 +96,18 @@ export function VideoPreview({ lesson, onFileRemove }: VideoPreviewProps) {
                   }}
                 />
               </div>
-              <div 
-                className="absolute inset-0 flex items-center justify-center cursor-pointer"
+              <div
+                role="button"
+                tabIndex={0}
+                className="absolute inset-0 flex items-center justify-center cursor-pointer outline-none"
                 onClick={handleTogglePlay}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleTogglePlay();
+                  }
+                }}
+                aria-label="Play video overlay"
               >
                 <div className="bg-black bg-opacity-60 rounded-full p-4 group-hover:bg-opacity-80 transition-all transform group-hover:scale-105">
                   <PlayCircle className="h-8 w-8 text-white" />
@@ -176,6 +199,6 @@ function formatFileSize(bytes?: number): string {
   if (!bytes) return 'Unknown size';
   
   if (bytes < 1024) return bytes + ' bytes';
-  else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
-  else return (bytes / 1048576).toFixed(1) + ' MB';
+  else if (bytes < 1_048_576) return (bytes / 1024).toFixed(1) + ' KB';
+  else return (bytes / 1_048_576).toFixed(1) + ' MB';
 } 

@@ -15,8 +15,8 @@ import {
 
 interface ControlsProps {
   status: LessonUploadStatus;
-  selectedFile: File | null;
-  error: string | null;
+  selectedFile?: File;
+  error?: string;
   onStart: () => void;
   onCancel: () => void;
 }
@@ -28,7 +28,7 @@ export function UploadControls({
   onStart,
   onCancel,
 }: ControlsProps) {
-  if (status === LESSON_UPLOAD_STATUS.PROCESSING) return null;
+  if (status === LESSON_UPLOAD_STATUS.PROCESSING) return;
   return (
     <div className="flex items-center gap-2">
       {(status === LESSON_UPLOAD_STATUS.IDLE || status === LESSON_UPLOAD_STATUS.ERROR) && (

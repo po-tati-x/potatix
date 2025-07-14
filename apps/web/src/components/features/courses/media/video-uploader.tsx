@@ -12,7 +12,7 @@ import { ProcessingBanner } from "./video-upload/processing-banner";
 interface VideoUploaderProps {
   lessonId: string;
   onDirectUploadComplete?: (lessonId: string) => void;
-  onProcessingComplete?: (lessonId: string, lesson?: any) => void;
+  onProcessingComplete?: (lessonId: string, lesson?: unknown) => void;
   onFileChange?: (
     fileOrEvent: File | React.ChangeEvent<HTMLInputElement>,
     lessonId: string,
@@ -44,7 +44,9 @@ export function VideoUploader(props: VideoUploaderProps) {
           type="outline"
           size="small"
           iconLeft={<CancelIcon className="h-3.5 w-3.5" />}
-          onClick={cancelUpload}
+          onClick={() => {
+            void cancelUpload();
+          }}
           className="mt-2"
         >
           Cancel
@@ -80,7 +82,7 @@ export function VideoUploader(props: VideoUploaderProps) {
           selectedFile={selectedFile}
           onSelect={selectFile}
           formatBytes={formatBytes}
-          disabled={status!==LESSON_UPLOAD_STATUS.IDLE && status!==LESSON_UPLOAD_STATUS.ERROR}
+          disabled={status !== LESSON_UPLOAD_STATUS.IDLE && status !== LESSON_UPLOAD_STATUS.ERROR}
         />
       )}
 
@@ -89,8 +91,12 @@ export function VideoUploader(props: VideoUploaderProps) {
         status={status}
         selectedFile={selectedFile}
         error={error}
-        onStart={startUpload}
-        onCancel={cancelUpload}
+        onStart={() => {
+          void startUpload();
+        }}
+        onCancel={() => {
+          void cancelUpload();
+        }}
       />
 
       {/* Progress */}
