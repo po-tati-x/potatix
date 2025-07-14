@@ -1,5 +1,6 @@
 import Mux from "@mux/mux-node";
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { auth } from "@/lib/auth/auth-server";
 import { env } from "@/env.server";
 
@@ -12,20 +13,22 @@ const mux = new Mux({
 // Helper to authenticate user
 async function authenticateUser(request: Request) {
   try {
-    const session = await auth.api.getSession({
-      headers: request.headers,
-    });
+    const session = await auth.api.getSession({ headers: request.headers });
 
-    if (!session || !session.user) {
-      return null;
+    if (!session?.user) {
+      return;
     }
 
     return session.user;
   } catch (error) {
     console.error("Error authenticating user:", error);
-    return null;
+    return;
   }
 }
+
+const bodySchema = z.object({
+  lessonId: z.string().min(1, "Lesson ID is required"),
+});
 
 export async function POST(request: Request) {
   try {
@@ -39,15 +42,7 @@ export async function POST(request: Request) {
     }
 
     // Get lesson ID from request body
-    const body = await request.json();
-    const { lessonId } = body;
-
-    if (!lessonId) {
-      return NextResponse.json(
-        { error: "Lesson ID is required" },
-        { status: 400 },
-      );
-    }
+    const { lessonId } = bodySchema.parse(await request.json());
 
     // Create a direct upload URL
     const upload = await mux.video.uploads.create({
@@ -72,24 +67,24 @@ export async function POST(request: Request) {
     // Persist direct upload ID & reset lesson status
     try {
       // Lazy import to avoid circular deps in lambda edge
-      const { db, courseSchema } = await import('@potatix/db');
+      const { database, courseSchema } = await import('@potatix/db');
       const { eq } = await import('drizzle-orm');
-      if (db) {
-        await db
+      if (database) {
+        await database
           .update(courseSchema.lesson)
           .set({
-            directUploadId: upload.id,
+            directUploadId: String(upload.id),
             uploadStatus: 'PENDING',
           })
           .where(eq(courseSchema.lesson.id, lessonId));
       }
-    } catch (err) {
-      console.error('[Mux Upload] Failed to store direct upload ID', err);
+    } catch (error) {
+      console.error('[Mux Upload] Failed to store direct upload ID', error);
     }
 
     return NextResponse.json({
-      url: upload.url,
-      id: upload.id,
+      url: String(upload.url),
+      id: String(upload.id),
     });
   } catch (error) {
     console.error("Error creating Mux upload URL:", error);

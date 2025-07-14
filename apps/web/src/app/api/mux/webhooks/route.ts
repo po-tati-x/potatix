@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { db, courseSchema } from "@potatix/db";
+import { database, courseSchema } from "@potatix/db";
 import { eq, sql } from "drizzle-orm";
+import { z } from "zod";
 
 // Mux webhook handler
 export async function POST(request: Request) {
@@ -11,16 +12,22 @@ export async function POST(request: Request) {
   try {
     // Get the webhook data
     console.log(`[Mux Webhook] Parsing request body...`);
-    const body = await request.json();
-    const { type, data } = body;
+
+    // Base validation for mux webhook payload
+    const BaseEvent = z.object({
+      type: z.string(),
+      data: z.unknown(),
+    });
+
+    const { type, data } = BaseEvent.parse((await request.json()) as unknown);
 
     console.log(
       `[Mux Webhook] Received event: ${type}`,
-      JSON.stringify(data).substring(0, 500),
+      JSON.stringify(data).slice(0, 500),
     );
 
     // Ensure database instance is available
-    if (!db) {
+    if (!database) {
       console.error('[Mux Webhook] Database instance is null');
       return NextResponse.json({ error: 'Database not initialized' }, { status: 500 });
     }
@@ -28,35 +35,55 @@ export async function POST(request: Request) {
     // Debug SQL connection
     try {
       console.log(`[Mux Webhook] Testing database connection...`);
-      const dbTest = await db
+      const dbTest = (await database
         .select({ count: sql`count(*)` })
-        .from(courseSchema.lesson);
+        .from(courseSchema.lesson)) as Array<{ count: bigint | number }>;
+      const lessonCount = Number(dbTest[0]?.count ?? 0);
       console.log(
-        `[Mux Webhook] Database connection successful, found ${dbTest[0]?.count || 0} lessons`,
+        `[Mux Webhook] Database connection successful, found ${lessonCount} lessons`,
       );
-    } catch (dbErr) {
-      console.error(`[Mux Webhook] DATABASE CONNECTION TEST FAILED:`, dbErr);
+    } catch (error) {
+      console.error(`[Mux Webhook] DATABASE CONNECTION TEST FAILED:`, error);
     }
 
     // Handle video.asset.ready event
-    if (type === "video.asset.ready") {
-      // Extract metadata
-      const playbackId = data.playback_ids?.[0]?.id;
-      const assetId = data.id;
-      const aspectRatioNum = parseFloat(data.aspect_ratio || '0');
-      const width = data.max_stored_resolution?.width || null;
-      const height = data.max_stored_resolution?.height || null;
+    switch (type) {
+    case "video.asset.ready": {
+      // Strictly validate event payload
+      const AssetReady = z.object({
+        id: z.string(),
+        playback_ids: z
+          .array(z.object({ id: z.string() }))
+          .optional(),
+        aspect_ratio: z.string().optional(),
+        max_stored_resolution: z
+          .object({ width: z.number().optional(), height: z.number().optional() })
+          .optional(),
+        passthrough: z.string().optional(),
+        duration: z.number().optional(),
+      });
 
-      // Get lesson ID from passthrough data
-      const passthrough = data.passthrough
-        ? JSON.parse(data.passthrough)
-        : null;
-      const lessonId = passthrough?.lessonId;
+      const assetData = AssetReady.parse(data);
+
+      const playbackId = assetData.playback_ids?.[0]?.id;
+      const assetId = assetData.id;
+      const aspectRatioNum = Number.parseFloat(assetData.aspect_ratio ?? 'NaN');
+      const width = assetData.max_stored_resolution?.width;
+      const height = assetData.max_stored_resolution?.height;
+
+      // Parse passthrough JSON → { lessonId }
+      const lessonId = (() => {
+        if (!assetData.passthrough) return;
+        const parsed = z
+          .object({ lessonId: z.string() })
+          .safeParse(JSON.parse(assetData.passthrough));
+        if (parsed.success) return parsed.data.lessonId;
+      })();
 
       if (!lessonId) {
         console.error(
           "[Mux Webhook] FATAL ERROR: No lesson ID in passthrough data",
-          JSON.stringify(data).substring(0, 500),
+          JSON.stringify(data).slice(0, 500),
         );
         return NextResponse.json(
           { error: "No lesson ID provided" },
@@ -84,7 +111,7 @@ export async function POST(request: Request) {
         );
 
         // First try direct ID match
-        let lessonCheck = await db
+        let lessonCheck = await database
           .select({
             id: courseSchema.lesson.id,
             title: courseSchema.lesson.title,
@@ -101,7 +128,7 @@ export async function POST(request: Request) {
           );
 
           // Get all lessons with PROCESSING status
-          const processingLessons = await db
+          const processingLessons = await database
             .select({
               id: courseSchema.lesson.id,
               title: courseSchema.lesson.title,
@@ -142,26 +169,28 @@ export async function POST(request: Request) {
         const targetLessonId = lessonCheck[0]!.id;
         console.log(
           `[Mux Webhook] Found lesson: ${targetLessonId}`,
-          JSON.stringify(lessonCheck[0]!),
+          JSON.stringify(lessonCheck[0]),
         );
 
         // Update lesson with playbackId using raw SQL for better logging
         console.log(
           `[Mux Webhook] Executing SQL update for lesson ${targetLessonId}...`,
         );
-        const updateResult = await db.execute(
-          sql`UPDATE "lesson"
-              SET "playback_id" = ${playbackId},
-                  "mux_asset_id" = ${assetId},
-                  "aspect_ratio" = ${isNaN(aspectRatioNum) ? null : aspectRatioNum},
-                  "width" = ${width},
-                  "height" = ${height},
-                  "upload_status" = 'COMPLETED',
-                  "duration" = ${Math.round(data.duration || 0)},
-                  "poster_url" = ${`https://image.mux.com/${playbackId}/thumbnail.jpg`},
-                  "updated_at" = NOW()
-              WHERE "id" = ${targetLessonId}
-              RETURNING "id", "playback_id", "upload_status", "updated_at"`,
+        const updateResult = await database.execute(
+          sql`
+            UPDATE "lesson"
+                          SET "playback_id" = ${playbackId},
+                              "mux_asset_id" = ${assetId},
+                              "aspect_ratio" = ${Number.isNaN(aspectRatioNum) ? undefined : aspectRatioNum},
+                              "width" = ${width},
+                              "height" = ${height},
+                              "upload_status" = 'COMPLETED',
+                              "duration" = ${Math.round(assetData.duration ?? 0)},
+                              "poster_url" = ${`https://image.mux.com/${playbackId}/thumbnail.jpg`},
+                              "updated_at" = NOW()
+                          WHERE "id" = ${targetLessonId}
+                          RETURNING "id", "playback_id", "upload_status", "updated_at"
+          `,
         );
 
         const rowCount = updateResult.rowCount || 0;
@@ -170,7 +199,7 @@ export async function POST(request: Request) {
         );
         console.log(
           `[Mux Webhook] DB update result:`,
-          JSON.stringify(updateResult.rows?.[0] || {}, null, 2),
+          JSON.stringify(updateResult.rows?.[0] || {}, undefined, 2),
         );
 
         if (rowCount === 0) {
@@ -187,7 +216,7 @@ export async function POST(request: Request) {
         console.log(
           `[Mux Webhook] Verifying update for lesson ${targetLessonId}...`,
         );
-        const verifyUpdate = await db
+        const verifyUpdate = await database
           .select({
             id: courseSchema.lesson.id,
             playbackId: courseSchema.lesson.playbackId,
@@ -214,19 +243,30 @@ export async function POST(request: Request) {
       console.log(
         `[Mux Webhook] Successfully updated lesson with video ID ${playbackId}`,
       );
+    
+    break;
     }
-
-    // Handle video.upload.cancelled event
-    else if (type === "video.upload.cancelled") {
+    case "video.upload.cancelled": {
       // Get lesson ID from passthrough data
-      const passthrough = data.new_asset_settings?.passthrough
-        ? JSON.parse(data.new_asset_settings.passthrough)
-        : null;
-      const lessonId = passthrough?.lessonId;
+      const UploadCancelled = z.object({
+        new_asset_settings: z
+          .object({ passthrough: z.string().optional() })
+          .optional(),
+      });
+      const cancelledData = UploadCancelled.parse(data);
+
+      const lessonId = (() => {
+        const raw = cancelledData.new_asset_settings?.passthrough;
+        if (!raw) return;
+        const parsed = z
+          .object({ lessonId: z.string() })
+          .safeParse(JSON.parse(raw));
+        if (parsed.success) return parsed.data.lessonId;
+      })();
 
       if (lessonId) {
         // Update lesson to reset upload status using Drizzle
-        await db
+        await database
           .update(courseSchema.lesson)
           .set({
             uploadStatus: "CANCELLED",
@@ -237,22 +277,31 @@ export async function POST(request: Request) {
           `[Mux Webhook] Marked lesson ${lessonId} upload as cancelled`,
         );
       }
+    
+    break;
     }
-
-    // Handle video.upload.asset_created – map direct upload to asset
-    else if (type === "video.upload.asset_created") {
-      const directUploadId = data.upload_id;
-      const assetId = data.asset_id;
+    case "video.upload.asset_created": {
+      const AssetCreated = z.object({
+        upload_id: z.string(),
+        asset_id: z.string(),
+      });
+      const createdData = AssetCreated.parse(data);
+      const directUploadId = createdData.upload_id;
+      const assetId = createdData.asset_id;
 
       if (!directUploadId || !assetId) {
         console.error('[Mux Webhook] Missing IDs in asset_created');
       } else {
-        await db
+        await database
           .update(courseSchema.lesson)
           .set({ muxAssetId: assetId, uploadStatus: 'PROCESSING' })
           .where(eq(courseSchema.lesson.directUploadId, directUploadId));
         console.log(`[Mux Webhook] Linked direct upload ${directUploadId} -> asset ${assetId}`);
       }
+    
+    break;
+    }
+    // No default
     }
 
     // Return success
