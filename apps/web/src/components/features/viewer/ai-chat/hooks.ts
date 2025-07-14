@@ -1,4 +1,4 @@
-import { useCallback, useState, useEffect } from 'react';
+import { useCallback, useState, useMemo } from 'react';
 import { VideoEventType, videoEventBus } from '@/lib/shared/utils/video-event-bus';
 
 /**
@@ -7,11 +7,11 @@ import { VideoEventType, videoEventBus } from '@/lib/shared/utils/video-event-bu
 export function useTimestampNavigation(lessonId: string) {
   // Convert timestamp string [MM:SS] to seconds
   const parseTimestamp = useCallback((timeStr: string): number => {
-    const cleanTime = timeStr.replace(/[[\]]/g, '');
+    const cleanTime = timeStr.replaceAll('[', '').replaceAll(']', '');
     const [minStr = '0', secStr = '0'] = cleanTime.split(':');
 
-    const minutes = parseInt(minStr, 10);
-    const seconds = parseInt(secStr, 10);
+    const minutes = Number.parseInt(minStr, 10);
+    const seconds = Number.parseInt(secStr, 10);
 
     if (Number.isNaN(minutes) || Number.isNaN(seconds)) {
       return 0;
@@ -51,17 +51,12 @@ export function useMessageInteractions() {
  * Hook to handle input area resizing
  */
 export function useInputResizing(input: string) {
-  const [inputRows, setInputRows] = useState(1);
-  
-  useEffect(() => {
-    if (!input) {
-      setInputRows(1);
-      return;
-    }
-    
+  const inputRows = useMemo(() => {
+    if (!input) return 1;
+
     const lineCount = input.split('\n').length;
-    setInputRows(Math.min(5, Math.max(1, lineCount)));
+    return Math.min(5, Math.max(1, lineCount));
   }, [input]);
-  
+
   return { inputRows };
 } 

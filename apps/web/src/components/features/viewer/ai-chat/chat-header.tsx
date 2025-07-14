@@ -18,7 +18,7 @@ export const ChatHeader = ({ messageCount, isCopied, onClearChat, onHideChat }: 
         <span className="font-medium text-sm text-slate-700">Lesson Assistant</span>
         {messageCount > 0 && (
           <span className="text-xs text-slate-500 ml-2">
-            ({messageCount} message{messageCount !== 1 ? 's' : ''})
+            ({messageCount} message{messageCount === 1 ? '' : 's'})
           </span>
         )}
       </div>

@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { Bot, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { z } from 'zod';
 
 interface ChatPromptProps {
   prompt: string;
@@ -36,7 +37,10 @@ export const EmptyState = ({ setInput, focusInput, lessonId, courseId, lessonTit
   // Fetch AI-generated prompts once
   useEffect(() => {
     let cancelled = false;
-    (async () => {
+
+    const promptRespSchema = z.object({ prompts: z.array(z.string()) });
+
+    async function fetchPrompts() {
       try {
         const resp = await fetch('/api/chat/lesson/prompts', {
           method: 'POST',
@@ -45,16 +49,26 @@ export const EmptyState = ({ setInput, focusInput, lessonId, courseId, lessonTit
         });
 
         if (resp.ok) {
-          const data = await resp.json();
-          if (!cancelled) setPrompts(data.prompts as string[]);
+          const json = (await resp.json()) as unknown;
+          const parsed = promptRespSchema.safeParse(json);
+          if (parsed.success && !cancelled) {
+            setPrompts(parsed.data.prompts);
+          }
         }
       } catch (error) {
         // Network failures are non-critical; fall back to static prompts.
         console.error('Failed to fetch AI chat prompts', error);
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-      if (!cancelled) setLoading(false);
-    })();
-    return () => { cancelled = true; };
+    }
+
+    // Fire and forget – explicitly ignored promise
+    void fetchPrompts();
+
+    return () => {
+      cancelled = true;
+    };
   }, [lessonId, courseId, lessonTitle]);
 
   const handlePromptClick = (prompt: string) => {

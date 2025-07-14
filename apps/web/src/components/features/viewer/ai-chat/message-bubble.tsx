@@ -18,14 +18,21 @@ export const MessageBubble = ({ message, lessonId, onCopy }: MessageProps) => {
   const [copied, setCopied] = useState(false);
   const { handleJumpToTimestamp } = useTimestampNavigation(lessonId);
   
-  const handleCopyMessage = () => {
-    if (message.content) {
-      navigator.clipboard.writeText(message.content);
+  async function handleCopyMessage() {
+    if (!message.content) return;
+
+    try {
+      await navigator.clipboard.writeText(message.content);
       setCopied(true);
       onCopy();
+
+      // Reset copied state after a short delay
       setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      // Silently ignore copy failures (e.g., permissions)
+      console.warn('Clipboard write failed', error);
     }
-  };
+  }
   
   const MarkdownComponents = createMarkdownComponents(handleJumpToTimestamp);
 
@@ -79,7 +86,7 @@ export const MessageBubble = ({ message, lessonId, onCopy }: MessageProps) => {
           {!isUser && (
             <div className="opacity-0 group-hover:opacity-100 transition-opacity">
               <button 
-                onClick={handleCopyMessage}
+                onClick={() => void handleCopyMessage()}
                 className="text-slate-400 hover:text-slate-600 ml-2 p-0.5 rounded"
                 title="Copy response"
               >

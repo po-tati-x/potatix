@@ -49,7 +49,7 @@ function AIChatPanel({ lessonId, courseId, lessonTitle, onHideChat }: AIChatPane
   useHotkeys('meta+enter, ctrl+enter', (e: KeyboardEvent) => {
     if (input.trim()) {
       e.preventDefault();
-      handleSubmit(e as unknown as React.FormEvent);
+      void handleSubmit(e as unknown as React.FormEvent);
     }
   }, { enableOnFormTags: true }, [input, handleSubmit]);
   
@@ -66,7 +66,7 @@ function AIChatPanel({ lessonId, courseId, lessonTitle, onHideChat }: AIChatPane
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSubmit(e);
+      void handleSubmit(e as unknown as React.FormEvent);
     }
   };
   
@@ -128,7 +128,9 @@ function AIChatPanel({ lessonId, courseId, lessonTitle, onHideChat }: AIChatPane
         inputRows={inputRows}
         handleInputChange={handleInputChange}
         handleKeyDown={handleKeyDown}
-        handleSubmit={handleSubmit}
+        handleSubmit={(e) => {
+          void handleSubmit(e);
+        }}
         isLoading={isLoading}
         inputRef={inputRef}
       />

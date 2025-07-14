@@ -1,5 +1,5 @@
 import { Play } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { isValidElement, type ReactElement, type ReactNode } from 'react';
 
 // Define types for Markdown component props
 interface MarkdownComponentProps {
@@ -9,6 +9,26 @@ interface MarkdownComponentProps {
 
 interface CodeProps extends MarkdownComponentProps {
   inline?: boolean;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Safely converts ReactNode children to plain text without triggering
+ * Object.prototype.toString on elements/objects.
+ */
+function toPlainText(node: ReactNode): string {
+  if (typeof node === 'string' || typeof node === 'number') return String(node);
+  if (Array.isArray(node)) {
+    return (node as ReactNode[]).map((child) => toPlainText(child)).join('');
+  }
+  if (isValidElement(node)) {
+    const element = node as ReactElement<{ children?: ReactNode }>;
+    return toPlainText(element.props.children);
+  }
+  return '';
 }
 
 /**
@@ -42,7 +62,7 @@ const renderWithTimestamps = (
   return (
     <ElementWrapper className={className}>
       {parts.map((part: string, i: number) => {
-        if (part.match(/^\[\d+:\d+\]$/)) {
+        if (/^\[\d+:\d+\]$/.test(part)) {
           return createTimestampButton(part, i, handleJumpToTimestamp);
         }
         return <span key={i}>{part}</span>;
@@ -58,10 +78,10 @@ export function createMarkdownComponents(handleJumpToTimestamp: (timeStr: string
   return {
     // Add custom styling for timestamps [00:00] and make them clickable
     p: ({ children, ...props }: MarkdownComponentProps) => {
-      const text = children?.toString() || '';
+      const text = toPlainText(children);
       
       // Check if the paragraph contains timestamps
-      if (text.match(/\[\d+:\d+\]/)) {
+      if (/\[\d+:\d+\]/.test(text)) {
         return renderWithTimestamps(text, handleJumpToTimestamp, 'p', 'mb-2');
       }
       
@@ -87,10 +107,10 @@ export function createMarkdownComponents(handleJumpToTimestamp: (timeStr: string
       <ol {...props} className="list-decimal pl-5 my-2">{children}</ol>
     ),
     li: ({ children, ...props }: MarkdownComponentProps) => {
-      const text = children?.toString() || '';
+      const text = toPlainText(children);
       
       // Check if list item contains timestamps
-      if (text.match(/\[\d+:\d+\]/)) {
+      if (/\[\d+:\d+\]/.test(text)) {
         return renderWithTimestamps(text, handleJumpToTimestamp, 'li', 'mb-1');
       }
       
@@ -106,8 +126,8 @@ export function createMarkdownComponents(handleJumpToTimestamp: (timeStr: string
 
     // Custom styling for strong/bold text, preserves bold but makes timestamps clickable
     strong: ({ children, ...props }: MarkdownComponentProps) => {
-      const text = children?.toString() || '';
-      if (text.match(/\[\d+:\d+\]/)) {
+      const text = toPlainText(children);
+      if (/\[\d+:\d+\]/.test(text)) {
         return renderWithTimestamps(text, handleJumpToTimestamp, 'strong', 'font-semibold');
       }
       return <strong {...props} className="font-semibold">{children}</strong>;
@@ -115,15 +135,15 @@ export function createMarkdownComponents(handleJumpToTimestamp: (timeStr: string
     
     // Custom styling for em/italic text
     em: ({ children, ...props }: MarkdownComponentProps) => {
-      const text = children?.toString() || '';
+      const text = toPlainText(children);
 
       // Phase/Step highlighting
-      if (text.match(/^(Phase|Step|Section) \d+:/i)) {
+      if (/^(Phase|Step|Section) \d+:/i.test(text)) {
         return <em {...props} className="block font-semibold text-emerald-700 mt-2 mb-1 not-italic">{children}</em>;
       }
 
       // Make timestamps inside italics clickable as well
-      if (text.match(/\[\d+:\d+\]/)) {
+      if (/\[\d+:\d+\]/.test(text)) {
         return renderWithTimestamps(text, handleJumpToTimestamp, 'em');
       }
 

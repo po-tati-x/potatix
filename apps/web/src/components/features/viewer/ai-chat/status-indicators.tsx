@@ -23,7 +23,7 @@ export const ErrorMessage = ({ error }: { error: string }) => (
     <div className="flex-1">
       <p>{error}</p>
       <button 
-        onClick={() => window.location.reload()}
+        onClick={() => globalThis.location.reload()}
         className="text-xs flex items-center gap-1 text-red-600 hover:text-red-800 mt-1 underline"
       >
         <RotateCcw className="h-3 w-3" /> Try reloading
