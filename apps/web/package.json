@@ -2,12 +2,12 @@
   "name": "@potatix/app",
   "private": true,
   "scripts": {
-    "check-types": "tsc --noEmit",
-    "dev": "next dev --turbopack",
-    "build": "next build",
-    "start": "next start --turbopack",
-    "lint": "eslint . --cache --cache-location .cache/.eslintcache",
-    "format": "prettier --check . --ignore-path ../../.gitignore --cache --cache-location .cache/.prettiercache"
+    "check-types": "bunx tsc --noEmit",
+    "dev": "bunx next dev --turbopack",
+    "build": "bunx next build",
+    "start": "bunx next start --turbopack",
+    "lint": "bunx eslint . --cache --cache-location .cache/.eslintcache",
+    "format": "bunx prettier --check . --ignore-path ../../.gitignore --cache --cache-location .cache/.prettiercache"
   },
   "dependencies": {
     "@ai-sdk/google": "^1.2.19",
@@ -122,7 +122,6 @@
     "@emnapi/core": "^1.4.3",
     "@emnapi/wasi-threads": "^1.0.2",
     "@eslint/eslintrc": "^3",
-    "@next/eslint-plugin-next": "^15.3.4",
     "@tailwindcss/postcss": "^4.0.15",
     "@tybys/wasm-util": "^0.9.0",
     "@types/react": "^19.1.6",
@@ -130,6 +129,8 @@
     "dotenv-flow": "^4.1.0",
     "postcss": "^8.5.3",
     "tailwindcss": "^4.0.15",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "@next/eslint-plugin-next": "^15.3.4",
+    "eslint-plugin-react-hooks-extra": "^1.52.2"
   }
 }

@@ -7,7 +7,8 @@
       "cache": false
     },
     "clean": {
-      "cache": false
+      "cache": false,
+      "dependsOn": ["^clean"]
     },
     "build": {
       "dependsOn": ["^build"],
@@ -20,7 +21,7 @@
     "auth:schema:generate": {
       "cache": false,
       "interactive": true,
-      "outputs": ["../schema/src/schemas/**"]
+      "outputs": ["../db/src/schemas/**"]
     },
     "format": {
       "outputs": [".cache/.prettiercache"],
@@ -50,6 +51,6 @@
       "persistent": true
     }
   },
-  "globalEnv": ["DB_*"],
+  "globalEnv": ["DB_*", "DATABASE_URL"],
   "globalPassThroughEnv": ["NODE_ENV", "CI", "npm_lifecycle_event"]
 }

@@ -13,14 +13,14 @@
     }
   },
   "scripts": {
-    "build": "tsc --build",
+    "build": "bunx tsc --build",
     "clean": "git clean -xdf .cache .turbo dist node_modules",
-    "dev": "tsc -b --watch",
-    "format": "prettier --check . --ignore-path ../../.gitignore --cache --cache-location .cache/.prettiercache",
-    "lint": "eslint . --cache --cache-location .cache/.eslintcache",
-    "push": "drizzle-kit push",
-    "studio": "drizzle-kit studio",
-    "typecheck": "tsc --build --noEmit --emitDeclarationOnly false",
+    "dev": "bunx tsc -b --watch",
+    "format": "bunx prettier --check . --ignore-path ../../.gitignore --cache --cache-location .cache/.prettiercache",
+    "lint": "bunx eslint . --cache --cache-location .cache/.eslintcache",
+    "push": "bunx drizzle-kit push",
+    "studio": "bunx drizzle-kit studio",
+    "typecheck": "bunx tsc --build --noEmit --emitDeclarationOnly false",
     "test": "echo 'noop test'"
   },
   "prettier": "@potatix/prettier-config",

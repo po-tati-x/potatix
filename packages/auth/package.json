@@ -13,13 +13,13 @@
     }
   },
   "scripts": {
-    "build": "tsc --build",
+    "build": "bunx tsc --build",
     "clean": "git clean -xdf .cache .turbo dist node_modules",
-    "dev": "tsc -b --watch",
-    "format": "prettier --check . --ignore-path ../../.gitignore --cache --cache-location .cache/.prettiercache",
+    "dev": "bunx tsc -b --watch",
+    "format": "bunx prettier --check . --ignore-path ../../.gitignore --cache --cache-location .cache/.prettiercache",
     "auth:schema:generate": "bunx @better-auth/cli generate --config ./src/cli-config.ts --output ../db/src/schemas/better-auth.ts",
-    "lint": "eslint . --cache --cache-location .cache/.eslintcache",
-    "typecheck": "tsc --noEmit",
+    "lint": "bunx eslint . --cache --cache-location .cache/.eslintcache",
+    "typecheck": "bunx tsc --noEmit",
     "test": "echo 'noop test'"
   },
   "prettier": "@potatix/prettier-config",
