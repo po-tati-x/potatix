@@ -13,10 +13,17 @@ export default async function StudentsPage({ params }: { params: Promise<Params>
   const { slug } = await params;
 
   const headerList = await headers();
-  const session = await auth.api.getSession({ headers: new Headers(Object.fromEntries(headerList)) });
+
+  // Better-typed session object (auth library returns untyped data)
+  const session = (await auth.api.getSession({
+    headers: new Headers(Object.fromEntries(headerList)),
+  })) as { user?: { id: string } } | undefined;
+
   if (!session?.user) redirect("/login");
 
+  // Fetch course (include drafts)
   const course = await courseService.getCourseBySlug(slug, false);
+
   if (!course || course.userId !== session.user.id) {
     redirect("/courses");
   }

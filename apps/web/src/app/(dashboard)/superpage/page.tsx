@@ -51,7 +51,7 @@ export default function SuperpagePage() {
 
   // Add new link
   const handleAddLink = () => {
-    const newId = Math.max(0, ...profile.links.map(link => parseInt(link.id))) + 1;
+    const newId = Math.max(0, ...profile.links.map(link => Number.parseInt(link.id))) + 1;
     setProfile({
       ...profile,
       links: [
@@ -85,7 +85,7 @@ export default function SuperpagePage() {
 
     if (sourceIndex === destIndex) return;
 
-    const newLinks = Array.from(profile.links);
+    const newLinks = [...profile.links];
     const [removed] = newLinks.splice(sourceIndex, 1);
     newLinks.splice(destIndex, 0, removed!);
 

@@ -49,7 +49,7 @@ export default async function EditLessonPage({
     <EditLessonClient
       courseId={course.id}
       lessonId={lesson.id}
-      initialCourse={course as any}
+      initialCourse={course}
     />
   );
 } 

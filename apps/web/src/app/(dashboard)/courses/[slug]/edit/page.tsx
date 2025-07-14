@@ -12,11 +12,21 @@ interface Params {
 export default async function EditCoursePage({ params }: { params: Promise<Params> }) {
   const { slug } = await params;
 
+  // Capture request headers for auth – Next requires sync extraction before async work
   const headerList = await headers();
-  const session = await auth.api.getSession({ headers: new Headers(Object.fromEntries(headerList)) });
-  if (!session?.user) redirect("/login");
 
+  // Narrow session shape locally to avoid `any`
+  const session = (await auth.api.getSession({
+    headers: new Headers(Object.fromEntries(headerList)),
+  })) as { user?: { id: string } } | undefined;
+
+  if (!session?.user) {
+    redirect("/login");
+  }
+
+  // Fetch course including drafts (owner editing), then cast to shared Course type
   const course = await courseService.getCourseBySlug(slug, false);
+
   if (!course || course.userId !== session.user.id) {
     redirect("/courses");
   }
