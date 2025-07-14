@@ -1,7 +1,7 @@
 import { User } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/new-button";
-import { ThemeSelector } from "./ThemeSelector";
+import { ThemeSelector } from "./theme-selector";
 import type { AppearanceTabProps } from "./types";
 
 export function AppearanceTab({
@@ -44,10 +44,11 @@ export function AppearanceTab({
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="block text-sm font-medium text-slate-700">
+                <label htmlFor="display-name" className="block text-sm font-medium text-slate-700">
                   Display Name
                 </label>
                 <input
+                  id="display-name"
                   type="text"
                   value={profile.displayName}
                   onChange={(e) =>
@@ -58,7 +59,7 @@ export function AppearanceTab({
               </div>
 
               <div className="space-y-1.5">
-                <label className="block text-sm font-medium text-slate-700">
+                <label htmlFor="username" className="block text-sm font-medium text-slate-700">
                   Username
                 </label>
                 <div className="flex">
@@ -66,6 +67,7 @@ export function AppearanceTab({
                     potatix.so/
                   </span>
                   <input
+                    id="username"
                     type="text"
                     value={profile.username}
                     onChange={(e) =>
@@ -78,10 +80,11 @@ export function AppearanceTab({
             </div>
 
             <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-slate-700">
+              <label htmlFor="bio" className="block text-sm font-medium text-slate-700">
                 Bio
               </label>
               <textarea
+                id="bio"
                 value={profile.bio}
                 onChange={(e) => onProfileChange("bio", e.target.value)}
                 rows={2}

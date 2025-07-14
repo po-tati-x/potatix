@@ -2,7 +2,7 @@ import { LinkIcon, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/new-button";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import type { LinksTabProps } from "./types";
-import { LinkEditor } from "./LinkEditor";
+import { LinkEditor } from "./link-editor";
 
 export function LinksTab({
   links,
