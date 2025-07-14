@@ -4,38 +4,29 @@ export { alias } from 'drizzle-orm/pg-core';
 export * from './schema';
 export * from './client';
 
-// Singleton DB instance
-import { createDb, type DatabaseInstance } from './client';
+// Typed models & helpers
+export * from './types';
 
-let _db: DatabaseInstance | null = null;
+// Singleton DB instance
+import { createDatabase, type DatabaseInstance } from './client';
+import { databaseEnvironment } from './env.server';
+
+let _databaseInstance: DatabaseInstance | undefined;
 
 /**
- * Get or create a singleton database instance
- * This ensures we reuse the same connection pool across the application
+ * Get or create a singleton database instance.
+ * Ensures we reuse the same connection pool across the application.
  */
-export function getDb(databaseUrl?: string): DatabaseInstance {
-  if (!_db) {
-    if (!databaseUrl && process.env.DATABASE_URL) {
-      databaseUrl = process.env.DATABASE_URL;
-    }
-
-    if (!databaseUrl) {
-      throw new Error(
-        'DATABASE_URL is required either in env or as a parameter',
-      );
-    }
-
-    _db = createDb({
+export function getDatabase(databaseUrl: string = databaseEnvironment.DATABASE_URL): DatabaseInstance {
+  if (!_databaseInstance) {
+    _databaseInstance = createDatabase({
       databaseUrl,
       max: 10,
     });
   }
 
-  return _db;
+  return _databaseInstance;
 }
 
-// Export singleton instance as 'db' for convenience
-export const db =
-  typeof process !== 'undefined' && process.env.DATABASE_URL
-    ? getDb(process.env.DATABASE_URL)
-    : null;
+// Singleton instance exported for optional direct import
+export const database = getDatabase();

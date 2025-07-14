@@ -10,23 +10,25 @@ export interface DatabaseClientOptions {
 
 export type DatabaseInstance = NodePgDatabase<typeof schema>;
 
-export const createDb = (opts?: DatabaseClientOptions): DatabaseInstance => {
-  if (!opts?.databaseUrl) {
+export const createDatabase = (
+  options?: DatabaseClientOptions,
+): DatabaseInstance => {
+  if (!options?.databaseUrl) {
     throw new Error('Database URL is required');
   }
 
   // Create a connection pool with proper configuration
   const pool = new Pool({
-    connectionString: opts.databaseUrl,
-    max: opts.max || 10,
+    connectionString: options.databaseUrl,
+    max: options.max || 10,
     ssl: {
-      rejectUnauthorized: false, // Required for Supabase connections
+      rejectUnauthorized: false,
     },
   });
 
   // Add error handler to prevent app crashes on connection issues
-  pool.on('error', (err) => {
-    console.error('Postgres pool error:', err);
+  pool.on('error', (error) => {
+    console.error('Postgres pool error:', error);
   });
 
   return drizzle(pool, {
