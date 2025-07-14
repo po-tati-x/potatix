@@ -41,8 +41,8 @@ export default async function LessonViewerPage({ params }: { params: Promise<{ s
 
   const lesson: Lesson = currentLesson;
 
-  const nextLesson: Lesson | null = currentIndex + 1 < lessons.length ? lessons[currentIndex + 1]! : null;
-  const prevLesson: Lesson | null = currentIndex - 1 >= 0 ? lessons[currentIndex - 1]! : null;
+  const nextLesson: Lesson | undefined = currentIndex + 1 < lessons.length ? lessons[currentIndex + 1] : undefined;
+  const prevLesson: Lesson | undefined = currentIndex - 1 >= 0 ? lessons[currentIndex - 1] : undefined;
 
   return (
     <LessonViewer

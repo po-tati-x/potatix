@@ -7,7 +7,7 @@ import { Ghost } from "lucide-react";
 import { Button } from "@/components/ui/new-button";
 import CourseSidebar from "@/components/features/viewer/sidebar/course-sidebar-container";
 import { Menu, X } from "lucide-react";
-import Modal from "@/components/ui/Modal";
+import Modal from "@/components/ui/modal";
 import LoginScreen from "@/components/features/auth/login-screen";
 import { cn } from "@/lib/shared/utils/cn";
 import { CourseProvider, useCourseContext } from "@/lib/client/context/course-context";
@@ -47,12 +47,7 @@ function CourseLayoutInner({ children }: { children: React.ReactNode }) {
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
 
-  // Close auth modal automatically when authentication succeeds
-  useEffect(() => {
-    if (isAuthenticated) {
-      setShowAuthModal(false);
-    }
-  }, [isAuthenticated]);
+  // Modal auto-closes simply by not rendering when authenticated.
 
   // If user is not enrolled and trying to access a restricted page (like a lesson), redirect
   useEffect(() => {
@@ -114,8 +109,9 @@ function CourseLayoutInner({ children }: { children: React.ReactNode }) {
           'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
         );
         
-        const firstElement = focusableElements[0] as HTMLElement;
-        const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
+        const focusableArray = [...focusableElements];
+        const firstElement = focusableArray[0] as HTMLElement;
+        const lastElement = (focusableArray.at(-1) ?? firstElement) as HTMLElement;
         
         // If shift+tab on first element, move to last element
         if (e.shiftKey && document.activeElement === firstElement) {
@@ -178,7 +174,7 @@ function CourseLayoutInner({ children }: { children: React.ReactNode }) {
           onClick={() => {
             const target = clientEnv.NEXT_PUBLIC_APP_URL || "/";
             // Use full reload to ensure correct host
-            window.location.href = target;
+            globalThis.window.location.href = target;
           }}
         >
           Back to Home
@@ -282,7 +278,7 @@ function CourseLayoutInner({ children }: { children: React.ReactNode }) {
 export default function CourseLayout({ children, params }: CourseLayoutProps) {
   const { slug: courseSlug } = usePromise(params);
   const pathname = usePathname();
-  const currentLessonId = (pathname.split("/lesson/")[1] ?? "") as string;
+  const currentLessonId = pathname.split("/lesson/")[1] ?? "";
   
   return (
     <CourseProvider 
