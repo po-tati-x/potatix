@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { apiAuth, createErrorResponse, type AuthResult } from "@/lib/auth/api-auth";
 import { enrollmentService, type EnrollmentUpdateInput } from "@/lib/server/services/enrollments";
+import { z } from "zod";
 
 // Type guard to check if auth result has userId
 function hasUserId(auth: AuthResult): auth is { userId: string } {
@@ -21,21 +22,16 @@ export async function PATCH(request: NextRequest) {
   }
   
   try {
-    // Parse request body
-    const body = await request.json();
-    
-    // Validate status
-    const status = body.status;
-    if (!status || !['active', 'pending', 'rejected'].includes(status)) {
-      return createErrorResponse(
-        "Status must be one of: active, pending, rejected",
-        400
-      );
-    }
+    // Validate request body
+    const bodySchema = z.object({
+      status: z.enum(["active", "pending", "rejected"]),
+    });
+
+    const { status } = bodySchema.parse(await request.json());
     
     // Create update input
     const updateInput: EnrollmentUpdateInput = {
-      status: status as "active" | "pending" | "rejected",
+      status,
     };
     
     // Update enrollment

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { apiAuth, createErrorResponse, type AuthResult } from "@/lib/auth/api-auth";
 import { enrollmentService, type EnrollmentCreateInput } from "@/lib/server/services/enrollments";
+import { z } from "zod";
 
 // Type guard to check if auth result has userId
 function hasUserId(auth: AuthResult): auth is { userId: string } {
@@ -64,9 +65,10 @@ export async function POST(request: NextRequest) {
   }
   
   try {
-    // Parse request body
-    const body = await request.json();
-    const courseId = body.courseId;
+    // Parse & validate request body
+    const { courseId } = z
+      .object({ courseId: z.string() })
+      .parse(await request.json());
     
     if (!courseId) {
       return createErrorResponse("Course ID is required", 400);
@@ -75,7 +77,7 @@ export async function POST(request: NextRequest) {
     // Create enrollment input
     const enrollmentInput: EnrollmentCreateInput = {
       userId: auth.userId,
-      courseId: courseId,
+      courseId,
     };
     
     // Create enrollment
