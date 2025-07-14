@@ -7,7 +7,7 @@ import type { ReactNode } from 'react';
 import { cn } from '@/lib/shared/utils/cn';
 import { HelpButton, ReferButton } from '../utility';
 import { useProfile } from '@/lib/client/hooks/use-profile';
-import { useNavigationArea } from '../hooks';
+import { useNavigationArea, type SidebarArea } from '../hooks';
 import { useContext } from 'react';
 import { SideNavContext } from '../context';
 
@@ -40,7 +40,7 @@ function ModeSwitch({
   setOverrideArea,
 }: {
   resolvedArea: 'default' | 'course';
-  setOverrideArea: (v: 'default' | null) => void;
+  setOverrideArea: (v: 'default' | undefined) => void;
 }) {
   return (
     <div className="ml-1 flex rounded-md bg-slate-200 p-0.5">
@@ -58,7 +58,7 @@ function ModeSwitch({
       </button>
       <button
         type="button"
-        onClick={() => setOverrideArea(null)}
+        onClick={() => setOverrideArea(undefined)}
         className={cn(
           'px-2 py-0.5 text-xs font-medium rounded-md transition-colors',
           resolvedArea === 'course'
@@ -76,14 +76,14 @@ export function SidebarHeader(props: SidebarHeaderProps) {
   const { profile } = useProfile();
   const area = useNavigationArea();
   const { overrideArea, setOverrideArea } = useContext(SideNavContext);
-  const resolvedArea: 'default' | 'course' = (overrideArea ?? area) as any;
+  const resolvedArea: SidebarArea = overrideArea ?? area;
   const { className } = props;
 
   // ---------------- Left-side content -------------------------------------
   let leftContent: ReactNode;
 
   switch (props.variant) {
-    case 'logo':
+    case 'logo': {
       leftContent = (
         <Link
           href="/"
@@ -100,18 +100,19 @@ export function SidebarHeader(props: SidebarHeaderProps) {
         </Link>
       );
       break;
+    }
 
-    case 'course':
+    case 'course': {
       leftContent = (
         <span className="text-sm font-semibold text-slate-800 truncate max-w-[8rem]">
           {props.title}
         </span>
       );
       break;
+    }
 
-    case 'back':
-      if (props.onBack) {
-        leftContent = (
+    case 'back': {
+      leftContent = props.onBack ? (
           <button
             type="button"
             onClick={props.onBack}
@@ -120,9 +121,7 @@ export function SidebarHeader(props: SidebarHeaderProps) {
             <ChevronLeft className="size-4 text-slate-600 transition-transform duration-100 group-hover:-translate-x-0.5" />
             <span>Back</span>
           </button>
-        );
-      } else {
-        leftContent = (
+        ) : (
           <Link
             href={props.backHref ?? '/'}
             className="group flex h-8 items-center gap-2 rounded-md px-1 text-sm font-medium text-slate-800 outline-none transition-opacity focus-visible:ring-2 focus-visible:ring-black/50"
@@ -131,11 +130,12 @@ export function SidebarHeader(props: SidebarHeaderProps) {
             {props.title}
           </Link>
         );
-      }
       break;
+    }
 
-    default:
-      leftContent = null;
+    default: {
+      leftContent = undefined;
+    }
   }
 
   return (

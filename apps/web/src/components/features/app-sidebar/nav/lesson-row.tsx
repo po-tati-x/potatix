@@ -1,7 +1,9 @@
 import React, { useEffect, useRef, useState, useCallback, memo } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { GripVertical } from 'lucide-react';
+import { GripVertical, Trash2, AlertTriangle } from 'lucide-react';
+import { Button } from '@/components/ui/new-button';
+import Modal from '@/components/ui/modal';
 import { DropIndicator } from '@atlaskit/pragmatic-drag-and-drop-react-drop-indicator/box';
 import {
   draggable,
@@ -9,14 +11,26 @@ import {
   type ElementDropTargetEventBasePayload,
 } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import {
-  attachClosestEdge,
-  extractClosestEdge,
+  attachClosestEdge as untypedAttachClosestEdge,
+  extractClosestEdge as untypedExtractClosestEdge,
 } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
+
+// Atlaskit utils ship without type info. Wrap them once with explicit typing to
+// silence `no-unsafe-*` ESLint rules.
+const extractClosestEdge = untypedExtractClosestEdge as unknown as (
+  data: unknown,
+) => ClosestEdge | undefined;
+
+const attachClosestEdge = untypedAttachClosestEdge as unknown as (
+  data: { lessonId: string; index: number; moduleId: string; instanceId: symbol },
+  opts: { element: HTMLElement; input: unknown; allowedEdges: ClosestEdge[] },
+) => Record<string | symbol, unknown>;
 import { preserveOffsetOnSource } from '@atlaskit/pragmatic-drag-and-drop/element/preserve-offset-on-source';
 import { setCustomNativeDragPreview } from '@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview';
 
 import { useDragCtx } from './drag-context';
 import type { Lesson } from './types';
+import { useDeleteLesson } from '@/lib/client/hooks/use-courses';
 
 type ClosestEdge = 'top' | 'bottom';
 
@@ -25,16 +39,36 @@ interface LessonRowProps {
   index: number;
   moduleId: string;
   courseSlug: string;
+  courseId: string;
 }
 
-function LessonRowComponent({ lesson, index, moduleId, courseSlug }: LessonRowProps) {
+function LessonRowComponent({ lesson, index, moduleId, courseSlug, courseId }: LessonRowProps) {
   const pathname = usePathname();
   const isActive = pathname?.includes(`/lessons/${lesson.id}`);
   const { instanceId, registerItem, reorderItem } = useDragCtx();
 
   const containerRef = useRef<HTMLLIElement>(null);
   const handleRef = useRef<HTMLSpanElement>(null);
-  const [closestEdge, setClosestEdge] = useState<ClosestEdge | null>(null);
+  // Undefined indicates no drop indicator needed.
+  const [closestEdge, setClosestEdge] = useState<ClosestEdge | undefined>();
+
+  const { mutate: deleteLesson, isPending: deleting } = useDeleteLesson();
+
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+  const confirmDelete = useCallback(() => {
+    deleteLesson(
+      { lessonId: lesson.id, courseId },
+      {
+        onSuccess: () => setShowDeleteModal(false),
+      },
+    );
+  }, [deleteLesson, lesson.id, courseId]);
+
+  const handleDeleteLesson = useCallback(() => {
+    if (deleting) return;
+    setShowDeleteModal(true);
+  }, [deleting]);
 
   const handleChange = useCallback(({ source, self }: ElementDropTargetEventBasePayload) => {
     const handle = handleRef.current;
@@ -42,7 +76,7 @@ function LessonRowComponent({ lesson, index, moduleId, courseSlug }: LessonRowPr
 
     const isSource = source.element === handle;
     if (isSource) {
-      setClosestEdge(null);
+      setClosestEdge(undefined);
       return;
     }
     const edge = extractClosestEdge(self.data);
@@ -50,13 +84,16 @@ function LessonRowComponent({ lesson, index, moduleId, courseSlug }: LessonRowPr
   }, []);
 
   const handleDragLeave = useCallback(() => {
-    setClosestEdge(null);
+    setClosestEdge(undefined);
   }, []);
 
   const handleDrop = useCallback(
-    (payload: any) => {
-      setClosestEdge(null);
-      const { source, self } = payload;
+    (payload: ElementDropTargetEventBasePayload) => {
+      setClosestEdge(undefined);
+      const { source, self } = payload as ElementDropTargetEventBasePayload & {
+        source: { data: { lessonId: string; moduleId: string; index: number; instanceId: symbol } };
+        self: { data: unknown };
+      };
       const closestEdgeOfTarget = extractClosestEdge(self.data);
       const src = source.data as { lessonId: string; moduleId: string; index: number };
       reorderItem({
@@ -64,7 +101,7 @@ function LessonRowComponent({ lesson, index, moduleId, courseSlug }: LessonRowPr
         startIndex: src.index,
         targetModuleId: moduleId,
         indexOfTarget: index,
-        closestEdgeOfTarget,
+        closestEdgeOfTarget: closestEdgeOfTarget,
       });
     },
     [reorderItem, moduleId, index],
@@ -75,13 +112,15 @@ function LessonRowComponent({ lesson, index, moduleId, courseSlug }: LessonRowPr
     const handle = handleRef.current;
     if (!element || !handle) return;
 
-    const cleanup = [
+    const cleanup: Array<() => void> = [
+      // Register list item for shared drag context
       registerItem({ lessonId: lesson.id, element }),
+      // Enable drag on the handle
       draggable({
         element: handle,
         getInitialData: () => ({ lessonId: lesson.id, moduleId, index, instanceId }),
         onGenerateDragPreview({ location, nativeSetDragImage, source }) {
-          const rowElement = containerRef.current?.querySelector('div') as HTMLElement | null;
+          const rowElement = containerRef.current?.querySelector('div') as HTMLElement | undefined;
           const previewSource = rowElement || containerRef.current || source.element;
           setCustomNativeDragPreview({
             nativeSetDragImage,
@@ -96,14 +135,15 @@ function LessonRowComponent({ lesson, index, moduleId, courseSlug }: LessonRowPr
               clone.style.width = `${previewSource.offsetWidth}px`;
               clone.style.pointerEvents = 'none';
               clone.classList.add('bg-white', 'shadow-lg', 'rounded');
-              container.appendChild(clone);
+              container.append(clone);
               return () => {
-                container.removeChild(clone);
+                clone.remove();
               };
             },
           });
         },
-      }),
+      }) as () => void,
+      // Make the entire row a drop target
       dropTargetForElements({
         element,
         canDrop({ source }) {
@@ -123,11 +163,11 @@ function LessonRowComponent({ lesson, index, moduleId, courseSlug }: LessonRowPr
         onDrag: handleChange,
         onDragLeave: handleDragLeave,
         onDrop: handleDrop,
-      }),
+      }) as () => void,
     ];
 
     return () => {
-      cleanup.forEach(fn => fn());
+      for (const fn of cleanup) fn();
     };
   }, [
     instanceId,
@@ -144,7 +184,8 @@ function LessonRowComponent({ lesson, index, moduleId, courseSlug }: LessonRowPr
     <li ref={containerRef} data-lesson-id={lesson.id} className="relative">
       <div
         role="treeitem"
-        className={`group flex items-center gap-1.5 rounded px-1.5 py-1 text-sm ${
+        aria-selected={isActive}
+        className={`group/lesson flex items-center gap-1.5 rounded px-1.5 py-1 text-sm ${
           isActive
             ? 'bg-emerald-50 font-medium text-emerald-900'
             : 'text-slate-700 focus-within:bg-slate-200/60 hover:bg-slate-200/60'
@@ -172,8 +213,49 @@ function LessonRowComponent({ lesson, index, moduleId, courseSlug }: LessonRowPr
         >
           {lesson.title || 'Untitled Lesson'}
         </Link>
+        {/* Delete button */}
+        <button
+          type="button"
+          onClick={handleDeleteLesson}
+          aria-label="Delete lesson"
+          disabled={deleting}
+          className={`flex size-5 items-center justify-center rounded text-red-500 transition-opacity opacity-0 group-hover/lesson:opacity-100 hover:bg-red-50 focus-visible:opacity-100 ${
+            deleting ? 'opacity-50 cursor-not-allowed' : ''
+          }`}
+        >
+          <Trash2 className="size-4" />
+        </button>
       </div>
-      {closestEdge && <DropIndicator edge={closestEdge as any} gap="2px" />}
+      {closestEdge && <DropIndicator edge={closestEdge} gap="2px" />}
+
+      {showDeleteModal && (
+        <Modal
+          title="Delete Lesson"
+          size="sm"
+          blurStrength="lg"
+          onClose={() => setShowDeleteModal(false)}
+        >
+          <div className="p-5">
+            <div className="flex gap-3 mb-4">
+              <div className="flex-shrink-0 mt-0.5">
+                <AlertTriangle className="h-5 w-5 text-amber-500" />
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-slate-900">Are you sure?</h3>
+                <p className="mt-1 text-sm text-slate-600">This will permanently delete the lesson.</p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 mt-5">
+              <Button type="outline" size="small" onClick={() => setShowDeleteModal(false)}>
+                Cancel
+              </Button>
+              <Button type="danger" size="small" onClick={confirmDelete} disabled={deleting}>
+                {deleting ? 'Deleting...' : 'Delete'}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </li>
   );
 }

@@ -13,6 +13,7 @@ import { AddModuleButton } from '../nav/ui';
 import { SidebarHeader } from '../chrome/sidebar-header';
 import { useCourseOutline } from '@/lib/client/hooks/use-courses';
 import { Skeleton } from '@/components/ui/skeleton';
+import type { Lesson } from '@/lib/shared/types/courses';
 import { PaneShell } from './pane-shell';
 import { useIsMutating } from '@tanstack/react-query';
 
@@ -25,12 +26,13 @@ interface CoursePaneProps {
 
 export function CoursePane({ courseSlug }: CoursePaneProps) {
   // Resolve slug from props or route params
-  const params = useParams() as { slug?: string; courseId?: string };
+  const params = useParams();
   // Memoise slug so we don't recompute on every render
-  const slug = useMemo(
-    () => courseSlug?.trim() || params.slug || params.courseId || 'course',
-    [courseSlug, params.slug, params.courseId],
-  );
+  const slug = useMemo(() => {
+    const candidate = courseSlug?.trim() || params.slug || params.courseId || 'course';
+    const value = Array.isArray(candidate) ? candidate[0] : candidate;
+    return value ?? 'course';
+  }, [courseSlug, params.slug, params.courseId]);
 
   // Data – lightweight outline
   const {
@@ -56,7 +58,7 @@ export function CoursePane({ courseSlug }: CoursePaneProps) {
       id: mod.id,
       title: mod.title,
       lessons: (mod.lessons ?? [])
-        .filter((lsn): lsn is NonNullable<typeof lsn> => Boolean(lsn && (lsn as any).id))
+        .filter((lsn): lsn is Lesson => Boolean(lsn && lsn.id))
         .map(lsn => ({
           id: lsn.id,
           title: lsn.title,
@@ -95,10 +97,10 @@ export function CoursePane({ courseSlug }: CoursePaneProps) {
             </div>
           )}
 
-          {modules.length ? (
+          {modules.length > 0 ? (
             <ModuleList modules={modules} courseSlug={slug} courseId={course?.id ?? ''} />
           ) : (
-            !isLoading && <EmptyState courseSlug={slug} />
+            !isLoading && <EmptyState courseSlug={slug} courseId={course?.id ?? ''} />
           )}
         </div>
       </PaneShell>
@@ -125,11 +127,11 @@ function SidebarSkeleton() {
   );
 }
 
-function EmptyState({ courseSlug }: { courseSlug: string }) {
+function EmptyState({ courseSlug, courseId }: { courseSlug: string; courseId: string }) {
   return (
     <div className="flex flex-col items-start gap-3 text-sm text-slate-500">
       <p>This course has no modules yet.</p>
-      <AddModuleButton courseSlug={courseSlug} />
+      <AddModuleButton courseSlug={courseSlug} courseId={courseId} />
     </div>
   );
 }
@@ -216,7 +218,6 @@ function CourseHeaderCard({ course, slug }: { course: Course; slug: string }) {
               onChange={e => setTitle(e.target.value)}
               onBlur={saveTitle}
               onKeyDown={handleKeyDown}
-              autoFocus
               aria-label="Course title"
               className="w-full max-w-full truncate rounded bg-white/90 px-2 py-1 text-sm font-medium text-slate-900 shadow focus:outline-none"
             />

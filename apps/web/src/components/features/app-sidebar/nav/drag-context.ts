@@ -7,12 +7,12 @@ export interface DragCtx {
     startIndex: number;
     targetModuleId: string;
     indexOfTarget: number;
-    closestEdgeOfTarget: 'top' | 'bottom' | null;
+    closestEdgeOfTarget: 'top' | 'bottom' | undefined;
   }) => void;
   instanceId: symbol;
 }
 
-export const DragContext = createContext<DragCtx | null>(null);
+export const DragContext = createContext<DragCtx | undefined>(undefined);
 
 export function useDragCtx() {
   const ctx = useContext(DragContext);

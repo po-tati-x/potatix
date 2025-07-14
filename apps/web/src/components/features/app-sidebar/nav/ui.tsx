@@ -1,7 +1,8 @@
 import React, { type ComponentType } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/new-button';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, Loader2 } from 'lucide-react';
+import { useCreateModule } from '@/lib/client/hooks/use-courses';
 
 export function IconButton({
   icon: Icon,
@@ -24,22 +25,36 @@ export function IconButton({
   );
 }
 
-export function AddModuleButton({ courseSlug }: { courseSlug: string }) {
+interface AddModuleButtonProps {
+  courseSlug: string;
+  courseId: string;
+}
+
+export function AddModuleButton({ courseSlug, courseId }: AddModuleButtonProps) {
   const router = useRouter();
+  const { mutate: createModule, isPending } = useCreateModule();
+
   const handleClick = () => {
-    if (courseSlug) {
+    if (!courseId) {
+      // fallback navigate if id missing
       router.push(`/courses/${courseSlug}/edit?addModule=1`);
+      return;
     }
+    createModule({ courseId, title: 'New Module' });
   };
+
   return (
     <Button
       type="outline"
       size="small"
       block
-      iconLeft={<PlusCircle />}
-      className="justify-start border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+      iconLeft={isPending ? <Loader2 className="animate-spin" /> : <PlusCircle />}
+      className={`justify-start border-emerald-300 text-emerald-700 hover:bg-emerald-50 ${
+        isPending ? 'opacity-60 cursor-not-allowed' : ''
+      }`}
       aria-label="Add module"
       onClick={handleClick}
+      disabled={isPending}
     >
       Add module
     </Button>

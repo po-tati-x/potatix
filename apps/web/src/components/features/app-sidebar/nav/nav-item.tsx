@@ -14,16 +14,18 @@ interface NavItemProps {
 function NavItemComponent({ item, className }: NavItemProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const current = `${pathname}${searchParams.toString() ? `?${searchParams}` : ''}`;
+  const queryString = searchParams.toString();
+  const current = queryString ? `${pathname}?${queryString}` : pathname;
 
   const hasChildren = item.items && item.items.length > 0;
-  const storageKey = hasChildren ? `nav:${item.href}:expanded` : undefined;
+  const storageKey = hasChildren ? `nav:${item.href}:expanded` : void 0;
 
-  // null = no manual override yet. boolean = user-set expanded state
-  const [overrideExpanded, setOverrideExpanded] = useState<boolean | null>(() => {
-    if (!hasChildren || typeof window === 'undefined' || !storageKey) return null;
+  // undefined = no manual override yet. boolean = user-set expanded state
+  const [overrideExpanded, setOverrideExpanded] = useState<boolean | undefined>(() => {
+    if (!hasChildren || globalThis.window === undefined || !storageKey) return;
     const stored = localStorage.getItem(storageKey);
-    return stored === null ? null : stored === '1';
+    if (stored === null) return;
+    return stored === '1';
   });
 
   // Treat full URL (path + query) as the current location
@@ -33,7 +35,7 @@ function NavItemComponent({ item, className }: NavItemProps) {
     isExactActive ||
     (hasChildren && item.items!.some((child) => current.startsWith(child.href)));
 
-  const isExpanded = hasChildren && (overrideExpanded !== null ? overrideExpanded : routeActive);
+  const isExpanded = hasChildren && (overrideExpanded === undefined ? routeActive : overrideExpanded);
 
   const toggleExpand = useCallback(
     (e?: React.MouseEvent | React.KeyboardEvent) => {
@@ -43,7 +45,7 @@ function NavItemComponent({ item, className }: NavItemProps) {
       }
       setOverrideExpanded((prev) => {
         // When override not set, derive current expanded status then flip
-        const currentExpanded = prev === null ? isExpanded : prev;
+        const currentExpanded = prev === undefined ? isExpanded : prev;
         const next = !currentExpanded;
         if (storageKey) {
           try {
@@ -59,7 +61,7 @@ function NavItemComponent({ item, className }: NavItemProps) {
   );
 
   const Icon = item.icon;
-  const submenuId = hasChildren ? `${item.href.replace(/\//g, '-')}-submenu` : undefined;
+  const submenuId = hasChildren ? `${item.href.replaceAll('/', '-')}-submenu` : void 0;
 
   // Determine semantic variant for styling
   const variant: 'course' | 'module' | 'lesson' =
@@ -93,7 +95,7 @@ function NavItemComponent({ item, className }: NavItemProps) {
       <Link
         href={item.href}
         data-active={routeActive}
-        aria-current={isExactActive ? 'page' : undefined}
+        aria-current={isExactActive ? 'page' : void 0}
         className={cn(rowClasses, 'flex items-center gap-2')}
         onClick={item.onClick}
       >
@@ -151,7 +153,7 @@ function NavItemComponent({ item, className }: NavItemProps) {
         <div data-active={routeActive} className={rowClasses}>
           <Link
             href={item.href}
-            aria-current={isExactActive ? 'page' : undefined}
+            aria-current={isExactActive ? 'page' : void 0}
             className="flex flex-1 items-center gap-2 truncate outline-none"
             onClick={item.onClick}
           >

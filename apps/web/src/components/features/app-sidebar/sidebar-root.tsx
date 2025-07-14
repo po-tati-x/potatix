@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, useState, useEffect } from 'react';
+import { ReactNode, useState, useLayoutEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { SideNavContext } from './context';
 import { useNavigationArea } from './hooks';
@@ -15,29 +15,22 @@ interface AppSidebarLayoutProps {
 
 export function SidebarRoot({ children }: AppSidebarLayoutProps) {
   const area = useNavigationArea();
-  const [overrideArea, setOverrideArea] = useState<SidebarArea | null>(null);
+  const [overrideArea, setOverrideArea] = useState<SidebarArea | undefined>();
   const resolvedArea = overrideArea ?? area;
-  // Reset overrides when the route-derived area changes
-  const [lastArea, setLastArea] = useState<SidebarArea>(area);
 
-  useEffect(() => {
-    if (area !== lastArea) {
-      setOverrideArea(null);
-      setLastArea(area);
-    }
-  }, [area, lastArea]);
+  // Reset overrides whenever the route-derived area changes
+  useLayoutEffect(() => {
+    setOverrideArea(undefined);
+  }, [area]);
 
-  const params = useParams() as { courseId?: string };
+  const params = useParams<{ courseId?: string }>();
 
-  const renderPane = () => {
-    switch (resolvedArea) {
-      case 'course':
-        return <CoursePane courseSlug={params.courseId ?? ''} />;
-      case 'default':
-      default:
-        return <DefaultPane />;
-    }
-  };
+  const renderPane = () =>
+    resolvedArea === 'course' ? (
+      <CoursePane courseSlug={params.courseId ?? ''} />
+    ) : (
+      <DefaultPane />
+    );
 
   const contextValue = { overrideArea, setOverrideArea };
 

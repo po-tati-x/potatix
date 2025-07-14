@@ -12,13 +12,11 @@ export interface ModuleRect {
  * Relies on the `[data-module-id]` attribute that `ModuleNode` sets on its `<li>` wrapper.
  */
 export function computeModuleRects(): ModuleRect[] {
-  return Array.from(
-    document.querySelectorAll<HTMLElement>("[data-module-id]"),
-  ).map((el) => {
+  return [...document.querySelectorAll<HTMLElement>("[data-module-id]")].map((el) => {
     const { top, bottom } = el.getBoundingClientRect();
     const id = el.dataset.moduleId;
     if (!id) throw new Error("Sidebar module element missing data-module-id attr");
-    return { id: id!, top, bottom };
+    return { id: id, top, bottom };
   });
 }
 
@@ -26,11 +24,11 @@ export function computeModuleRects(): ModuleRect[] {
  * Given an array of ModuleRect (usually cached during drag) and a Y coordinate,
  * return the id of the module currently under that point, or null if none.
  */
-export function findModuleAtY(rects: ModuleRect[], y: number): string | null {
+export function findModuleAtY(rects: ModuleRect[], y: number): string | undefined {
   for (const rect of rects) {
     if (y >= rect.top && y <= rect.bottom) return rect.id;
   }
-  return null;
+  return undefined;
 }
 
 /**
@@ -40,11 +38,9 @@ export function findModuleAtY(rects: ModuleRect[], y: number): string | null {
  * the pointer. Fallback is to append to the end.
  */
 export function computeInsertIndex(moduleEl: HTMLElement, pointerY: number): number {
-  const lessonEls = Array.from(
-    moduleEl.querySelectorAll<HTMLElement>("[data-lesson-id]"),
-  );
-  for (let i = 0; i < lessonEls.length; i++) {
-    const rect = lessonEls[i]!.getBoundingClientRect();
+  const lessonEls = [...moduleEl.querySelectorAll<HTMLElement>("[data-lesson-id]")];
+  for (const [i, lessonEl] of lessonEls.entries()) {
+    const rect = lessonEl.getBoundingClientRect();
     if (pointerY < rect.top + rect.height / 2) return i;
   }
   return lessonEls.length; // append if nothing matched

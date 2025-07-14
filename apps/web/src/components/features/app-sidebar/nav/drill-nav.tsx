@@ -15,7 +15,7 @@ interface StackEntry {
 
 export function DrillNav({ items }: DrillNavProps) {
   const [stack, setStack] = useState<StackEntry[]>([{ label: 'Course', items }]);
-  const current = stack[stack.length - 1]!;
+  const current = stack.at(-1)!;
 
   function handleItemClick(item: NavItem) {
     if (item.items && item.items.length > 0) {
@@ -41,7 +41,7 @@ export function DrillNav({ items }: DrillNavProps) {
         </button>
       )}
 
-      <ul className="flex flex-col gap-1" role="list">
+      <ul className="flex flex-col gap-1">
         {current.items.map((item) => (
           <li key={item.href}>
             {item.items && item.items.length > 0 ? (
