@@ -3,6 +3,7 @@ import { apiAuth, createErrorResponse } from "@/lib/auth/api-auth";
 import type { AuthResult } from "@/lib/auth/api-auth";
 import { lessonService } from "@/lib/server/services/lessons";
 import type { LessonUpdateInput } from "@/lib/server/services/lessons";
+import { z } from "zod";
 
 // Type guard to check if auth result has userId
 function hasUserId(auth: AuthResult): auth is { userId: string } {
@@ -85,19 +86,21 @@ export async function PATCH(request: NextRequest) {
       return createErrorResponse(errObj?.error ?? "Access denied", errObj?.status ?? 403);
     }
     
-    // Parse request body
-    const body = await request.json();
-    
-    // Create update input
-    const updateInput: LessonUpdateInput = {
-      title: body.title,
-      description: body.description,
-      playbackId: body.playbackId,
-      uploadStatus: body.uploadStatus,
-      order: body.order,
-      visibility: body.visibility,
-      transcriptData: body.transcriptData,
-    };
+    // Parse and validate request body
+    const bodySchema = z.object({
+      title: z.string().optional(),
+      description: z.string().nullable().optional(),
+      playbackId: z.string().nullable().optional(),
+      uploadStatus: z.string().optional(),
+      order: z.number().int().optional(),
+      visibility: z.enum(["public", "enrolled"]).optional(),
+      transcriptData: z.unknown().optional(),
+    });
+
+    const body = bodySchema.parse(await request.json());
+
+    // Body is now strongly typed; spread to update input
+    const updateInput: LessonUpdateInput = { ...body };
     
     // Update lesson
     const updatedLesson = await lessonService.updateLesson(lessonId, updateInput);

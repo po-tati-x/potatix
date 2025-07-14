@@ -4,6 +4,18 @@ import type { AuthResult } from "@/lib/auth/api-auth";
 import { courseService } from "@/lib/server/services/courses";
 import { moduleService } from "@/lib/server/services/modules";
 import type { ModuleCreateInput } from "@/lib/server/services/modules";
+import { z } from "zod";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Validation schema for POST body
+// ─────────────────────────────────────────────────────────────────────────────
+
+const BodySchema = z.object({
+  courseId: z.string(),
+  title: z.string().min(1),
+  description: z.string().optional().nullable(),
+  order: z.number().int().optional(),
+});
 
 // Type guard to check if auth result has userId
 function hasUserId(auth: AuthResult): auth is { userId: string } {
@@ -64,9 +76,9 @@ export async function POST(request: NextRequest) {
   }
   
   try {
-    // Parse request body
-    const body = await request.json();
-    const courseId = body.courseId;
+    // Parse and validate request body
+    const body = BodySchema.parse(await request.json());
+    const { courseId, title, description, order } = body;
     
     if (!courseId) {
       return createErrorResponse("Course ID is required", 400);
@@ -85,10 +97,10 @@ export async function POST(request: NextRequest) {
     
     // Create module input
     const moduleInput: ModuleCreateInput = {
-      title: body.title,
-      description: body.description,
-      order: body.order,
-      courseId: courseId,
+      title,
+      description: description ?? undefined,
+      order,
+      courseId,
     };
     
     // Create module

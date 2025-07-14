@@ -4,6 +4,27 @@ import { courseService } from "@/lib/server/services/courses";
 import type { CourseCreateInput } from "@/lib/server/services/courses";
 import type { ApiResponse } from "@/lib/shared/types/api";
 
+// Schema validation
+import {
+  object,
+  string as vString,
+  number as vNumber,
+  array as vArray,
+  optional,
+  parse,
+} from "valibot";
+
+const CreateCourseSchema = object({
+  title: vString(),
+  description: optional(vString()),
+  price: optional(vNumber()),
+  status: optional(vString()),
+  imageUrl: optional(vString()),
+  perks: optional(vArray(vString())),
+  learningOutcomes: optional(vArray(vString())),
+  prerequisites: optional(vArray(vString())),
+});
+
 // Type guard to check if auth result has userId
 function hasUserId(auth: AuthResult): auth is { userId: string } {
   return 'userId' in auth && typeof auth.userId === 'string';
@@ -24,7 +45,7 @@ export async function GET(request: NextRequest) {
     
     // Get courses for the authenticated user (pagination param not used in service)
     const result = await courseService.getCoursesByUserId(auth.userId);
-    return NextResponse.json({ data: result, error: null } as ApiResponse<typeof result>);
+    return NextResponse.json({ data: result, error: undefined } as ApiResponse<typeof result>);
   } catch (error) {
     console.error("[API] Failed to get courses:", error);
     return createErrorResponse(
@@ -46,20 +67,19 @@ export async function POST(request: NextRequest) {
   }
   
   try {
-    // Parse request body
-    const body = await request.json();
-    
+    // Parse & validate request body
+    let body: CourseCreateInput;
+    try {
+      body = parse(CreateCourseSchema, await request.json()) as CourseCreateInput;
+    } catch {
+      return createErrorResponse("Invalid request payload", 400);
+    }
+
     // Create course input
     const courseInput: CourseCreateInput = {
-      title: body.title,
-      description: body.description,
-      price: body.price,
-      status: body.status || "draft",
-      imageUrl: body.imageUrl,
+      ...body,
+      status: body.status ?? "draft",
       userId: auth.userId,
-      perks: body.perks,
-      learningOutcomes: body.learningOutcomes,
-      prerequisites: body.prerequisites,
     };
     
     // Create course
@@ -67,7 +87,7 @@ export async function POST(request: NextRequest) {
     if (!course) {
       return createErrorResponse("Failed to create course", 500);
     }
-    return NextResponse.json({ data: course, error: null } as ApiResponse<typeof course>, { status: 201 });
+    return NextResponse.json({ data: course, error: undefined } as ApiResponse<typeof course>, { status: 201 });
   } catch (error) {
     console.error("[API] Failed to create course:", error);
     return createErrorResponse(

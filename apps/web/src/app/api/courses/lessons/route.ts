@@ -5,6 +5,7 @@ import { courseService } from "@/lib/server/services/courses";
 import { moduleService } from "@/lib/server/services/modules";
 import { lessonService } from "@/lib/server/services/lessons";
 import type { LessonCreateInput } from "@/lib/server/services/lessons";
+import { z } from "zod";
 
 // Type guard to check if auth result has userId
 function hasUserId(auth: AuthResult): auth is { userId: string } {
@@ -96,14 +97,22 @@ export async function POST(request: NextRequest) {
   }
   
   try {
-    // Parse request body
-    const body = await request.json();
-    const courseId = body.courseId;
-    const moduleId = body.moduleId;
-    
-    if (!courseId || !moduleId) {
-      return createErrorResponse("Course ID and Module ID are required", 400);
-    }
+    // Validate and parse request body
+    const bodySchema = z.object({
+      courseId: z.string().min(1),
+      moduleId: z.string().min(1),
+      title: z.string().min(1).optional(),
+      description: z.string().optional(),
+      playbackId: z.string().nullable().optional(),
+    });
+
+    const {
+      courseId,
+      moduleId,
+      title,
+      description,
+      playbackId,
+    } = bodySchema.parse(await request.json());
     
     // Check course ownership
     const ownershipCheck = await courseService.checkCourseOwnership(
@@ -122,12 +131,12 @@ export async function POST(request: NextRequest) {
     
     // Create lesson input
     const lessonInput: LessonCreateInput = {
-      title: body.title,
-      description: body.description,
-      playbackId: body.playbackId,
+      title: title ?? "Untitled Lesson",
+      description,
+      playbackId: playbackId ?? undefined,
       order,
-      moduleId: moduleId,
-      courseId: courseId,
+      moduleId,
+      courseId,
     };
     
     // Create lesson

@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { apiAuth, createErrorResponse } from "@/lib/auth/api-auth";
 import type { AuthResult } from "@/lib/auth/api-auth";
-import { db as _db, courseSchema } from "@potatix/db";
+import { database, courseSchema } from "@potatix/db";
 import { eq } from "drizzle-orm";
 import { slugify } from "@/lib/shared/utils/courses";
 import { nanoid } from "nanoid";
 
-const db = _db!;
+// use the singleton `database` directly
 
 // Type guard to check if auth result has userId
 function hasUserId(auth: AuthResult): auth is { userId: string } {
@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
         // Check if slug already exists
         const slug = value;
         
-        const existingCourses = await db
+        const existingCourses = await database
           .select({ id: courseSchema.course.id })
           .from(courseSchema.course)
           .where(eq(courseSchema.course.slug, slug));
@@ -68,11 +68,12 @@ export async function GET(request: NextRequest) {
         });
       }
       
-      default:
+      default: {
         return createErrorResponse(
           `Unsupported validation type: ${type}`,
           400
         );
+      }
     }
   } catch (error) {
     console.error("[API] Validation error:", error);

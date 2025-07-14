@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { apiAuth, createErrorResponse, type AuthResult, checkCourseOwnership } from "@/lib/auth/api-auth";
 import { courseService, type CourseUpdateInput } from "@/lib/server/services/courses";
 import type { ApiResponse } from "@/lib/shared/types/api";
+import { z } from "zod";
 
 // Type guard to check if auth result has userId
 function hasUserId(auth: AuthResult): auth is { userId: string } {
@@ -32,7 +33,7 @@ export async function GET(request: NextRequest) {
       return createErrorResponse("Course not found", 404);
     }
     
-    return NextResponse.json({ data: course, error: null } as ApiResponse<typeof course>);
+    return NextResponse.json({ data: course } as ApiResponse<typeof course>);
   } catch (error: unknown) {
     const err = error as { message?: string; status?: number } | Error;
     console.error("[API] Failed to get course:", err);
@@ -60,21 +61,23 @@ export async function PATCH(request: NextRequest) {
     // Check course ownership
     await checkCourseOwnership(courseId, auth.userId);
     
-    // Parse request body
-    const body = await request.json();
-    
+    // Validate request body
+    const UpdateCourseSchema = z.object({
+      title: z.string().max(255).optional(),
+      description: z.string().max(10_000).optional(),
+      price: z.number().nonnegative().optional(),
+      status: z.enum(["draft", "published", "archived"]).optional(),
+      imageUrl: z.string().url().optional(),
+      slug: z.string().max(255).optional(),
+      perks: z.array(z.string()).optional(),
+      learningOutcomes: z.array(z.string()).optional(),
+      prerequisites: z.array(z.string()).optional(),
+    });
+
+    const body = UpdateCourseSchema.parse(await request.json());
+
     // Create update input
-    const updateInput: CourseUpdateInput = {
-      title: body.title,
-      description: body.description,
-      price: body.price,
-      status: body.status,
-      imageUrl: body.imageUrl,
-      slug: body.slug,
-      perks: body.perks,
-      learningOutcomes: body.learningOutcomes,
-      prerequisites: body.prerequisites,
-    };
+    const updateInput: CourseUpdateInput = { ...body };
     
     // Update course
     const course = await courseService.updateCourse(courseId, updateInput);
@@ -82,7 +85,7 @@ export async function PATCH(request: NextRequest) {
     if (!course) {
       return createErrorResponse("Failed to update", 500);
     }
-    return NextResponse.json({ data: course, error: null } as ApiResponse<typeof course>);
+    return NextResponse.json({ data: course } as ApiResponse<typeof course>);
   } catch (error: unknown) {
     const err = error as { message?: string; status?: number } | Error;
     console.error("[API] Failed to update course:", err);
@@ -113,7 +116,7 @@ export async function DELETE(request: NextRequest) {
     // Delete course
     const result = await courseService.deleteCourse(courseId);
     
-    return NextResponse.json({ data: result, error: null } as ApiResponse<typeof result>);
+    return NextResponse.json({ data: result } as ApiResponse<typeof result>);
   } catch (error: unknown) {
     const err = error as { message?: string; status?: number } | Error;
     console.error("[API] Failed to delete course:", err);

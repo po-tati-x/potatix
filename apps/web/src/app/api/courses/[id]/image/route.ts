@@ -29,14 +29,18 @@ export async function POST(
   // Check ownership (throws if not owned)
   try {
     await checkCourseOwnership(courseId, auth.userId);
-  } catch (err: any) {
-    return createErrorResponse(err.message ?? "Access denied", err.status ?? 403);
+  } catch (error: unknown) {
+    const err = error as { message?: string; status?: number } | Error;
+    return createErrorResponse(
+      'message' in err && err.message ? err.message : 'Access denied',
+      'status' in err && err.status ? err.status : 403,
+    );
   }
 
   try {
     // Parse multipart form data
     const formData = await request.formData();
-    const file = formData.get("file") as File | null;
+    const file = formData.get("file") as File | undefined;
 
     if (!file) {
       return createErrorResponse("No file provided", 400);
@@ -85,7 +89,7 @@ export async function POST(
 
     // Return consistent ApiResponse
     const result = { imageUrl };
-    return NextResponse.json({ data: result, error: null } as ApiResponse<typeof result>);
+    return NextResponse.json({ data: result } as ApiResponse<typeof result>);
   } catch (error) {
     console.error("[API] Failed to upload course image:", error);
     return createErrorResponse("Failed to upload course image", 500);

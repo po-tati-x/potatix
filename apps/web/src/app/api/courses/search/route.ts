@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { apiAuth, createErrorResponse } from "@/lib/auth/api-auth";
 import type { AuthResult } from "@/lib/auth/api-auth";
-import { db as _db, courseSchema } from "@potatix/db";
+import { database, courseSchema } from "@potatix/db";
 import { desc, sql } from "drizzle-orm";
-
-const db = _db!;
 
 // Type guard to check if auth result has userId
 function hasUserId(auth: AuthResult): auth is { userId: string } {
@@ -21,8 +19,8 @@ export async function GET(request: NextRequest) {
   // Parse search parameters
   const query = searchParams.get("query") || "";
   const status = searchParams.get("status");
-  const page = parseInt(searchParams.get("page") || "1", 10);
-  const limit = parseInt(searchParams.get("limit") || "10", 10);
+  const page = Number.parseInt(searchParams.get("page") || "1", 10);
+  const limit = Number.parseInt(searchParams.get("limit") || "10", 10);
   const userOnly = searchParams.get("userOnly") === "true";
   
   // Calculate offset
@@ -57,15 +55,11 @@ export async function GET(request: NextRequest) {
     if (query) {
       const searchCondition = sql`(${courseSchema.course.title} ILIKE ${'%' + query + '%'} OR ${courseSchema.course.description} ILIKE ${'%' + query + '%'})`;
       
-      if (conditions) {
-        conditions = sql`${conditions} AND ${searchCondition}`;
-      } else {
-        conditions = searchCondition;
-      }
+      conditions = conditions ? sql`${conditions} AND ${searchCondition}` : searchCondition;
     }
     
     // Get total count
-    const countQuery = db.select({ count: sql`COUNT(*)` })
+    const countQuery = database.select({ count: sql`COUNT(*)` })
       .from(courseSchema.course)
       .where(conditions);
     
@@ -73,7 +67,7 @@ export async function GET(request: NextRequest) {
     const totalCount = Number(countResult[0]?.count || 0);
     
     // Get courses
-    const coursesQuery = db.select({
+    const coursesQuery = database.select({
       id: courseSchema.course.id,
       title: courseSchema.course.title,
       description: courseSchema.course.description,
