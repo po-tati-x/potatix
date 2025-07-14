@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { apiAuth, createErrorResponse, type AuthResult } from "@/lib/auth/api-auth";
 import { lessonService } from "@/lib/server/services/lessons";
 
+// Type guard – checks if auth result contains userId
+function hasUserId(auth: AuthResult): auth is { userId: string } {
+  return 'userId' in auth && typeof auth.userId === 'string';
+}
+
 interface Params {
   params: Promise<{ id: string; lessonId: string }>;
 }
@@ -13,10 +18,9 @@ interface Params {
 export async function GET(req: NextRequest, { params }: Params) {
   const { id: courseId, lessonId } = await params;
 
-  const auth = await apiAuth(req) as AuthResult;
-  // Type guard
-  if (!('userId' in auth) || typeof auth.userId !== 'string') {
-    return createErrorResponse((auth as any).error, (auth as any).status);
+  const auth = await apiAuth(req);
+  if (!hasUserId(auth)) {
+    return createErrorResponse(auth.error, auth.status);
   }
 
   try {
@@ -31,9 +35,9 @@ export async function GET(req: NextRequest, { params }: Params) {
       return createErrorResponse(ownership.error, ownership.status);
     }
 
-    return NextResponse.json({ data: ownership.lesson, error: null });
-  } catch (err) {
-    console.error("[API] lesson fetch", err);
+    return NextResponse.json({ data: ownership.lesson, error: undefined });
+  } catch (error) {
+    console.error("[API] lesson fetch", error);
     return createErrorResponse("Failed to fetch lesson", 500);
   }
 } 
