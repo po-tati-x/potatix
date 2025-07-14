@@ -27,7 +27,7 @@ export async function POST(
   try {
     // Parse multipart form data
     const formData = await request.formData();
-    const file = formData.get("file") as File | null;
+    const file = formData.get("file") as File | undefined;
     if (!file) return createErrorResponse("No file provided", 400);
 
     if (file.size > MAX_FILE_SIZE) {
@@ -50,9 +50,9 @@ export async function POST(
     await instructorService.updateInstructor(instructorId, { avatarUrl });
 
     const result = { avatarUrl };
-    return NextResponse.json({ data: result, error: null } as ApiResponse<typeof result>);
-  } catch (err) {
-    console.error("[API] Failed to upload instructor avatar", err);
+    return NextResponse.json({ data: result } as ApiResponse<typeof result>);
+  } catch (error) {
+    console.error("[API] Failed to upload instructor avatar", error);
     return createErrorResponse("Failed to upload avatar", 500);
   }
 } 

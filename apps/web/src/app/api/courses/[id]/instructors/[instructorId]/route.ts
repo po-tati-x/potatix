@@ -1,11 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { apiAuth, createErrorResponse, type AuthResult, checkCourseOwnership } from '@/lib/auth/api-auth';
+import {
+  apiAuth,
+  createErrorResponse,
+  type AuthResult,
+  checkCourseOwnership,
+} from '@/lib/auth/api-auth';
 import { instructorService } from '@/lib/server/services/instructors';
 import type { ApiResponse } from '@/lib/shared/types/api';
+import { z } from 'zod';
 
 function hasUserId(auth: AuthResult): auth is { userId: string } {
   return 'userId' in auth && typeof auth.userId === 'string';
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Validation schema for PATCH body – all fields optional
+// ─────────────────────────────────────────────────────────────────────────────
+
+const patchSchema = z.object({
+  // Instructor profile fields
+  name: z.string().trim().optional(),
+  title: z.string().trim().optional(), // allow empty string for removal
+  bio: z.string().trim().optional(),
+  credentials: z.array(z.string().trim()).optional(),
+
+  // Pivot fields
+  titleOverride: z.string().trim().optional(),
+  role: z.enum(['primary', 'co', 'guest']).optional(),
+  sortOrder: z.number().int().optional(),
+});
 
 /**
  * PATCH /api/courses/[courseId]/instructors/[instructorId]
@@ -17,40 +40,50 @@ export async function PATCH(
 ) {
   const { id: courseId, instructorId } = await params;
 
-  // Auth
+  // Auth & ownership check
   const auth = await apiAuth(request);
-  if (!hasUserId(auth)) return createErrorResponse(auth.error, auth.status);
+  if (!hasUserId(auth)) {
+    return createErrorResponse(auth.error, auth.status);
+  }
 
   try {
     await checkCourseOwnership(courseId, auth.userId);
 
-    const body = await request.json();
+    const body = patchSchema.parse(await request.json());
 
-    // Update instructor profile if provided
-    if (body.name || body.title || body.bio || body.credentials) {
-      await instructorService.updateInstructor(instructorId, {
-        name: body.name,
-        title: body.title,
-        bio: body.bio,
-        credentials: body.credentials,
-      });
+    const { name, title, bio, credentials, titleOverride, role, sortOrder } = body;
+
+    // Collect instructor field updates
+    const instructorUpdates: Record<string, unknown> = {};
+    if (name !== undefined) instructorUpdates.name = name;
+    if (title !== undefined) instructorUpdates.title = title;
+    if (bio !== undefined) instructorUpdates.bio = bio;
+    if (credentials !== undefined) instructorUpdates.credentials = credentials;
+
+    if (Object.keys(instructorUpdates).length > 0) {
+      await instructorService.updateInstructor(instructorId, instructorUpdates);
     }
 
-    // Update pivot if pivot fields supplied
-    if (body.titleOverride !== undefined || body.role || body.sortOrder !== undefined) {
-      await instructorService.updateCourseInstructorByKeys(courseId, instructorId, {
-        titleOverride: body.titleOverride,
-        role: body.role,
-        sortOrder: body.sortOrder,
-      });
+    // Collect pivot table updates
+    const pivotUpdates: Record<string, unknown> = {};
+    if (titleOverride !== undefined) pivotUpdates.titleOverride = titleOverride;
+    if (role !== undefined) pivotUpdates.role = role;
+    if (sortOrder !== undefined) pivotUpdates.sortOrder = sortOrder;
+
+    if (Object.keys(pivotUpdates).length > 0) {
+      await instructorService.updateCourseInstructorByKeys(courseId, instructorId, pivotUpdates);
     }
 
     const updated = await instructorService.getInstructorsByCourse(courseId);
 
-    return NextResponse.json({ data: updated, error: null } as ApiResponse<typeof updated>);
-  } catch (err) {
-    const e = err as { message?: string; status?: number } | Error;
-    return createErrorResponse(e.message || 'Failed to update instructor', (e as any).status || 500);
+    return NextResponse.json({ data: updated } as ApiResponse<typeof updated>);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Failed to update instructor';
+    const status =
+      typeof error === 'object' && error !== null && 'status' in error && typeof (error as { status: unknown }).status === 'number'
+        ? (error as { status: number }).status
+        : 500;
+    return createErrorResponse(message, status);
   }
 }
 
@@ -65,16 +98,22 @@ export async function DELETE(
   const { id: courseId, instructorId } = await params;
 
   const auth = await apiAuth(request);
-  if (!hasUserId(auth)) return createErrorResponse(auth.error, auth.status);
+  if (!hasUserId(auth)) {
+    return createErrorResponse(auth.error, auth.status);
+  }
 
   try {
     await checkCourseOwnership(courseId, auth.userId);
 
     await instructorService.unlinkInstructorFromCourse(courseId, instructorId);
 
-    return NextResponse.json({ data: true, error: null } as ApiResponse<boolean>);
-  } catch (err) {
-    const e = err as { message?: string; status?: number } | Error;
-    return createErrorResponse(e.message || 'Failed to remove instructor', (e as any).status || 500);
+    return NextResponse.json({ data: true } as ApiResponse<boolean>);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Failed to remove instructor';
+    const status =
+      typeof error === 'object' && error !== null && 'status' in error && typeof (error as { status: unknown }).status === 'number'
+        ? (error as { status: number }).status
+        : 500;
+    return createErrorResponse(message, status);
   }
 } 

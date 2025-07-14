@@ -14,11 +14,11 @@ export async function GET(
   try {
     const instructor = await instructorService.getPublicInstructor(id);
     if (!instructor) {
-      return NextResponse.json({ error: 'Not found', data: null } as ApiResponse<null>, { status: 404 });
+      return NextResponse.json({ error: 'Not found', data: undefined } as ApiResponse<undefined>, { status: 404 });
     }
-    return NextResponse.json({ data: instructor, error: null } as ApiResponse<typeof instructor>);
-  } catch (err) {
-    console.error('[API] Failed to fetch instructor', err);
-    return NextResponse.json({ error: 'Failed to fetch instructor', data: null } as ApiResponse<null>, { status: 500 });
+    return NextResponse.json({ data: instructor } as ApiResponse<typeof instructor>);
+  } catch (error) {
+    console.error('[API] Failed to fetch instructor', error);
+    return NextResponse.json({ error: 'Failed to fetch instructor', data: undefined } as ApiResponse<undefined>, { status: 500 });
   }
 } 
