@@ -50,7 +50,7 @@ export function CourseHub() {
 
     const handleScroll = () => {
       if (!ticking) {
-        window.requestAnimationFrame(() => {
+        globalThis.requestAnimationFrame(() => {
           const currentScrollY = window.scrollY;
 
           // Hide when scrolling down, show when scrolling up
@@ -144,7 +144,12 @@ export function CourseHub() {
                 />
 
                 {/* Resources */}
-                <ResourceCenter resources={resources} onResourceSave={onResourceSave} />
+                <ResourceCenter
+                  resources={resources}
+                  onResourceSave={id => {
+                    void onResourceSave(id);
+                  }}
+                />
 
                 {/* Discussion on tablet/mobile */}
                 <div className="lg:hidden">
@@ -170,13 +175,23 @@ export function CourseHub() {
                 />
 
                 {/* AI Tutor */}
-                <AITutorBox onAskAI={onAskAI} isStreaming={false} streamingResponse="" />
+                <AITutorBox
+                  onAskAI={prompt => {
+                    void onAskAI(prompt);
+                  }}
+                  isStreaming={false}
+                  streamingResponse=""
+                />
 
                 {/* Notes & Highlights */}
                 <NotesHighlights
                   notes={notes}
-                  onNoteCreate={onNoteCreate}
-                  onNoteEdit={onNoteEdit}
+                  onNoteCreate={note => {
+                    void onNoteCreate(note);
+                  }}
+                  onNoteEdit={(noteId, content) => {
+                    void onNoteEdit(noteId, content);
+                  }}
                   onOpenFullEditor={onOpenNotesEditor}
                 />
 

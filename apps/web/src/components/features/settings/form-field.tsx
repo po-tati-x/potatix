@@ -3,7 +3,7 @@ interface FormFieldProps {
   children: React.ReactNode; 
   required?: boolean;
   description?: string;
-  error?: string | null;
+  error?: string | undefined;
 }
 
 export function FormField({ label, children, required = false, description, error }: FormFieldProps) {

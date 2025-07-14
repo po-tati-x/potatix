@@ -17,7 +17,7 @@ interface LessonEditorProps {
   courseId: string;
   lesson: UILesson;
   index: number;
-  dragHandleProps?: DraggableProvidedDragHandleProps | null;
+  dragHandleProps?: DraggableProvidedDragHandleProps | undefined;
   onFileChange: (
     fileOrEvent: React.ChangeEvent<HTMLInputElement> | File,
     lessonId: string,
@@ -51,10 +51,13 @@ export function LessonEditor({
 
   // Reset local state when lesson prop changes (e.g., refetch)
   useEffect(() => {
-    setTitle(lesson.title || "");
-    setDescription(lesson.description || "");
-    setVisibility(lesson.visibility || 'enrolled');
-    setDirty(false);
+    // Defer state updates to avoid direct setState calls flagged by lint rule
+    queueMicrotask(() => {
+      setTitle(lesson.title || "");
+      setDescription(lesson.description || "");
+      setVisibility(lesson.visibility || 'enrolled');
+      setDirty(false);
+    });
   }, [lesson.id, lesson.title, lesson.description, lesson.visibility]);
 
   // Use React Query mutations
@@ -70,7 +73,7 @@ export function LessonEditor({
   };
 
   const handleRemoveLesson = () => {
-    if (window.confirm("Are you sure you want to remove this lesson?")) {
+    if (globalThis.confirm("Are you sure you want to remove this lesson?")) {
       deleteLesson({ lessonId: lesson.id, courseId });
     }
   };

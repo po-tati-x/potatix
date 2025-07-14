@@ -85,7 +85,7 @@ export function DraggableLessonList({
 
     if (sourceIndex === destIndex) return;
     
-    const reorderedItems = Array.from(lessons);
+    const reorderedItems = [...lessons];
     const [removed] = reorderedItems.splice(sourceIndex, 1);
     if (!removed) return;
     reorderedItems.splice(destIndex, 0, removed);

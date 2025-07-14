@@ -26,7 +26,7 @@ export function DashboardHeaderSkeleton() {
 export function StatsGridSkeleton() {
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-      {[...Array(4)].map((_, i) => (
+      {Array.from({length: 4}).map((_, i) => (
         <div
           key={i}
           className="bg-white border border-slate-200 rounded-md p-4"
@@ -53,7 +53,7 @@ export function CoursesPanelSkeleton() {
         </div>
       </div>
       <div className="p-4 space-y-4">
-        {[...Array(3)].map((_, i) => (
+        {Array.from({length: 3}).map((_, i) => (
           <div key={i} className="flex gap-4">
             <Skeleton className="w-16 h-10 flex-shrink-0" />
             <div className="flex-1">
@@ -80,7 +80,7 @@ export function CourseProgressSkeleton() {
         <Skeleton className="h-5 w-36" />
       </div>
       <div className="p-4 space-y-4">
-        {[...Array(2)].map((_, i) => (
+        {Array.from({length: 2}).map((_, i) => (
           <div key={i} className="border border-slate-100 rounded-md p-4">
             <div className="flex items-center justify-between mb-3">
               <Skeleton className="h-5 w-48" />
@@ -150,7 +150,7 @@ export function RevenueInsightsSkeleton() {
           <Skeleton className="h-5 w-48" />
         </div>
         <div className="grid grid-cols-3 gap-3 mb-4">
-          {[...Array(3)].map((_, i) => (
+          {Array.from({length: 3}).map((_, i) => (
             <div key={i} className="p-3 rounded-md bg-slate-50">
               <Skeleton className="h-4 w-16 mb-1" />
               <Skeleton className="h-5 w-full" />
@@ -160,7 +160,7 @@ export function RevenueInsightsSkeleton() {
         <div>
           <Skeleton className="h-5 w-40 mb-2" />
           <div className="space-y-2">
-            {[...Array(2)].map((_, i) => (
+            {Array.from({length: 2}).map((_, i) => (
               <Skeleton key={i} className="h-10 w-full" />
             ))}
           </div>
@@ -176,7 +176,7 @@ export function RevenueInsightsSkeleton() {
 export function CoursesGridSkeleton() {
   return (
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-      {[...Array(6)].map((_, i) => (
+      {Array.from({length: 6}).map((_, i) => (
         <div
           key={i}
           className="border border-slate-200 rounded-lg overflow-hidden bg-white"

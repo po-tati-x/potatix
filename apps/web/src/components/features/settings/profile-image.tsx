@@ -9,7 +9,7 @@ import { openDefaultEditor } from '@pqina/pintura';
 import '@pqina/pintura/pintura.css';
 
 export interface ProfileImageProps {
-  image?: string | null;
+  image?: string;
   uploading?: boolean;
   onImageChange?: (file: File) => void;
   onImageRemove?: () => void;
@@ -21,9 +21,9 @@ export function ProfileImage({
   onImageChange = () => {},
   onImageRemove = () => {},
 }: ProfileImageProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
   const [loadError, setLoadError] = useState(false);
-  const [localError, setLocalError] = useState<string | null>(null);
+  const [localError, setLocalError] = useState<string | undefined>();
 
   function resetInput() {
     if (inputRef.current) inputRef.current.value = '';
@@ -34,7 +34,7 @@ export function ProfileImage({
       if (file.size > 5 * 1024 * 1024) throw new Error('File too large (max 5 MB)');
       if (!file.type.startsWith('image/')) throw new Error('Only image files allowed');
 
-      setLocalError(null);
+      setLocalError(undefined);
 
       const editor = openDefaultEditor({
         src: file,
@@ -44,8 +44,8 @@ export function ProfileImage({
 
       // Listen for the process event to receive the edited file
       editor.on('process', handlePinturaProcess);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to upload image';
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to upload image';
       toast.error(message);
       setLocalError(message);
     } finally {

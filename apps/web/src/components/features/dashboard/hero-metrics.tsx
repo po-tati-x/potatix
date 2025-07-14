@@ -85,7 +85,7 @@ export function HeroMetricsRow() {
     enrollmentsMTD: 0,
     enrollmentsAll: 0,
     activeStudents: 0,
-    avgRating: null,
+    avgRating: undefined,
   };
 
   return (

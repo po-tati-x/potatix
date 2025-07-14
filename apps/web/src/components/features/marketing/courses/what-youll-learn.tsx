@@ -36,7 +36,6 @@ export function WhatYoullLearn({ course }: WhatYoullLearnProps) {
           </header>
 
           <ul
-            role="list"
             className="grid gap-4 sm:grid-cols-2 sm:gap-x-8 sm:gap-y-5"
           >
             {learnings.map(item => (

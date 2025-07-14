@@ -7,9 +7,9 @@ export type ProfileSectionProps = {
   userData: UserProfile;
   /**
    * Callback invoked when user uploads or deletes a profile image.
-   * If `null` is passed, the image should be removed.
+   * Pass `undefined` to remove the image.
    */
-  onImageUpdate: (file: File | null) => void;
+  onImageUpdate: (file?: File) => void;
   /** Indicates whether the profile image is being uploaded */
   loading: boolean;
 };
@@ -19,7 +19,7 @@ export type ProfileSectionProps = {
  */
 export type SecuritySectionProps = {
   onSavePassword: (data: { currentPassword: string; newPassword: string }) => void;
-  error: string | null;
+  error: string | undefined;
 };
 
 /**

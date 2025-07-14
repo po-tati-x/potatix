@@ -43,7 +43,7 @@ class VideoEventBus {
   public dispatch<K extends keyof EventMap>(type: K, data: EventMap[K]): void {
     const listeners = this.eventListeners[type];
     if (listeners) {
-      listeners.forEach(callback => callback(data));
+      for (const callback of listeners) callback(data);
     }
   }
 

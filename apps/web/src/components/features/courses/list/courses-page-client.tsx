@@ -20,11 +20,10 @@ export default function CoursesPageClient({ initialData }: { initialData?: Cours
   const createCourseMutation = useCreateCourse();
   const isCreatingCourse = createCourseMutation.isPending;
 
-  /**
-   * Handles the action of creating a new course.
-   * It generates a random name, calls the creation mutation, and navigates
-   * to the new course's edit page on success.
-   */
+  // ───────────────────────────────────────────────────────────────────────────
+  // Course creation logic (async)
+  // ───────────────────────────────────────────────────────────────────────────
+
   const handleCreateCourse = async () => {
     if (isCreatingCourse) return;
 
@@ -48,9 +47,15 @@ export default function CoursesPageClient({ initialData }: { initialData?: Cours
       } else {
         console.error("Course created, but no slug returned from API");
       }
-    } catch (err) {
-      console.error("Failed to create course:", err);
+    } catch (error) {
+      console.error("Failed to create course:", error);
     }
+  };
+
+  // Sync wrapper to appease eslint – avoids passing a Promise-returning fn to
+  // React event props while still letting us `await` inside.
+  const handleCreateCourseClick = () => {
+    void handleCreateCourse();
   };
 
   return (
@@ -69,7 +74,7 @@ export default function CoursesPageClient({ initialData }: { initialData?: Cours
             type="primary"
             size="small"
             iconLeft={<PlusCircle className="h-3.5 w-3.5" />}
-            onClick={handleCreateCourse}
+            onClick={handleCreateCourseClick}
             loading={isCreatingCourse}
             aria-busy={isCreatingCourse}
           >
@@ -81,7 +86,7 @@ export default function CoursesPageClient({ initialData }: { initialData?: Cours
       <main>
         <CoursesGrid
           initialData={initialData}
-          onCreateCourse={handleCreateCourse}
+          onCreateCourse={handleCreateCourseClick}
           isCreatingCourse={isCreatingCourse}
         />
       </main>

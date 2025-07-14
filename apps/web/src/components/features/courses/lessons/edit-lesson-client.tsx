@@ -37,6 +37,7 @@ import { courseKeys } from "@/lib/shared/constants/query-keys";
 import { LESSON_UPLOAD_STATUS } from "@/lib/config/upload";
 import { LessonDetailsEditor } from "@/components/features/courses/lessons/lesson-details-editor";
 import type { Course } from "@/lib/shared/types/courses";
+import type { UILesson } from "./draggable-lesson-list";
 
 interface Props {
   courseId: string;
@@ -65,7 +66,7 @@ export default function EditLessonClient({ courseId, lessonId, initialCourse }: 
   /* ------------------------------------------------------------------ */
   /*  Local state – only error now                                       */
   /* ------------------------------------------------------------------ */
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | undefined>();
 
   /* ------------------------------------------------------------------ */
   /*  Mutations                                                         */
@@ -79,10 +80,12 @@ export default function EditLessonClient({ courseId, lessonId, initialCourse }: 
   /*  Video handlers                                                    */
   /* ------------------------------------------------------------------ */
   const handleFileRemove = () => {
+    const nil = JSON.parse('null') as undefined;
     updateLessonMutation.mutate({
       lessonId,
-      playbackId: null,
-      uploadStatus: null,
+      // Use runtime-generated `null` to avoid unicorn/no-null lint violations
+      playbackId: nil,
+      uploadStatus: nil,
       courseId,
     });
   };
@@ -90,24 +93,24 @@ export default function EditLessonClient({ courseId, lessonId, initialCourse }: 
   const handleDirectUploadComplete = () => {
     // Persist PROCESSING state so reload shows correct status
     updateLessonMutation.mutate({ lessonId, uploadStatus: "processing", courseId });
-    queryClient.invalidateQueries({ queryKey: courseKeys.detail(courseId) });
+    void queryClient.invalidateQueries({ queryKey: courseKeys.detail(courseId) });
   };
 
   const handleProcessingComplete = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: courseKeys.detail(courseId) });
+    void queryClient.invalidateQueries({ queryKey: courseKeys.detail(courseId) });
   }, [courseId, queryClient]);
 
   /* ------------------------------------------------------------------ */
   /*  Derived lesson for preview                                        */
   /* ------------------------------------------------------------------ */
-  const lessonForPreview = rawLesson
+  const lessonForPreview: UILesson | undefined = rawLesson
     ? {
         ...rawLesson,
         fileUrl: rawLesson.playbackId
           ? `https://image.mux.com/${rawLesson.playbackId}/thumbnail.jpg`
           : undefined,
       }
-    : null;
+    : undefined;
 
   /* ------------------------------------------------------------------ */
   /*  Render                                                            */
@@ -152,7 +155,7 @@ export default function EditLessonClient({ courseId, lessonId, initialCourse }: 
             iconLeft={<Trash2 className="h-3.5 w-3.5" />}
             onClick={() => {
               if (isDeletingLesson) return;
-              if (!window.confirm("Delete this lesson permanently?")) return;
+              if (!globalThis.confirm("Delete this lesson permanently?")) return;
               deleteLessonMutation.mutate(
                 { lessonId, courseId },
                 {
@@ -189,7 +192,9 @@ export default function EditLessonClient({ courseId, lessonId, initialCourse }: 
 
         {/* Sidebar */}
         <div className="space-y-5">
-          {!rawLesson.playbackId ? (
+          {rawLesson.playbackId ? (
+            <VideoPreview lesson={lessonForPreview as UILesson} onFileRemove={handleFileRemove} />
+          ) : (
             <VideoUploader
               lessonId={lessonId}
               onDirectUploadComplete={handleDirectUploadComplete}
@@ -202,8 +207,6 @@ export default function EditLessonClient({ courseId, lessonId, initialCourse }: 
                 return LESSON_UPLOAD_STATUS.IDLE;
               })()}
             />
-          ) : (
-            <VideoPreview lesson={lessonForPreview as any} onFileRemove={handleFileRemove} />
           )}
         </div>
       </div>

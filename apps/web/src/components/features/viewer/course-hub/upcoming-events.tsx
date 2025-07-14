@@ -134,7 +134,11 @@ function EventCard({ event, onAddToCalendar, onWatchRecording }: EventCardProps)
               <PlayCircle className="h-4 w-4" />
               Watch Recording
             </button>
-          ) : !isPast ? (
+          ) : (isPast ? (
+            <div className="flex-1 rounded-md bg-slate-50 px-3 py-1.5 text-center text-sm text-slate-500">
+              Recording not available
+            </div>
+          ) : (
             <>
               <a
                 href={event.calendarLink}
@@ -150,17 +154,16 @@ function EventCard({ event, onAddToCalendar, onWatchRecording }: EventCardProps)
                 Add to Calendar
               </a>
               <a
-                href="#"
+                href={event.calendarLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Open event details"
                 className="flex items-center justify-center rounded-md border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-sm font-medium text-emerald-700 transition-all hover:bg-emerald-100"
               >
                 <ExternalLink className="h-4 w-4" />
               </a>
             </>
-          ) : (
-            <div className="flex-1 rounded-md bg-slate-50 px-3 py-1.5 text-center text-sm text-slate-500">
-              Recording not available
-            </div>
-          )}
+          ))}
         </div>
       </div>
     </div>

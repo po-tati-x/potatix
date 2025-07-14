@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { clientEnv } from '@/env.client'
+import { clientEnv } from '@/env.client';
 
 // Hoisted constants – computed once at boot, not on every request
 const BASE_DOMAIN = clientEnv.NEXT_PUBLIC_APP_URL
@@ -17,18 +17,18 @@ const EXCLUDED_PATH_PREFIXES = [
 /**
  * Extract sub-domain (course slug) for potatix.* or *.localhost.
  */
-function getSubdomain(hostHeader: string): string | null {
-  if (!hostHeader) return null;
+function getSubdomain(hostHeader: string): string | undefined {
+  if (!hostHeader) return undefined;
 
   const host = hostHeader.split(":" )[0] as string; // strip port
 
   // root domain or www – no slug
-  if (host === BASE_DOMAIN || host === `www.${BASE_DOMAIN}`) return null;
+  if (host === BASE_DOMAIN || host === `www.${BASE_DOMAIN}`) return undefined;
 
   if (host.endsWith(`.${BASE_DOMAIN}`)) return host.replace(`.${BASE_DOMAIN}`, "");
   if (host.endsWith(".localhost")) return host.replace(".localhost", "");
 
-  return null;
+  return undefined;
 }
 
 /**

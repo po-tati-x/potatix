@@ -72,37 +72,37 @@ const FAQ_ITEMS: FAQItem[] = [
 function HighlightedAnswer({ text }: { text: string }) {
   // Highlight specific keywords
   const highlightedText = text
-    .replace(
-      /free\./g,
+    .replaceAll(
+      'free.',
       '<span class="text-emerald-600 font-medium">free</span>.',
     )
-    .replace(
-      /free,/g,
+    .replaceAll(
+      'free,',
       '<span class="text-emerald-600 font-medium">free</span>,',
     )
-    .replace(/100%/g, '<span class="text-emerald-600 font-medium">100%</span>')
-    .replace(
-      /no BS/g,
+    .replaceAll('100%', '<span class="text-emerald-600 font-medium">100%</span>')
+    .replaceAll(
+      'no BS',
       '<span class="text-emerald-600 font-medium">no BS</span>',
     )
-    .replace(
-      /10 minutes/g,
+    .replaceAll(
+      '10 minutes',
       '<span class="text-emerald-600 font-medium">10 minutes</span>',
     )
-    .replace(
-      /Next\.js/g,
+    .replaceAll(
+      'Next.js',
       '<span class="text-emerald-600 font-medium">Next.js</span>',
     )
-    .replace(
-      /Supabase/g,
+    .replaceAll(
+      'Supabase',
       '<span class="text-emerald-600 font-medium">Supabase</span>',
     )
-    .replace(
-      /Stripe/g,
+    .replaceAll(
+      'Stripe',
       '<span class="text-emerald-600 font-medium">Stripe</span>',
     )
-    .replace(
-      /Vercel/g,
+    .replaceAll(
+      'Vercel',
       '<span class="text-emerald-600 font-medium">Vercel</span>',
     );
 
@@ -116,7 +116,7 @@ function FAQAccordion({ items }: { items: FAQItem[] }) {
         <AccordionItem
           key={index}
           value={`item-${index}`}
-          className={index !== items.length - 1 ? "border-b border-slate-200" : undefined}
+          className={index === items.length - 1 ? undefined : "border-b border-slate-200"}
         >
           <AccordionTrigger className="text-base lg:text-base font-medium text-slate-800 py-4 px-0 sm:px-2 hover:text-emerald-600 transition-colors data-[state=open]:text-emerald-600">
             {item.question}

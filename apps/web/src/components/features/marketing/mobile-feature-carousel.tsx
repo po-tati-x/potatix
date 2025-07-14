@@ -10,7 +10,7 @@ interface Props {
 
 export default function MobileFeatureCarousel({ features }: Props) {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const touchStartX = useRef<number | null>(null);
+  const touchStartX = useRef<number | undefined>(undefined);
 
   function handleTouchStart(e: React.TouchEvent<HTMLDivElement>) {
     const touch = e.touches[0];
@@ -20,7 +20,7 @@ export default function MobileFeatureCarousel({ features }: Props) {
 
   function handleTouchEnd(e: React.TouchEvent<HTMLDivElement>) {
     const startX = touchStartX.current;
-    if (startX === null) return;
+    if (startX === undefined) return;
     const touch = e.changedTouches[0];
     if (!touch) return;
     const deltaX = touch.clientX - startX;
@@ -34,7 +34,7 @@ export default function MobileFeatureCarousel({ features }: Props) {
       }
     }
 
-    touchStartX.current = null;
+    touchStartX.current = undefined;
   }
 
   return (

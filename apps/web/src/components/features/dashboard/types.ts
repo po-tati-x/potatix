@@ -82,7 +82,7 @@ export interface HeroMetrics {
   enrollmentsMTD: number;
   enrollmentsAll: number;
   activeStudents: number;
-  avgRating: number | null;
+  avgRating: number | undefined;
   revenueTrend?: number[];
   enrollmentTrend?: number[];
 } 

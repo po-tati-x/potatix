@@ -36,6 +36,22 @@ export function HeroSection({ course, isLoggedIn, onEnroll, isEnrolling }: HeroS
   const isActive = enrollmentStatus === 'active';
   const isRejected = enrollmentStatus === 'rejected';
 
+  // ─────────────── CTA label – avoid nested ternaries for clarity
+  let ctaLabel: string;
+  if (isEnrolling) {
+    ctaLabel = 'Enrolling...';
+  } else if (isPending) {
+    ctaLabel = 'Pending Approval';
+  } else if (isRejected) {
+    ctaLabel = 'Enrollment Rejected';
+  } else if (isActive) {
+    ctaLabel = 'Continue Learning';
+  } else if (isLoggedIn) {
+    ctaLabel = isPaid ? 'Request Enrollment' : 'Enroll Now (Free)';
+  } else {
+    ctaLabel = 'Sign in to continue';
+  }
+
   // ──────────────────────────────────────────────────────────────────────────────
   return (
     <Section bg="slate-100" className="py-16">
@@ -62,19 +78,7 @@ export function HeroSection({ course, isLoggedIn, onEnroll, isEnrolling }: HeroS
               disabled={isEnrolling || isPending || isRejected}
               iconRight={!isPending && !isRejected ? <ChevronRight className="h-4 w-4" /> : undefined}
             >
-              {isEnrolling
-                ? 'Enrolling...'
-                : isPending
-                  ? 'Pending Approval'
-                  : isRejected
-                    ? 'Enrollment Rejected'
-                    : isActive
-                      ? 'Continue Learning'
-                      : !isLoggedIn
-                        ? 'Sign in to continue'
-                        : isPaid
-                          ? 'Request Enrollment'
-                          : 'Enroll Now (Free)'}
+              {ctaLabel}
             </Button>
 
             <div className="flex items-baseline gap-2">

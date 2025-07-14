@@ -1,10 +1,10 @@
-'use client'
+'use client';
 
-import { Slot } from '@radix-ui/react-slot'
-import { cva } from 'class-variance-authority'
-import type { VariantProps } from 'class-variance-authority'
-import { Loader2 } from 'lucide-react'
-import { forwardRef } from 'react'
+import { Slot } from '@radix-ui/react-slot';
+import { cva } from 'class-variance-authority';
+import type { VariantProps } from 'class-variance-authority';
+import { Loader2 } from 'lucide-react';
+import { forwardRef } from 'react';
 import { cn } from "@/lib/shared/utils/cn";
 
 export type ButtonVariantProps = VariantProps<typeof buttonVariants>
@@ -139,7 +139,7 @@ const buttonVariants = cva(
       size: 'medium',
     },
   }
-)
+);
 
 const IconContainerVariants = cva('', {
   variants: {
@@ -150,7 +150,7 @@ const IconContainerVariants = cva('', {
       large: '[&_svg]:h-[24px] [&_svg]:w-[24px]',
     },
   },
-})
+});
 
 export type LoadingVariantProps = VariantProps<typeof loadingVariants>
 const loadingVariants = cva('', {
@@ -160,7 +160,7 @@ const loadingVariants = cva('', {
       default: '',
     },
   },
-})
+});
 
 export interface ButtonProps
   extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'type'>,
@@ -193,9 +193,9 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     },
     ref,
   ) => {
-    const Comp = asChild ? Slot : 'button'
-    const _iconLeft = icon ?? iconLeft
-    const disabled = !!loading || props.disabled
+    const Comp = asChild ? Slot : 'button';
+    const _iconLeft = icon ?? iconLeft;
+    const disabled = !!loading || props.disabled;
 
     return (
       <Comp
@@ -215,10 +215,10 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           <span className={IconContainerVariants({ size })}>{iconRight}</span>
         )}
       </Comp>
-    )
+    );
   },
-)
+);
 
-Button.displayName = 'Button'
+Button.displayName = 'Button';
 
-export { Button, buttonVariants }
+export { Button, buttonVariants };

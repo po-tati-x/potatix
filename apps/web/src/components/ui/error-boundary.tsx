@@ -49,19 +49,19 @@ export class ErrorBoundary extends Component<Props, State> {
  * Hook version of error boundary for function components
  */
 export function useErrorBoundary() {
-  const [error, setError] = useState<Error | null>(null);
+  const [error, setError] = useState<Error | undefined>();
 
   const reset = useCallback(() => {
-    setError(null);
+    setError(undefined);
   }, []);
 
-  const showBoundary = useCallback((error: Error) => {
-    setError(error);
+  const showBoundary = useCallback((err: Error) => {
+    setError(err);
   }, []);
 
   return {
     error,
     reset,
     showBoundary,
-  };
+  } as const;
 } 

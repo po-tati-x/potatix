@@ -13,7 +13,7 @@ import type { UserProfile } from "@/lib/shared/types/profile";
 import { useProfile } from "@/lib/client/hooks/use-profile";
 
 interface Props {
-  initialData: UserProfile | null;
+  initialData?: UserProfile;
 }
 
 export default function SettingsClient({ initialData }: Props) {
@@ -47,18 +47,20 @@ export default function SettingsClient({ initialData }: Props) {
     );
   }
 
-  // Handle image upload/delete
-  async function handleImageUpdate(file: File | null) {
-    try {
-      if (file) {
-        uploadImage(file);
-      } else {
-        // Delete image
-        await fetch("/api/user/profile/image", { method: "DELETE" });
-        await refetch();
-      }
-    } catch (err) {
-      console.error("Failed to update profile image", err);
+  // Handle image upload/delete (sync wrapper to satisfy void-return requirement)
+  function handleImageUpdate(file?: File): void {
+    if (file === undefined) {
+      void (async () => {
+        try {
+          await fetch("/api/user/profile/image", { method: "DELETE" });
+          await refetch();
+        } catch (error_) {
+          console.error("Failed to update profile image", error_);
+        }
+      })();
+    } else {
+      // uploadImage is already asynchronous but we don't await it to keep return type void
+      uploadImage(file);
     }
   }
 

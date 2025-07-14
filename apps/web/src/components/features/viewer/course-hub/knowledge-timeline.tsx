@@ -47,15 +47,18 @@ const LessonItem = memo(function LessonItem({ lesson, isCurrent, onLessonClick }
     >
       {/* Status icon */}
       <div className="relative flex-shrink-0">
-        {lesson.isCompleted ? (
-          <CheckCircle className="h-4 w-4 text-emerald-600" />
-        ) : lesson.isLocked ? (
-          <Lock className="h-4 w-4 text-slate-400" />
-        ) : isPartial ? (
-          <Play className="h-4 w-4 text-emerald-500" />
-        ) : (
-          <Circle className={cn('h-4 w-4', isCurrent ? 'text-emerald-600' : 'text-slate-400')} />
-        )}
+        {(() => {
+          if (lesson.isCompleted) {
+            return <CheckCircle className="h-4 w-4 text-emerald-600" />;
+          }
+          if (lesson.isLocked) {
+            return <Lock className="h-4 w-4 text-slate-400" />;
+          }
+          if (isPartial) {
+            return <Play className="h-4 w-4 text-emerald-500" />;
+          }
+          return <Circle className={cn('h-4 w-4', isCurrent ? 'text-emerald-600' : 'text-slate-400')} />;
+        })()}
         {isCurrent && (
           <div className="absolute -inset-1 animate-ping rounded-full bg-emerald-500/20" />
         )}
@@ -127,12 +130,15 @@ export function KnowledgeTimeline({
 
   // Calculate total remaining time
   const totalRemainingTime = useMemo(() => {
-    return modules.reduce((acc, module) => {
-      const moduleTime = module.lessons
-        .filter(lesson => !lesson.isCompleted && !lesson.isLocked)
-        .reduce((sum, lesson) => sum + lesson.duration, 0);
-      return acc + moduleTime;
-    }, 0);
+    let total = 0;
+    for (const mod of modules) {
+      for (const lesson of mod.lessons) {
+        if (!lesson.isCompleted && !lesson.isLocked) {
+          total += lesson.duration;
+        }
+      }
+    }
+    return total;
   }, [modules]);
 
   const remainingLabel = useMemo(

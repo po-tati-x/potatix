@@ -19,7 +19,7 @@ export function CourseProgressTracking() {
           </div>
         </div>
         <div className="p-4 space-y-4">
-          {[...Array(2)].map((_, i) => (
+          {Array.from({length: 2}).map((_, i) => (
             <div key={i} className="border border-slate-100 rounded-md p-4">
               <div className="flex items-center justify-between mb-3">
                 <Skeleton className="h-5 w-48" />
@@ -59,7 +59,7 @@ export function CourseProgressTracking() {
   }
 
   // Empty state
-  if (!courses?.length || !progressData.length) {
+  if (!courses?.length || progressData.length === 0) {
     return (
       <div className="border border-slate-200 rounded-md overflow-hidden bg-white">
         <div className="border-b border-slate-200 px-4 py-2.5 bg-slate-50">

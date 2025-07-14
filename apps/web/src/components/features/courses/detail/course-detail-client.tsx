@@ -20,7 +20,7 @@ import {
   ChevronDown,
   ChevronRight,
 } from "lucide-react";
-import Modal from "@/components/ui/Modal";
+import Modal from "@/components/ui/modal";
 import { Button } from "@/components/ui/new-button";
 import type { Module, Lesson } from "@/lib/shared/types/courses";
 import { useCourseDetail } from "@/components/providers/courses/course-detail-context";
@@ -57,8 +57,16 @@ const ModuleItem = ({ module, index }: { module: Module; index: number }) => {
   return (
     <div className="border border-slate-200 rounded-md overflow-hidden bg-white mb-4">
       <div
-        className="bg-slate-50 border-b border-slate-200 px-4 py-3 flex items-center justify-between cursor-pointer"
+        role="button"
+        tabIndex={0}
+        className="bg-slate-50 border-b border-slate-200 px-4 py-3 flex items-center justify-between cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500"
         onClick={() => toggleModuleExpanded(moduleId)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            toggleModuleExpanded(moduleId);
+          }
+        }}
       >
         <div className="flex items-center gap-2">
           <div className="p-1 hover:bg-slate-200 rounded-md transition-colors">
@@ -241,7 +249,7 @@ export default function CourseDetailClient() {
               <Button 
                 type="danger" 
                 size="small" 
-                onClick={confirmDelete}
+                onClick={() => { void confirmDelete(); }}
                 disabled={isDeleting}
               >
                 {isDeleting ? "Deleting..." : "Delete"}
@@ -436,7 +444,7 @@ export default function CourseDetailClient() {
                         `https://${course.slug}.potatix.com`,
                         "_blank",
                         "noopener,noreferrer",
-                      )
+                      );
                   }}
                 >
                   Preview Course

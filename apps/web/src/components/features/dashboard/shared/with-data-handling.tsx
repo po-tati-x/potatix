@@ -32,7 +32,7 @@ export function withDataHandling<WrappedProps extends object = Record<string, un
   return function WithDataHandling(
     props: WrappedProps & {
       isLoading?: boolean;
-      error?: Error | null;
+      error?: Error | undefined;
       refetch?: () => void;
     },
   ) {
@@ -40,16 +40,21 @@ export function withDataHandling<WrappedProps extends object = Record<string, un
 
     if (isLoading) {
       switch (config.skeletonType) {
-        case "stats":
+        case "stats": {
           return <StatsGridSkeleton />;
-        case "courses":
+        }
+        case "courses": {
           return <CoursesPanelSkeleton />;
-        case "progress":
+        }
+        case "progress": {
           return <CourseProgressSkeleton />;
-        case "revenue":
+        }
+        case "revenue": {
           return <RevenueInsightsSkeleton />;
-        default:
+        }
+        default: {
           return <DashboardSkeleton />;
+        }
       }
     }
 

@@ -72,8 +72,8 @@ export default function Header() {
         return;
       }
 
-      const targetId = href.substring(1);
-      const targetSection = document.getElementById(targetId);
+      const targetId = href.slice(1);
+      const targetSection = document.querySelector<HTMLElement>(`#${CSS.escape(targetId)}`);
 
       if (targetSection) {
         const navbarHeight = 80;
@@ -253,9 +253,9 @@ function NavItem({
           "justify-between",
           isOpen
             ? "bg-white/90 text-emerald-600"
-            : scrolled
+            : (scrolled
               ? "hover:bg-white/80 hover:text-emerald-700"
-              : "bg-transparent hover:bg-white/30 hover:text-emerald-700",
+              : "bg-transparent hover:bg-white/30 hover:text-emerald-700"),
         )}
         iconRight={
           <ChevronDown

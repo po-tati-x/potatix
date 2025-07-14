@@ -5,7 +5,7 @@ interface CourseErrorAlertProps {
 }
 
 export function CourseErrorAlert({ error }: CourseErrorAlertProps) {
-  if (!error) return null;
+  if (!error) return;
   
   return (
     <div className="mb-5 border border-red-200 bg-red-50 rounded-md p-3">

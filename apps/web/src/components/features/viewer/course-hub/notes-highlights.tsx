@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { FileText, Edit2, Clock, Highlighter, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/new-button';
 import { cn } from '@/lib/shared/utils/cn';
@@ -31,7 +31,7 @@ function formatDate(date: Date): string {
   return date.toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
-    year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
+    year: date.getFullYear() === now.getFullYear() ? undefined : 'numeric',
   });
 }
 
@@ -43,6 +43,14 @@ interface NoteCardProps {
 function NoteCard({ note, onEdit }: NoteCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(note.content);
+  const editTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Move focus to textarea when edit mode is activated (a11y-compliant)
+  useEffect(() => {
+    if (isEditing) {
+      editTextareaRef.current?.focus();
+    }
+  }, [isEditing]);
 
   const handleSave = () => {
     if (editedContent.trim() && editedContent !== note.content) {
@@ -101,11 +109,11 @@ function NoteCard({ note, onEdit }: NoteCardProps) {
       {isEditing ? (
         <div className="space-y-2">
           <textarea
+            ref={editTextareaRef}
             value={editedContent}
             onChange={e => setEditedContent(e.target.value)}
             className="w-full resize-none rounded-md border border-slate-200 px-2 py-1.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
             rows={3}
-            autoFocus
           />
           <div className="flex justify-end gap-2">
             <button
@@ -137,6 +145,14 @@ export function NotesHighlights({
 }: NotesHighlightsProps) {
   const [isAddingNote, setIsAddingNote] = useState(false);
   const [newNoteContent, setNewNoteContent] = useState('');
+  const addTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Focus the quick-add textarea when it appears
+  useEffect(() => {
+    if (isAddingNote) {
+      addTextareaRef.current?.focus();
+    }
+  }, [isAddingNote]);
 
   const recentNotes = notes.slice(0, 5);
   const highlightedCount = notes.filter(n => n.isHighlighted).length;
@@ -168,12 +184,12 @@ export function NotesHighlights({
       {isAddingNote ? (
         <div className="space-y-2 rounded-lg border border-emerald-200 bg-emerald-50/30 p-3">
           <textarea
+            ref={addTextareaRef}
             value={newNoteContent}
             onChange={e => setNewNoteContent(e.target.value)}
             placeholder="Type your note here..."
             className="w-full resize-none rounded-md border border-slate-200 bg-white px-3 py-2 text-sm placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
             rows={3}
-            autoFocus
           />
           <div className="flex justify-end gap-2">
             <button

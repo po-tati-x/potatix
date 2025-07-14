@@ -13,11 +13,7 @@ interface ResumeTileProps {
 
 export function ResumeTile({ progress, onResume }: ResumeTileProps) {
   let progressPercentage = 0;
-  if (progress.totalDuration > 0) {
-    progressPercentage = Math.round((progress.lastWatchedPosition / progress.totalDuration) * 100);
-  } else {
-    progressPercentage = Math.round(progress.percentComplete);
-  }
+  progressPercentage = progress.totalDuration > 0 ? Math.round((progress.lastWatchedPosition / progress.totalDuration) * 100) : Math.round(progress.percentComplete);
   progressPercentage = Math.min(100, Math.max(0, progressPercentage));
   const safeDuration = progress.totalDuration || 0;
   const remainingTime = safeDuration > 0 ? safeDuration - progress.lastWatchedPosition : 0;

@@ -37,6 +37,40 @@ export function FloatingEnrollBar({
   const isActive = enrollmentStatus === 'active';
   const isRejected = enrollmentStatus === 'rejected';
 
+  /* ------------------------------------------------------------------ */
+  /*  CTA label logic – avoid nested ternaries for clarity              */
+  /* ------------------------------------------------------------------ */
+
+  const isPaidCourse = Boolean(course.price && course.price > 0);
+
+  let fullLabel: string;
+  let shortLabel: string;
+
+  if (isEnrolling) {
+    fullLabel = 'Enrolling...';
+    shortLabel = '...';
+  } else if (isPending) {
+    fullLabel = 'Pending Approval';
+    shortLabel = 'Pending';
+  } else if (isActive) {
+    fullLabel = 'Continue Learning';
+    shortLabel = 'Continue';
+  } else if (isRejected) {
+    fullLabel = 'Enrollment Rejected';
+    shortLabel = 'Rejected';
+  } else if (isLoggedIn) {
+    if (isPaidCourse) {
+      fullLabel = 'Request Enrollment';
+      shortLabel = 'Request';
+    } else {
+      fullLabel = 'Enroll Now (Free)';
+      shortLabel = 'Enroll';
+    }
+  } else {
+    fullLabel = 'Sign in to continue';
+    shortLabel = 'Sign in';
+  }
+
   return (
     <div
       className={cn(
@@ -78,42 +112,8 @@ export function FloatingEnrollBar({
           loading={isEnrolling}
           disabled={isEnrolling || isPending || isRejected}
         >
-          {isEnrolling ? (
-            <>
-              <span className="hidden sm:inline">Enrolling...</span>
-              <span className="sm:hidden">...</span>
-            </>
-          ) : isPending ? (
-            <>
-              <span className="hidden sm:inline">Pending Approval</span>
-              <span className="sm:hidden">Pending</span>
-            </>
-          ) : isActive ? (
-            <>
-              <span className="hidden sm:inline">Continue Learning</span>
-              <span className="sm:hidden">Continue</span>
-            </>
-          ) : isRejected ? (
-            <>
-              <span className="hidden sm:inline">Enrollment Rejected</span>
-              <span className="sm:hidden">Rejected</span>
-            </>
-          ) : !isLoggedIn ? (
-            <>
-              <span className="hidden sm:inline">Sign in to continue</span>
-              <span className="sm:hidden">Sign in</span>
-            </>
-          ) : course.price && course.price > 0 ? (
-            <>
-              <span className="hidden sm:inline">Request Enrollment</span>
-              <span className="sm:hidden">Request</span>
-            </>
-          ) : (
-            <>
-              <span className="hidden sm:inline">Enroll Now (Free)</span>
-              <span className="sm:hidden">Enroll</span>
-            </>
-          )}
+          <span className="hidden sm:inline">{fullLabel}</span>
+          <span className="sm:hidden">{shortLabel}</span>
         </Button>
       </div>
 

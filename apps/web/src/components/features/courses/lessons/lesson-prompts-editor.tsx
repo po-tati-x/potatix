@@ -13,7 +13,7 @@ interface LessonPromptsEditorProps {
  * Editor for AI chat prompts stored on a lesson (aiPrompts column)
  */
 export function LessonPromptsEditor({ courseId, lesson }: LessonPromptsEditorProps) {
-  const originalPrompts: string[] = (lesson as any).aiPrompts ?? [];
+  const originalPrompts: string[] = lesson.aiPrompts ?? [];
   const [prompts, setPrompts] = useState<string[]>(originalPrompts);
   const [dirty, setDirty] = useState(false);
 

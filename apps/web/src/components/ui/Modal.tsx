@@ -23,23 +23,24 @@ const Modal = ({
   hideCloseButton = false,
   blurStrength = "md",
 }: ModalProps) => {
-  const [mounted, setMounted] = useState(false);
+  const isBrowser = globalThis.document !== undefined;
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
-    document.body.style.overflow = "hidden";
+    if (!isBrowser) return;
+
+    globalThis.document.body.style.overflow = "hidden";
 
     // Add a small delay to trigger animation
-    const timer = setTimeout(() => {
+    const timer = globalThis.setTimeout(() => {
       setIsVisible(true);
     }, 10);
 
     return () => {
-      document.body.style.overflow = "auto";
-      clearTimeout(timer);
+      globalThis.document.body.style.overflow = "auto";
+      globalThis.clearTimeout(timer);
     };
-  }, []);
+  }, [isBrowser]);
 
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget && onClose) {
@@ -53,6 +54,13 @@ const Modal = ({
       setTimeout(() => {
         onClose();
       }, 200); // Match the transition duration
+    }
+  };
+
+  const handleBackdropKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === "Escape" || e.key === "Enter" || e.key === " ") {
+      e.stopPropagation();
+      handleClose();
     }
   };
 
@@ -73,6 +81,8 @@ const Modal = ({
 
   const content = (
     <div
+      role="button"
+      tabIndex={0}
       className={cn(
         "fixed inset-0 z-50 flex items-center justify-center p-4 transition-all duration-200 ease-in-out",
         isVisible ? "bg-black/40" : "bg-black/0",
@@ -80,6 +90,7 @@ const Modal = ({
         isVisible ? "opacity-100" : "opacity-0",
       )}
       onClick={handleBackdropClick}
+      onKeyDown={handleBackdropKeyDown}
     >
       <div
         className={cn(
@@ -112,7 +123,7 @@ const Modal = ({
     </div>
   );
 
-  return mounted ? createPortal(content, document.body) : null;
+  return isBrowser ? createPortal(content, globalThis.document.body) : undefined;
 };
 
 export default Modal;

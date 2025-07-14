@@ -8,9 +8,9 @@ import { useCourses } from "@/lib/client/hooks/use-courses";
 import { CourseCard } from "@/components/features/courses/course-card";
 
 // Helper to convert standard Error to ApiError if needed
-function toApiError(error: Error | null): ApiError | null {
-  if (!error) return null;
-  // If it's already an ApiError, return it
+function toApiError(error?: Error): ApiError | undefined {
+  if (!error) return undefined;
+  // If it's already an ApiError, return error directly
   if ('status' in error) return error as ApiError;
   // Otherwise, create a new ApiError with a default status
   return new ApiError(error.message, 500);
@@ -34,13 +34,13 @@ function CreateCourseCard({
   };
 
   return (
-    <div
+    <button
+      type="button"
       onClick={handleClick}
-      className={`group flex min-h-[220px] cursor-pointer flex-col items-center justify-center rounded-md border border-dashed border-slate-200 bg-slate-50 p-6 transition-all hover:border-slate-300 hover:bg-slate-100 ${
-        isPending ? "cursor-not-allowed opacity-50" : ""
+      disabled={isPending}
+      className={`group flex min-h-[220px] flex-col items-center justify-center rounded-md border border-dashed border-slate-200 bg-slate-50 p-6 transition-all hover:border-slate-300 hover:bg-slate-100 ${
+        isPending ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
       }`}
-      role="button"
-      aria-disabled={isPending}
     >
       <div className="flex flex-col items-center text-center">
         <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-emerald-600 transition-transform group-hover:scale-110">
@@ -57,7 +57,7 @@ function CreateCourseCard({
           {isPending ? "Please wait" : "Add another course to your catalog"}
         </p>
       </div>
-    </div>
+    </button>
   );
 }
 
@@ -110,8 +110,11 @@ export function CoursesGrid({
         {message && <p className="mb-4 text-xs text-slate-500">{message}</p>}
         {actionLabel && onAction && (
           <button
+            type="button"
             className="px-4 py-2 text-sm border border-slate-300 rounded-md hover:bg-slate-50"
-            onClick={onAction}
+            onClick={() => {
+              void onAction();
+            }}
           >
             {actionLabel}
           </button>
@@ -126,9 +129,11 @@ export function CoursesGrid({
       <StateCard
         icon={<AlertTriangle className="h-6 w-6 text-red-500" />}
         title="Failed to load courses"
-        message={toApiError(error)?.message || "Unknown error"}
+        message={toApiError(error)?.message ?? "Unknown error"}
         actionLabel="Try again"
-        onAction={() => refetch?.()}
+        onAction={() => {
+          void refetch?.();
+        }}
       />
     );
   }

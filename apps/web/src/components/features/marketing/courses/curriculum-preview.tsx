@@ -31,20 +31,20 @@ export function CurriculumPreview({ course }: CurriculumPreviewProps) {
   const { totalSeconds, lessonMap } = useMemo(() => {
     const map: Record<string, typeof lessons> = {};
     let seconds = 0;
-    lessons.forEach((l) => {
+    for (const l of lessons) {
       seconds += l.duration ?? 0;
-      if (!l.moduleId) return;
+      if (!l.moduleId) continue;
       (map[l.moduleId] ||= []).push(l);
-    });
+    }
     return { totalSeconds: seconds, lessonMap: map };
   }, [lessons]);
 
   // Track which module accordions are expanded
   const [openIds, setOpenIds] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {};
-    modules.forEach((m, idx) => {
+    for (const [idx, m] of modules.entries()) {
       initial[m.id] = idx === 0; // first module open by default
-    });
+    }
     return initial;
   });
 
@@ -75,7 +75,7 @@ export function CurriculumPreview({ course }: CurriculumPreviewProps) {
         </header>
 
         {/* Module list */}
-        <ul role="list" className="space-y-4">
+        <ul className="space-y-4">
           {modules.map((module, idx) => {
             const list = lessonMap[module.id] ?? [];
             const modSeconds = list.reduce((a, l) => a + (l.duration ?? 0), 0);
@@ -141,7 +141,6 @@ const ModuleRow = memo(function ModuleRow({ module, idx, lessons, modSeconds, op
       <AnimatePresence initial={false}>
         {open && (
           <motion.ul
-            role="list"
             className="divide-y divide-slate-100"
             key="panel"
             initial={{ height: 0, opacity: 0 }}

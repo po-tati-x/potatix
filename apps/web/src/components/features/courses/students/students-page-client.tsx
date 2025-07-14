@@ -16,6 +16,15 @@ interface Props { courseId: string; }
 
 type EnrollmentStatus = Enrollment["status"];
 
+// Utility – format ISO date to friendly string
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
 export default function StudentsPageClient({ courseId }: Props) {
   const router = useRouter();
   const { data: course } = useCourse(courseId);
@@ -57,10 +66,8 @@ export default function StudentsPageClient({ courseId }: Props) {
   const [refreshing, setRefreshing] = useState(false);
   const refreshData = () => {
     setRefreshing(true);
-    refetch().finally(() => setRefreshing(false));
+    void refetch().finally(() => setRefreshing(false));
   };
-
-  const formatDate = (iso: string) => new Date(iso).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
 
   const StatusBadge = ({ status }: { status: EnrollmentStatus }) => {
     const map = {
@@ -86,7 +93,7 @@ export default function StudentsPageClient({ courseId }: Props) {
       <div className="p-8 text-center">
         <AlertCircle className="h-6 w-6 text-red-500 mx-auto mb-4" />
         <p className="text-sm text-red-600">{error.message}</p>
-        <Button type="primary" size="small" onClick={() => refetch()}>Retry</Button>
+        <Button type="primary" size="small" onClick={() => { void refetch(); }}>Retry</Button>
       </div>
     );
   }
@@ -148,7 +155,7 @@ export default function StudentsPageClient({ courseId }: Props) {
               <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-md shadow-lg z-10">
                 {(["all","pending","active","rejected"] as const).map(k=>(
                   <button key={k} className={`w-full text-left px-4 py-2 text-sm ${filter===k?"bg-slate-50 text-emerald-600":"text-slate-700 hover:bg-slate-50"}`} onClick={()=>{setFilter(k);setIsFilterOpen(false);}}>
-                    {k.charAt(0).toUpperCase()+k.slice(1)} ({k==="all"?students.length:counts[k as keyof typeof counts]})
+                    {k.charAt(0).toUpperCase()+k.slice(1)} ({k==="all"?students.length:counts[k]})
                   </button>
                 ))}
               </div>) }

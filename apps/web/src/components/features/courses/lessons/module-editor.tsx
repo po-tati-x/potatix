@@ -15,7 +15,7 @@ interface CourseModuleEditorProps {
   courseId: string;
   module: Module;
   index: number;
-  dragHandleProps?: DraggableProvidedDragHandleProps | null;
+  dragHandleProps?: DraggableProvidedDragHandleProps | undefined;
   onToggleModule?: (moduleId: string) => void;
   isExpanded: boolean;
   expandedLessons: Record<string, boolean>;
@@ -47,8 +47,10 @@ export function CourseModuleEditor({
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(module.title || '');
   
-  // State to keep track of locally reordered lessons
-  const [localLessons, setLocalLessons] = useState<UILesson[] | null>(null);
+  // Map of moduleId -> locally reordered lessons
+  const [lessonOverrides, setLessonOverrides] = useState<Record<string, UILesson[] | undefined>>({});
+
+  const localLessons = lessonOverrides[module.id];
 
   const { mutate: updateModule } = useUpdateModule();
   const { mutate: deleteModule } = useDeleteModule();
@@ -78,10 +80,7 @@ export function CourseModuleEditor({
       })
     : baseLessons;
   
-  // Reset local lessons when module changes
-  useEffect(() => {
-    setLocalLessons(null);
-  }, [module.id, module.lessons]);
+  // No effect needed – when module.id changes, lessonOverrides key changes naturally
   
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -115,7 +114,7 @@ export function CourseModuleEditor({
   };
 
   const handleDeleteModule = () => {
-    if (window.confirm('Are you sure you want to delete this module and all its lessons?')) {
+    if (globalThis.confirm('Are you sure you want to delete this module and all its lessons?')) {
       deleteModule({ moduleId: module.id, courseId });
     }
   };
@@ -127,8 +126,12 @@ export function CourseModuleEditor({
       courseId
     }, {
       onSuccess: () => {
-        // Reset local lessons to ensure we get fresh data
-        setLocalLessons(null);
+        // Clear overrides for this module so fresh data loads
+        setLessonOverrides((prev) => {
+          const newOverrides = { ...prev };
+          delete newOverrides[module.id];
+          return newOverrides;
+        });
       }
     });
   };
@@ -144,22 +147,23 @@ export function CourseModuleEditor({
 
   // Handle file removal for lessons
   const handleLessonFileRemove = (lessonId: string) => {
-    if (!window.confirm('Remove video from this lesson?')) return;
+    if (!globalThis.confirm('Remove video from this lesson?')) return;
 
     // Optimistically reset local UI state
-    setLocalLessons((prev) => {
-      if (!prev) return prev;
-      return prev.map((lsn) =>
+    setLessonOverrides((prev) => {
+      const currentLessons = prev[module.id] ?? baseLessons;
+      const updated = currentLessons.map((lsn) =>
         lsn.id === lessonId
           ? { ...lsn, uploading: false, file: undefined, fileUrl: undefined, playbackId: undefined }
           : lsn,
       );
+      return { ...prev, [module.id]: updated };
     });
 
     updateLessonMutation({
       lessonId,
-      playbackId: null,
-      uploadStatus: null,
+      playbackId: undefined,
+      uploadStatus: undefined,
       courseId,
     });
   };
@@ -167,11 +171,12 @@ export function CourseModuleEditor({
   // Handle direct upload complete callback
   const handleDirectUploadComplete = (lessonId: string) => {
     // Mark lesson as processing until webhook updates with playbackId
-    setLocalLessons((prev) => {
-      const source = prev ?? baseLessons;
-      return source.map((lsn) =>
+    setLessonOverrides((prev) => {
+      const source = prev[module.id] ?? baseLessons;
+      const updated = source.map((lsn) =>
         lsn.id === lessonId ? { ...lsn, uploading: true, file: undefined } : lsn,
       );
+      return { ...prev, [module.id]: updated };
     });
 
     // Persist to backend so refresh shows PROCESSING instead of UPLOADING
@@ -182,21 +187,21 @@ export function CourseModuleEditor({
     });
 
     // Trigger refetch to eventually get playbackId
-    queryClient.invalidateQueries({ queryKey: courseKeys.detail(courseId) });
+    void queryClient.invalidateQueries({ queryKey: courseKeys.detail(courseId) });
   };
 
   const handleProcessingComplete = () => {
     // video ready, refresh data so UX shows preview
-    queryClient.invalidateQueries({ queryKey: courseKeys.detail(courseId) });
+    void queryClient.invalidateQueries({ queryKey: courseKeys.detail(courseId) });
   };
 
   // Handle lesson reordering with immediate UI update
   const handleLessonsReordered = (reorderedLessons: UILesson[]) => {
     // Update local state immediately to reflect the new order
-    setLocalLessons(reorderedLessons);
+    setLessonOverrides((prev) => ({ ...prev, [module.id]: reorderedLessons }));
     
     // Invalidate queries to ensure data is refreshed on next fetch
-    queryClient.invalidateQueries({ queryKey: courseKeys.detail(courseId) });
+    void queryClient.invalidateQueries({ queryKey: courseKeys.detail(courseId) });
   };
 
   // Render an individual lesson with drag handle
@@ -207,7 +212,7 @@ export function CourseModuleEditor({
         courseId={courseId}
         lesson={lesson}
         index={idx}
-        dragHandleProps={dragHandleProps}
+        dragHandleProps={dragHandleProps ?? undefined}
         onFileChange={handleLessonFileChange}
         onFileRemove={() => handleLessonFileRemove(lesson.id)}
         onToggleExpanded={onToggleExpanded || onToggleLesson}

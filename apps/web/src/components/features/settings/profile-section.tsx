@@ -19,7 +19,7 @@ export function ProfileSection({ userData, onImageUpdate, loading }: ProfileSect
   }
 
   function handleImageDelete() {
-    onImageUpdate(null);
+    onImageUpdate();
   }
 
   /** ---------------------- Local state ----------------------- */
@@ -33,11 +33,11 @@ export function ProfileSection({ userData, onImageUpdate, loading }: ProfileSect
    * Debounce util – keeps only the last call within `delay` ms.
    * We re-create the function only once (closure stable).
    */
-  const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const debounce = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const scheduleSave = useCallback(
     (payload: Partial<{ name: string; bio: string }>) => {
-      if (debounce.current) clearTimeout(debounce.current);
+      if (debounce.current !== undefined) clearTimeout(debounce.current);
       debounce.current = setTimeout(() => {
         updateProfile.mutate(payload, {
           onError: (err) => toast.error(err.message || "Failed to update profile"),
@@ -52,16 +52,13 @@ export function ProfileSection({ userData, onImageUpdate, loading }: ProfileSect
     if (name !== userData.name) {
       scheduleSave({ name });
     }
-    // Ignore exhaustive-deps for userData; we purposely compare value
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [name]);
+  }, [name, scheduleSave, userData.name]);
 
   useEffect(() => {
     if ((userData.bio || "") !== bio) {
       scheduleSave({ bio });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bio]);
+  }, [bio, scheduleSave, userData.bio]);
 
   /** ---------------------- UI helpers ------------------------ */
   const isSaving = updateProfile.isPending;

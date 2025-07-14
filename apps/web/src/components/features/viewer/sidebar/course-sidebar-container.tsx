@@ -8,7 +8,7 @@ import ModuleList from "./module-list";
 import EnrollmentStatus from "./enrollment-status";
 import SidebarFooter from "./sidebar-footer";
 import { useCourseContext } from "@/lib/client/context/course-context";
-import { memo } from "react";
+import { memo, useCallback } from "react";
 
 // Props now only need course data as everything else comes from context
 interface CourseSidebarProps {
@@ -54,6 +54,17 @@ function CourseSidebar({
   const shouldShowSubscriptionCTA =
     !isEnrolled || enrollmentStatus !== "active";
 
+  /* ------------------------------------------------------------------ */
+  /*  Helpers                                                           */
+  /* ------------------------------------------------------------------ */
+
+  // Wrap async enrollment handler so callers expecting void get what they need.
+  const handleAuthRequired = useCallback(() => {
+    if (onEnroll) {
+      void onEnroll();
+    }
+  }, [onEnroll]);
+
   return (
     <div
       className={`h-full flex flex-col bg-white border-r border-slate-200 overflow-hidden transition-all duration-300 ease-in-out ${
@@ -86,7 +97,7 @@ function CourseSidebar({
           isLocked={isLocked}
           completedLessons={completedLessons}
           isAuthenticated={isAuthenticated}
-          onAuthRequired={onEnroll}
+          onAuthRequired={handleAuthRequired}
         />
       </div>
 

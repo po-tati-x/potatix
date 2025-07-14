@@ -4,6 +4,67 @@ import type { Course, Lesson, CourseModule } from '@/lib/shared/types/courses';
 import { useMemo, memo, useRef, useEffect } from 'react';
 import LessonItem from './lesson-item';
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Dom helpers & keyboard handlers (outside component to satisfy eslint rules)
+// ─────────────────────────────────────────────────────────────────────────────
+
+function $(id: string): HTMLElement | undefined {
+  return document.querySelector<HTMLElement>(`#${id}`) ?? undefined;
+}
+
+function moduleKeyDownHandler(
+  e: React.KeyboardEvent,
+  moduleIndex: number,
+  isCollapsed: boolean,
+) {
+  if (isCollapsed) return;
+
+  switch (e.key) {
+    case 'ArrowDown': {
+      e.preventDefault();
+      const next = $(`module-${moduleIndex}-lesson-0`) ?? $(
+        `module-${moduleIndex + 1}`,
+      );
+      next?.focus();
+      break;
+    }
+    case 'ArrowUp': {
+      e.preventDefault();
+      const prev = $(`module-${moduleIndex - 1}`);
+      prev?.focus();
+      break;
+    }
+  }
+}
+
+function lessonKeyDownHandler(
+  e: React.KeyboardEvent,
+  moduleIndex: number,
+  lessonIndex: number,
+  lessonCount: number,
+) {
+  switch (e.key) {
+    case 'ArrowDown': {
+      e.preventDefault();
+      const targetId =
+        lessonIndex < lessonCount - 1
+          ? `module-${moduleIndex}-lesson-${lessonIndex + 1}`
+          : `module-${moduleIndex + 1}`;
+      $(targetId)?.focus();
+      break;
+    }
+    case 'ArrowUp': {
+      e.preventDefault();
+      const targetId =
+        lessonIndex > 0
+          ? `module-${moduleIndex}-lesson-${lessonIndex - 1}`
+          : `module-${moduleIndex}`;
+      $(targetId)?.focus();
+      break;
+    }
+  }
+}
+
 // Defined types with consistent naming
 interface UILesson extends Lesson {
   completed?: boolean;
@@ -43,7 +104,10 @@ function ModuleList({
   onAuthRequired,
 }: ModuleListProps) {
   // Reference to the current lesson element for auto-scrolling
-  const currentLessonRef = useRef<HTMLDivElement>(null);
+  const currentLessonRef = useRef<HTMLElement | null>(null);
+  const setCurrentLessonRef = (el: HTMLElement | null) => {
+    currentLessonRef.current = el;
+  };
   
   // Transform lessons only once with completion status
   const enhancedLessons = useMemo(() => {
@@ -65,7 +129,7 @@ function ModuleList({
     }
     
     // Fallback for courses without modules
-    if (enhancedLessons.length) {
+    if (enhancedLessons.length > 0) {
       return [{
         id: 'default-module', 
         title: 'Course Content', 
@@ -94,61 +158,12 @@ function ModuleList({
     }
   }, [currentLessonId, isCollapsed]);
   
-  // Keyboard navigation handler for module headers
-  const handleModuleKeyDown = (e: React.KeyboardEvent, moduleIndex: number) => {
-    // Only handle keyboard navigation when not collapsed
-    if (isCollapsed) return;
-    
-    switch (e.key) {
-      case 'ArrowDown': {
-        e.preventDefault();
-        // Focus first lesson in module or next module header
-        const nextElement =
-          document.getElementById(`module-${moduleIndex}-lesson-0`) ||
-          document.getElementById(`module-${moduleIndex + 1}`);
-        nextElement?.focus();
-        break;
-      }
-      case 'ArrowUp': {
-        e.preventDefault();
-        // Focus previous module header
-        const prevModule = document.getElementById(`module-${moduleIndex - 1}`);
-        if (prevModule) {
-          prevModule.focus();
-        }
-        break;
-      }
-    }
-  };
-  
-  // Keyboard navigation handler for lesson items
-  const handleLessonKeyDown = (e: React.KeyboardEvent, moduleIndex: number, lessonIndex: number, lessonCount: number) => {
-    switch (e.key) {
-      case 'ArrowDown':
-        e.preventDefault();
-        // Focus next lesson or next module header
-        if (lessonIndex < lessonCount - 1) {
-          document.getElementById(`module-${moduleIndex}-lesson-${lessonIndex + 1}`)?.focus();
-        } else {
-          document.getElementById(`module-${moduleIndex + 1}`)?.focus();
-        }
-        break;
-      case 'ArrowUp':
-        e.preventDefault();
-        // Focus previous lesson or module header
-        if (lessonIndex > 0) {
-          document.getElementById(`module-${moduleIndex}-lesson-${lessonIndex - 1}`)?.focus();
-        } else {
-          document.getElementById(`module-${moduleIndex}`)?.focus();
-        }
-        break;
-    }
-  };
+  // (handlers moved to module scope)
   
   // Render module with its lessons - optimized with fewer object creations
   const renderModule = (module: UIModule, moduleIndex: number, isCollapsedView: boolean) => {
     const lessonsToRender = module.lessons;
-    if (lessonsToRender.length === 0) return null;
+    if (lessonsToRender.length === 0) return;
     
     if (isCollapsedView) {
       return (
@@ -165,7 +180,7 @@ function ModuleList({
               return (
                 <div 
                   key={lesson.id}
-                  ref={isCurrentLesson ? currentLessonRef : null}
+                  ref={isCurrentLesson ? setCurrentLessonRef : undefined}
                   id={`module-${moduleIndex}-lesson-${index}`}
                 >
                   <LessonItem
@@ -193,13 +208,11 @@ function ModuleList({
     
     return (
       <div key={module.id} className="space-y-1">
-        <div 
-          className="flex items-center justify-between mb-1"
+        <button
+          type="button"
+          className="flex w-full items-center justify-between mb-1 focus:outline-none"
           id={`module-${moduleIndex}`}
-          tabIndex={0}
-          role="heading"
-          aria-level={2}
-          onKeyDown={(e) => handleModuleKeyDown(e, moduleIndex)}
+          onKeyDown={(e) => moduleKeyDownHandler(e, moduleIndex, isCollapsed)}
         >
           <div className="flex items-center gap-1.5">
             <h4 className="font-medium text-sm text-slate-900">{module.title}</h4>
@@ -217,28 +230,31 @@ function ModuleList({
               </div>
             </div>
           )}
-        </div>
+        </button>
         
-        <ul className="space-y-0.5" role="list">
+        <ul className="space-y-0.5">
           {moduleLessons.map((lesson, index) => {
             const isCurrentLesson = lesson.id === currentLessonId;
             return (
-              <div 
-                key={lesson.id}
-                ref={isCurrentLesson ? currentLessonRef : null}
-                id={`module-${moduleIndex}-lesson-${index}`}
-                onKeyDown={(e) => handleLessonKeyDown(e, moduleIndex, index, moduleLessons.length)}
-              >
-                <LessonItem
-                  lesson={lesson}
-                  isCurrentLesson={isCurrentLesson}
-                  isLocked={isLocked && lesson.visibility !== 'public'}
-                  index={index}
-                  isCollapsed={false}
-                  isAuthenticated={isAuthenticated}
-                  onAuthRequired={onAuthRequired}
-                />
-              </div>
+              <li key={lesson.id} className="list-none">
+                <button
+                  type="button"
+                  id={`module-${moduleIndex}-lesson-${index}`}
+                  ref={isCurrentLesson ? setCurrentLessonRef : undefined}
+                  onKeyDown={(e) => lessonKeyDownHandler(e, moduleIndex, index, moduleLessons.length)}
+                  className="w-full text-left focus:outline-none"
+                >
+                  <LessonItem
+                    lesson={lesson}
+                    isCurrentLesson={isCurrentLesson}
+                    isLocked={isLocked && lesson.visibility !== 'public'}
+                    index={index}
+                    isCollapsed={false}
+                    isAuthenticated={isAuthenticated}
+                    onAuthRequired={onAuthRequired}
+                  />
+                </button>
+              </li>
             );
           })}
         </ul>

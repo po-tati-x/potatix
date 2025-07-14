@@ -35,8 +35,21 @@ export function PricingSection({ course, isLoggedIn, onEnroll, isEnrolling }: Pr
   const isActive = enrollmentStatus === "active";
   const isRejected = enrollmentStatus === "rejected";
 
+  /* ------------------------------------------------------------------ */
+  /*  Button label helper – avoids nested ternaries                      */
+  /* ------------------------------------------------------------------ */
+
+  const buttonLabel: string = (() => {
+    if (isEnrolling) return "Enrolling...";
+    if (isPending) return "Pending Approval";
+    if (isRejected) return "Enrollment Rejected";
+    if (isActive) return "Continue Learning";
+    if (!isLoggedIn) return "Sign In To Enroll";
+    return isFree ? "Start Learning" : "Enroll Now";
+  })();
+
   // Feature bullets – authored by course owner; fallback seed list when nothing configured yet
-  const perks = course.perks && course.perks.filter(Boolean).length
+  const perks = course.perks && course.perks.some(Boolean)
     ? course.perks
     : [
         "52 hours on-demand video",
@@ -95,19 +108,7 @@ export function PricingSection({ course, isLoggedIn, onEnroll, isEnrolling }: Pr
               loading={isEnrolling}
               disabled={isEnrolling || isPending || isRejected}
             >
-              {isEnrolling
-                ? "Enrolling..."
-                : isPending
-                  ? "Pending Approval"
-                  : isRejected
-                    ? "Enrollment Rejected"
-                    : isActive
-                      ? "Continue Learning"
-                      : !isLoggedIn
-                        ? "Sign In To Enroll"
-                        : isFree
-                          ? "Start Learning"
-                          : "Enroll Now"}
+              {buttonLabel}
             </Button>
 
             {/* Satisfaction guarantee */}
@@ -129,7 +130,6 @@ export function PricingSection({ course, isLoggedIn, onEnroll, isEnrolling }: Pr
           </header>
 
           <ul
-            role="list"
             className="grid gap-4 sm:grid-cols-2 sm:gap-x-8 sm:gap-y-5"
           >
             {perks.map((perk) => (
@@ -141,7 +141,7 @@ export function PricingSection({ course, isLoggedIn, onEnroll, isEnrolling }: Pr
           </ul>
 
           {/* Platform feature chips */}
-          <ul role="list" className="flex flex-wrap gap-3 pt-2 text-xs text-slate-500">
+          <ul className="flex flex-wrap gap-3 pt-2 text-xs text-slate-500">
             {platformChips.map(({ icon: Icon, label }) => (
               <li
                 key={label}

@@ -30,7 +30,7 @@ interface DraggableModuleListProps {
   modules: UIModule[];
   emptyState: React.ReactNode;
   renderModule: (
-    module: UIModule,
+    mod: UIModule,
     index: number,
     dragHandleProps: DraggableProvidedDragHandleProps | null,
     onToggleExpanded?: (id: string) => void
@@ -61,7 +61,7 @@ export function DraggableModuleList({
 
     if (sourceIndex === destIndex) return;
     
-    const reorderedItems = Array.from(modules);
+    const reorderedItems = [...modules];
     const [removed] = reorderedItems.splice(sourceIndex, 1);
     if (!removed) return;
     reorderedItems.splice(destIndex, 0, removed);
@@ -72,7 +72,7 @@ export function DraggableModuleList({
     }
 
     // Get just the IDs for reordering
-    const orderedIds = reorderedItems.map(module => module.id);
+    const orderedIds = reorderedItems.map(mod => mod.id);
 
     // Make the API call with the format expected by the server
     reorderModules({
@@ -105,10 +105,10 @@ export function DraggableModuleList({
             {modules.length === 0 ? (
               emptyState
             ) : (
-              modules.map((module, index) => (
+              modules.map((mod, index) => (
                 <Draggable
-                  key={module.id}
-                  draggableId={module.id}
+                  key={mod.id}
+                  draggableId={mod.id}
                   index={index}
                 >
                   {(provided, snapshot) => {
@@ -123,7 +123,7 @@ export function DraggableModuleList({
                         className={`${snapshot.isDragging ? "shadow-lg ring-2 ring-slate-200" : ""}`}
                       >
                         {renderModule(
-                          module,
+                          mod,
                           index,
                           provided.dragHandleProps,
                           onToggleExpanded

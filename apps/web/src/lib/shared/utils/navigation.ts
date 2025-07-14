@@ -1,10 +1,10 @@
 export function getLessonPath(courseSlug: string, lessonId: string): string {
-  if (typeof window === "undefined") {
+  if (globalThis.window === undefined) {
     // During SSR we can't inspect host, assume non-subdomain viewer path
     return `/viewer/${courseSlug}/lesson/${lessonId}`;
   }
 
-  const host = window.location.hostname;
+  const host = globalThis.window.location.hostname;
 
   // Development sub-domain pattern: xxx.localhost
   if (host.endsWith(".localhost")) {

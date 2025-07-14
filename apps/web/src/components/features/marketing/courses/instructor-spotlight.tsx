@@ -134,7 +134,7 @@ export function InstructorSpotlight({ courseId }: InstructorSpotlightProps) {
                   {hasCredentials && (
                     <div className="space-y-4 pt-2">
                       <h4 className="text-sm font-medium text-slate-800">Expertise & Credentials</h4>
-                      <ul role="list" className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2">
+                      <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2">
                         {ins.credentials?.map((cred) => (
                           <li key={cred} className="flex gap-2.5 text-sm text-slate-700">
                             <CheckCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-500" />

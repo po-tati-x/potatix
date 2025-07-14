@@ -147,21 +147,27 @@ function EnrollmentStatus({
   }
 
   function renderNotEnrolled() {
-    // Determine appropriate button text based on authentication and price
-    const buttonText = isEnrolling
-      ? "Enrolling..."
-      : isAuthenticated
-        ? coursePrice > 0
-          ? "Request Enrollment"
-          : "Enroll Now (Free)"
-        : "Sign in to continue";
+    // Derive button text without nested ternaries
+    let buttonText: string;
+    if (isEnrolling) {
+      buttonText = "Enrolling...";
+    } else if (!isAuthenticated) {
+      buttonText = "Sign in to continue";
+    } else if (coursePrice > 0) {
+      buttonText = "Request Enrollment";
+    } else {
+      buttonText = "Enroll Now (Free)";
+    }
 
-    // Determine description text based on authentication status and course price
-    const descriptionText = isAuthenticated
-      ? coursePrice > 0
-        ? `Enrollment requires approval (${coursePrice > 0 ? `${coursePrice}$` : "Free"})`
-        : "You need to enroll to access this course"
-      : "Sign in to access this course";
+    // Derive description text without nested ternaries
+    let descriptionText: string;
+    if (!isAuthenticated) {
+      descriptionText = "Sign in to access this course";
+    } else if (coursePrice > 0) {
+      descriptionText = `Enrollment requires approval (${coursePrice}$)`;
+    } else {
+      descriptionText = "You need to enroll to access this course";
+    }
 
     return (
       <div className="px-4 py-3 border-b border-slate-200">
@@ -171,7 +177,9 @@ function EnrollmentStatus({
             type="primary"
             size="small"
             className="w-full justify-center"
-            onClick={handleEnroll}
+            onClick={() => {
+              void handleEnroll();
+            }}
             disabled={isEnrolling}
           >
             {buttonText}

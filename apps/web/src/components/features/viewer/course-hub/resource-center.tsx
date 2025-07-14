@@ -57,7 +57,9 @@ function ResourceCard({ resource, onSave }: ResourceCardProps) {
               <p className="mt-0.5 text-xs text-slate-500">From: {resource.lessonTitle}</p>
             )}
             <div className="mt-1 flex items-center gap-3 text-xs text-slate-500">
-              {resource.size && <span>{formatFileSize(resource.size)}</span>}
+              {typeof resource.size === 'number' && resource.size > 0 && (
+                <span>{formatFileSize(resource.size)}</span>
+              )}
               {resource.downloadedAt && (
                 <>
                   <span className="text-slate-300">•</span>
@@ -95,7 +97,7 @@ function ResourceCard({ resource, onSave }: ResourceCardProps) {
           rel="noopener noreferrer"
           className="flex-1 rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5 text-center text-sm font-medium text-slate-700 transition-all hover:border-slate-300 hover:bg-slate-100"
         >
-          {resource.type === 'video' ? 'Watch' : resource.type === 'link' ? 'Visit' : 'Open'}
+          {resource.type === 'video' ? 'Watch' : (resource.type === 'link' ? 'Visit' : 'Open')}
         </a>
         {resource.type !== 'link' && resource.type !== 'video' && (
           <a

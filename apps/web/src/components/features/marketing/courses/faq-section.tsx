@@ -58,7 +58,7 @@ export function FAQSection({ courseId }: FAQSectionProps) {
         </header>
 
         {/* FAQ list */}
-        <ul role="list" className="space-y-3">
+        <ul className="space-y-3">
           {faqs.map((f) => {
             const elementId = `${courseId ?? 'faq'}-${f.id}`;
             return (
@@ -96,8 +96,8 @@ export function FAQSection({ courseId }: FAQSectionProps) {
             type="primary"
             size="small"
             onClick={() => {
-              if (typeof window !== 'undefined') {
-                window.location.hash = 'contact-support';
+              if (globalThis.window !== undefined) {
+                globalThis.location.hash = 'contact-support';
               }
             }}
           >

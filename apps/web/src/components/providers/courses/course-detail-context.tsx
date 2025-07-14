@@ -9,9 +9,9 @@ import { courseKeys } from "@/lib/shared/constants/query-keys";
 import { formatMonthDay } from "@/lib/shared/utils/format";
 
 interface CourseDetailContextValue {
-  course: Course | null;
+  course: Course | undefined;
   isLoading: boolean;
-  error: Error | null;
+  error: Error | undefined;
   deleteCourse: () => Promise<void>;
   isDeleting: boolean;
   expandedModules: Record<string, boolean>;
@@ -48,7 +48,8 @@ export function CourseDetailProvider({ children, courseId, initialData }: Provid
   const deleteMutation = useMutation<void, Error, void>({
     mutationFn: () => courseApi.deleteCourse(courseId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: courseKeys.all() });
+      // Invalidating queries is fire-and-forget
+      void queryClient.invalidateQueries({ queryKey: courseKeys.all() });
     },
   });
 
@@ -60,9 +61,9 @@ export function CourseDetailProvider({ children, courseId, initialData }: Provid
 
   const value: CourseDetailContextValue = useMemo(
     () => ({
-      course: course ?? null,
+      course,
       isLoading,
-      error: error || null,
+      error: error ?? undefined,
       deleteCourse: async () => deleteMutation.mutateAsync(),
       isDeleting: deleteMutation.isPending,
       expandedModules,

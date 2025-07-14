@@ -78,25 +78,23 @@ interface StatCardProps {
 }
 
 function StatCard({ title, value, change }: StatCardProps) {
-  // Determine change color and arrow
-  const changeColor = !change
-    ? "text-slate-500"
-    : change > 0
-      ? "text-emerald-600"
-      : "text-red-500";
+  // Positive check for presence of change value
+  const hasChange = typeof change === 'number';
 
-  const changeIcon = !change ? null : change > 0 ? (
-    <ArrowUp className="h-3 w-3 mr-0.5" />
-  ) : (
-    <ArrowDown className="h-3 w-3 mr-0.5" />
-  );
+  const changeColor = hasChange
+    ? (change > 0 ? 'text-emerald-600' : 'text-red-500')
+    : 'text-slate-500';
+
+  const changeIcon = hasChange
+    ? (change > 0 ? <ArrowUp className="h-3 w-3 mr-0.5" /> : <ArrowDown className="h-3 w-3 mr-0.5" />)
+    : undefined;
 
   return (
     <div className="bg-white border border-slate-200 rounded-md p-4 flex flex-col">
       <p className="text-xs text-slate-500 mb-1">{title}</p>
       <div className="flex items-center justify-between mt-1">
         <p className="text-xl font-medium text-slate-900">{value}</p>
-        {change !== undefined && (
+        {hasChange && (
           <div className={`flex items-center text-xs ${changeColor}`}>
             {changeIcon}
             {Math.abs(change)}%

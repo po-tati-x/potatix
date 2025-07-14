@@ -4,14 +4,14 @@ import React, { useRef, useEffect, useState } from "react";
 import { Cropper, CropperRef } from "react-advanced-cropper";
 import "react-advanced-cropper/dist/style.css";
 
-import Modal from "@/components/ui/Modal";
+import Modal from "@/components/ui/modal";
 import { Button } from "@/components/ui/new-button";
 
 export interface ImageEditorProps {
   /** Show / hide modal */
   open: boolean;
   /** Image source – File URL, data-URI, whatever <img> accepts */
-  src: string | null;
+  src?: string;
   /** Emit processed file */
   onSave: (file: File) => void;
   /** Called when user closes the modal (either Cancel or after Save) */
@@ -37,24 +37,28 @@ export function ImageEditor({
 }: ImageEditorProps) {
   const cropperRef = useRef<CropperRef>(null);
 
-  const [size, setSize] = useState<{ w: number; h: number } | null>(null);
+  const [size, setSize] = useState<{ w: number; h: number } | undefined>();
 
   // Measure image once to fit cropper exactly and avoid empty gray areas
   useEffect(() => {
     if (!src) return;
     const img = new Image();
-    img.onload = () => {
+
+    const handleLoad = () => {
       if (img.naturalWidth && img.naturalHeight) {
         setSize({ w: img.naturalWidth, h: img.naturalHeight });
       }
     };
+
+    img.addEventListener("load", handleLoad);
     img.src = src;
+
     return () => {
-      img.onload = null;
+      img.removeEventListener("load", handleLoad);
     };
   }, [src]);
 
-  if (!open || !src || !size) return null;
+  if (!open || !src || !size) return;
   
   function handleSave() {
     const cropper = cropperRef.current;

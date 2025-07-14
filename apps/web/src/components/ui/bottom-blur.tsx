@@ -21,10 +21,10 @@ export function BottomBlur({
     // Create intersection observer
     observerRef.current = new IntersectionObserver(
       (entries) => {
-        entries.forEach((entry) => {
+        for (const entry of entries) {
           // Update state based on footer visibility
           setIsFooterVisible(entry.isIntersecting);
-        });
+        }
       },
       { threshold: 0.1 } // Trigger when 10% of footer is visible
     );
@@ -41,7 +41,7 @@ export function BottomBlur({
   }, []);
   
   // Don't render if footer is visible
-  if (isFooterVisible) return null;
+  if (isFooterVisible) return;
   
   return (
     <div 

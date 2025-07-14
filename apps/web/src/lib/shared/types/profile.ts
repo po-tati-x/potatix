@@ -15,8 +15,8 @@ export interface UserProfile {
  */
 export type UpdateProfileParams = {
   name?: string;
-  bio?: string | null;
-  image?: File | null;
+  bio?: string | undefined;
+  image?: File | undefined;
 };
 
 /**
@@ -40,5 +40,5 @@ export type UpdateNotificationsParams = {
  */
 export type FormState = {
   dirty: boolean;
-  error: string | null;
+  error: string | undefined;
 }; 

@@ -3,6 +3,7 @@ import { ArrowUp, ArrowDown, Plus, Trash2, Save, X, RefreshCw, Loader2 } from "l
 import { nanoid } from "nanoid";
 import { Button } from "@/components/ui/new-button";
 import { useUpdateLesson } from "@/lib/client/hooks/use-courses";
+import { z } from "zod";
 import type { Lesson } from "@/lib/shared/types/courses";
 
 interface Chapter {
@@ -27,7 +28,7 @@ export function LessonChaptersEditor({ courseId, lesson }: LessonChaptersEditorP
   const [chapters, setChapters] = useState<Chapter[]>(originalChapters);
   const [dirty, setDirty] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [genError, setGenError] = useState<string | null>(null);
+  const [genError, setGenError] = useState<string | undefined>();
 
   const { mutate: updateLesson } = useUpdateLesson();
 
@@ -38,7 +39,7 @@ export function LessonChaptersEditor({ courseId, lesson }: LessonChaptersEditorP
   /* ------------------------------------------------------------------ */
   const addChapter = () => {
     const nextTimestamp =
-      chapters.length > 0 ? chapters[chapters.length - 1]!.timestamp + 30 : 0;
+      chapters.length > 0 ? chapters.at(-1)!.timestamp + 30 : 0;
     setChapters([
       ...chapters,
       {
@@ -95,28 +96,58 @@ export function LessonChaptersEditor({ courseId, lesson }: LessonChaptersEditorP
   };
 
   /* AI generate chapters */
-  const handleGenerate = async () => {
+  const handleGenerate = async (): Promise<void> => {
     if (!lesson.playbackId) return;
     try {
       setIsGenerating(true);
-      setGenError(null);
+      setGenError(undefined);
       const res = await fetch(
         `/api/ai/transcript?playbackId=${lesson.playbackId}&lessonId=${lesson.id}`,
       );
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || "Failed to generate chapters");
 
-      const newTranscriptData = {
-        ...lesson.transcriptData,
-        ...json,
-      } as unknown as Lesson["transcriptData"];
+      const json: unknown = await res.json();
 
-      setChapters(json.chapters);
+      if (!res.ok) {
+        const isErrorResponse = (data: unknown): data is { error: string } =>
+          typeof data === 'object' && !!data && 'error' in data && typeof (data as Record<string, unknown>).error === 'string';
+
+        const msg = isErrorResponse(json) ? json.error : 'Failed to generate chapters';
+        throw new Error(msg);
+      }
+
+      /* -------------------------------------------------------------- */
+      /*  Validate response shape                                       */
+      /* -------------------------------------------------------------- */
+      const schema = z.object({
+        chapters: z.array(
+          z.object({
+            id: z.string(),
+            title: z.string(),
+            description: z.string(),
+            timestamp: z.number(),
+          }),
+        ),
+      });
+
+      const parsed = schema.parse(json);
+
+      const baseTranscript = lesson.transcriptData ?? {
+        textLength: 0,
+        duration: 0,
+        processedAt: new Date().toISOString(),
+      };
+
+      const newTranscriptData: Lesson["transcriptData"] = {
+        ...baseTranscript,
+        chapters: parsed.chapters,
+      };
+
+      setChapters(parsed.chapters);
       updateLesson({ lessonId: lesson.id, courseId, transcriptData: newTranscriptData });
 
       setDirty(false);
-    } catch (err) {
-      setGenError(err instanceof Error ? err.message : "Failed to generate chapters");
+    } catch (error) {
+      setGenError(error instanceof Error ? error.message : "Failed to generate chapters");
     } finally {
       setIsGenerating(false);
     }
@@ -135,7 +166,7 @@ export function LessonChaptersEditor({ courseId, lesson }: LessonChaptersEditorP
             type="outline"
             size="tiny"
             iconLeft={isGenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
-            onClick={handleGenerate}
+            onClick={() => void handleGenerate()}
             disabled={isGenerating || !lesson.playbackId}
           >
             {isGenerating ? "Generating" : "Generate"}
@@ -216,8 +247,9 @@ export function LessonChaptersEditor({ courseId, lesson }: LessonChaptersEditorP
                   className="w-full border border-slate-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 resize-none"
                 />
                 <div className="flex items-center gap-2">
-                  <label className="text-xs text-slate-600">Timestamp (sec)</label>
+                  <label htmlFor={`timestamp-${chapter.id}`} className="text-xs text-slate-600">Timestamp (sec)</label>
                   <input
+                    id={`timestamp-${chapter.id}`}
                     type="number"
                     min={0}
                     value={chapter.timestamp}

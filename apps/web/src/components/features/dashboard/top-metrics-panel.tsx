@@ -90,7 +90,7 @@ export function TopMetricsPanel() {
     enrollmentsMTD: 0,
     enrollmentsAll: 0,
     activeStudents: 0,
-    avgRating: null,
+    avgRating: undefined,
     revenueTrend: [],
     enrollmentTrend: [],
   };
@@ -109,7 +109,7 @@ export function TopMetricsPanel() {
       hero={heroMetrics ?? defaultHero}
       stats={stats ?? defaultStats}
       isLoading={heroLoading || statsLoading}
-      error={heroError || statsError || null}
+      error={heroError || statsError}
     />
   );
 } 

@@ -43,23 +43,23 @@ function LessonItem({
     // Get background color based on status
     const bgColorClass = isCurrentLesson 
       ? 'bg-emerald-100 text-emerald-700 border-emerald-300' 
-      : lesson.completed 
+      : (lesson.completed 
         ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
-        : 'bg-white text-slate-600 hover:bg-slate-50 border-slate-200';
+        : 'bg-white text-slate-600 hover:bg-slate-50 border-slate-200');
 
     // Get icon based on status
     const icon = isCurrentLesson 
       ? <Play className="h-3.5 w-3.5" aria-hidden="true" />
-      : lesson.completed 
+      : (lesson.completed 
         ? <CheckCircle className="h-3.5 w-3.5" aria-hidden="true" /> 
-        : <span className="text-xs font-medium">{index + 1}</span>;
+        : <span className="text-xs font-medium">{index + 1}</span>);
 
     // Get status text for screen readers
     const status = isCurrentLesson 
       ? 'Current lesson' 
-      : lesson.completed 
+      : (lesson.completed 
         ? 'Completed' 
-        : 'Not started';
+        : 'Not started');
 
     return (
       <div className="py-1 px-2 w-full">
@@ -91,8 +91,8 @@ function LessonItem({
             <div className="flex items-center text-[10px] text-slate-300">
               <span className={`w-2 h-2 rounded-full mr-1.5 ${
                 isCurrentLesson ? 'bg-emerald-400' : 
-                lesson.completed ? 'bg-emerald-500' : 
-                'bg-slate-400'
+                (lesson.completed ? 'bg-emerald-500' : 
+                'bg-slate-400')
               }`}></span>
               {status}
             </div>
@@ -157,17 +157,17 @@ function LessonItem({
       : 'text-slate-500';
       
     const icon = isCurrentLesson || lesson.completed
-      ? lesson.completed 
+      ? (lesson.completed 
         ? <CheckCircle className={`h-3 w-3 ${iconClass}`} aria-hidden="true" /> 
-        : <Play className={`h-3 w-3 ${iconClass}`} aria-hidden="true" />
+        : <Play className={`h-3 w-3 ${iconClass}`} aria-hidden="true" />)
       : <Play className={`h-3 w-3 ${iconClass}`} aria-hidden="true" />;
       
     // Status for screen readers
     const status = isCurrentLesson 
       ? 'Current lesson' 
-      : lesson.completed 
+      : (lesson.completed 
         ? 'Completed' 
-        : 'Not started';
+        : 'Not started');
       
     return (
       <li className="relative transition-transform hover:translate-x-0.5 duration-150">

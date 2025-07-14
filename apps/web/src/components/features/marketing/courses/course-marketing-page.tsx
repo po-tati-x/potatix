@@ -10,7 +10,7 @@ import { CourseStats } from './course-stats';
 import { FloatingEnrollBar } from './floating-enroll-bar';
 import { useState, useEffect, useRef } from 'react';
 import { Section } from '@/components/ui/section';
-import Modal from '@/components/ui/Modal';
+import Modal from '@/components/ui/modal';
 import LoginScreen from '@/components/features/auth/login-screen';
 import { WhatYoullLearn } from './what-youll-learn';
 import { Prerequisites } from './prerequisites';
@@ -55,7 +55,7 @@ export function CourseMarketingPage({ course, isLoggedIn }: CourseMarketingPageP
       });
 
       if (response.ok) {
-        window.location.href = `/viewer/${course.slug}`;
+        globalThis.location.href = `/viewer/${course.slug}`;
       } else {
         // TODO: Show error toast
         console.error('Enrollment failed');
@@ -74,7 +74,7 @@ export function CourseMarketingPage({ course, isLoggedIn }: CourseMarketingPageP
         <HeroSection
           course={course}
           isLoggedIn={isLoggedIn}
-          onEnroll={handleEnroll}
+          onEnroll={() => { void handleEnroll(); }}
           isEnrolling={isEnrolling}
         />
         {/* Invisible sentinel used by IntersectionObserver */}
@@ -97,7 +97,7 @@ export function CourseMarketingPage({ course, isLoggedIn }: CourseMarketingPageP
       <PricingSection
         course={course}
         isLoggedIn={isLoggedIn}
-        onEnroll={handleEnroll}
+        onEnroll={() => { void handleEnroll(); }}
         isEnrolling={isEnrolling}
       />
 
@@ -106,7 +106,7 @@ export function CourseMarketingPage({ course, isLoggedIn }: CourseMarketingPageP
         course={course}
         isVisible={isFloatingBarVisible}
         isLoggedIn={isLoggedIn}
-        onEnroll={handleEnroll}
+        onEnroll={() => { void handleEnroll(); }}
         isEnrolling={isEnrolling}
       />
 

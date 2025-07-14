@@ -32,7 +32,6 @@ export function Prerequisites({ course }: PrerequisitesProps) {
         </header>
 
         <ul
-          role="list"
           className="grid gap-4 sm:grid-cols-2 sm:gap-x-8 sm:gap-y-5"
         >
           {prereqs.map(item => (

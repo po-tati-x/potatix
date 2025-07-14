@@ -15,9 +15,9 @@ interface CourseCardProps {
  */
 export function CourseCard({ course }: CourseCardProps) {
   // Calculate the lesson count - use lessonCount if available, otherwise use the length of the lessons array if present
-  const lessonCount = course.lessonCount !== undefined 
-    ? course.lessonCount 
-    : (course.lessons?.length || 0);
+  const lessonCount = course.lessonCount === undefined 
+    ? (course.lessons?.length || 0) 
+    : course.lessonCount;
     
   // Format the price
   const formattedPrice = course.price > 0 
@@ -33,7 +33,7 @@ export function CourseCard({ course }: CourseCardProps) {
   
   // Get status style with fallback to draft
   const status = course.status || 'draft';
-  const statusStyles = statusMap[status as keyof typeof statusMap];
+  const statusStyles = statusMap[status];
     
   return (
     <Link href={`/courses/${course.slug!}`} className="block group">

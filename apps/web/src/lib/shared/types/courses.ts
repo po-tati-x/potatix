@@ -40,6 +40,9 @@ export interface Lesson {
     duration: number;
     processedAt: string;
   };
+
+  /** Cached AI-generated chat prompts */
+  aiPrompts?: string[];
 }
 
 export interface CourseModule {
@@ -88,7 +91,7 @@ export interface CreateCourseData {
   lessons?: {
     title: string;
     description?: string;
-    playbackId?: string | null;
+    playbackId?: string | undefined;
   }[];
 
   /** Marketing sections */
@@ -121,10 +124,10 @@ export interface Instructor {
   name: string;
   title?: string;
   bio?: string;
-  avatarUrl?: string | null;
+  avatarUrl?: string | undefined;
   credentials?: string[];
   /** If the instructor is a registered user */
-  userId?: string | null;
+  userId?: string | undefined;
   /** Active students across this course (when provided) */
   totalStudents?: number;
 }

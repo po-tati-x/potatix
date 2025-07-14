@@ -359,9 +359,11 @@ const About = () => {
 
         {/* Desktop Layout */}
         <div className="hidden lg:block max-w-7xl mx-auto">
-          <nav 
+          <div
             className="grid grid-cols-5 gap-3 mb-10"
             role="tablist"
+            aria-label="Feature tabs"
+            tabIndex={0}
           >
             {features.map((feature, index) => (
               <FeatureCard
@@ -372,7 +374,7 @@ const About = () => {
                 index={index}
               />
             ))}
-          </nav>
+          </div>
           
           <div className="relative min-h-[400px]">
             {features.map((feature) => (

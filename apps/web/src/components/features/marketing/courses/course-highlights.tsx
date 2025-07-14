@@ -58,7 +58,7 @@ export function CourseHighlights({ course }: CourseHighlightsProps) {
             </p>
           </header>
 
-          <ul role="list" className="space-y-6">
+          <ul className="space-y-6">
             {highlights.map(({ icon: Icon, title, description }) => (
               <li key={title} className="flex gap-4">
                 <span

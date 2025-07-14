@@ -103,12 +103,31 @@ export function CourseHubProvider({ courseSlug, children }: CourseHubProviderPro
   // Fetch learning stats
   const { stats } = useLearningStats();
 
-  // Get actions from store
-  const { setCurrentLesson, addNote, updateNote, deleteNote, saveResource, unsaveResource } =
-    useCourseProgressStore();
+  // Individual selectors – avoid pulling the entire store (prevents any type leakage)
+  const setCurrentLesson = useCourseProgressStore((s) => s.setCurrentLesson);
+  const addNote = useCourseProgressStore((s) => s.addNote);
+  const updateNote = useCourseProgressStore((s) => s.updateNote);
+  const deleteNote = useCourseProgressStore((s) => s.deleteNote);
+  const saveResource = useCourseProgressStore((s) => s.saveResource);
+  const unsaveResource = useCourseProgressStore((s) => s.unsaveResource);
 
   // Get update progress hook
   const { updateProgress, markLessonComplete } = useUpdateLessonProgress();
+
+  // Wrap async progress helpers so callers never await (satisfy no-misused-promises)
+  const handleUpdateProgress = useCallback(
+    (lessonId: string, position: number, duration: number) => {
+      void updateProgress(lessonId, position, duration);
+    },
+    [updateProgress],
+  );
+
+  const handleMarkLessonComplete = useCallback(
+    (lessonId: string) => {
+      void markLessonComplete(lessonId);
+    },
+    [markLessonComplete],
+  );
 
   // Navigation handlers
   const handleLessonClick = useCallback(
@@ -116,7 +135,7 @@ export function CourseHubProvider({ courseSlug, children }: CourseHubProviderPro
       if (!course) return;
       setCurrentLesson(lessonId);
       // Navigation is handled by the router in course-hub-client
-      window.location.href = `/viewer/${courseSlug}/lesson/${lessonId}`;
+      globalThis.location.href = `/viewer/${courseSlug}/lesson/${lessonId}`;
     },
     [course, courseSlug, setCurrentLesson],
   );
@@ -127,11 +146,7 @@ export function CourseHubProvider({ courseSlug, children }: CourseHubProviderPro
       const resource = resources.find(r => r.id === resourceId);
       if (!resource) return;
 
-      if (resource.savedForLater) {
-        await unsaveResource(resourceId);
-      } else {
-        await saveResource(resourceId, resource.lessonId);
-      }
+      await (resource.savedForLater ? unsaveResource(resourceId) : saveResource(resourceId, resource.lessonId));
 
       // TODO: Show success toast
     },
@@ -239,13 +254,13 @@ export function CourseHubProvider({ courseSlug, children }: CourseHubProviderPro
   // Achievement handlers
   const handleShareAchievement = useCallback(
     (achievement: Achievement) => {
-      if (!achievement.shareUrl) {
+      if (achievement.shareUrl) {
+        window.open(achievement.shareUrl, '_blank');
+      } else {
         // Generate share URL
         const shareText = `I just unlocked "${achievement.title}" in ${course?.title}! 🎉`;
         const shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
         window.open(shareUrl, '_blank');
-      } else {
-        window.open(achievement.shareUrl, '_blank');
       }
     },
     [course],
@@ -255,7 +270,7 @@ export function CourseHubProvider({ courseSlug, children }: CourseHubProviderPro
   const handleViewCertificate = useCallback(() => {
     if (!course) return;
     // TODO: Navigate to certificate page
-    window.location.href = `/courses/${course.id}/certificate`;
+    globalThis.location.href = `/courses/${course.id}/certificate`;
   }, [course]);
 
   // Notes editor handler
@@ -265,9 +280,12 @@ export function CourseHubProvider({ courseSlug, children }: CourseHubProviderPro
     console.log('Open notes editor');
   }, [course]);
 
+  // Ensure course is undefined instead of null to match context type
+  const courseOrUndefined: Course | undefined = course ?? undefined;
+
   const contextValue: CourseHubContextValue = {
     // Data
-    course,
+    course: courseOrUndefined,
     modules,
     progress,
     stats,
@@ -300,8 +318,8 @@ export function CourseHubProvider({ courseSlug, children }: CourseHubProviderPro
     onOpenNotesEditor: handleOpenNotesEditor,
 
     // Progress actions
-    onUpdateProgress: updateProgress,
-    onMarkLessonComplete: markLessonComplete,
+    onUpdateProgress: handleUpdateProgress,
+    onMarkLessonComplete: handleMarkLessonComplete,
 
     // Refresh
     refetch,
@@ -314,12 +332,12 @@ export function CourseHubProvider({ courseSlug, children }: CourseHubProviderPro
 // Helper to generate calendar links
 function generateCalendarLink(event: UpcomingEvent): string {
   const startTime = new Date(event.startTime);
-  const endTime = new Date(startTime.getTime() + event.duration * 60000);
+  const endTime = new Date(startTime.getTime() + event.duration * 60_000);
 
   const formatDate = (date: Date) =>
     date
       .toISOString()
-      .replace(/[-:]/g, '')
+      .replaceAll(/[-:]/g, '')
       .replace(/\.\d{3}/, '');
 
   const params = new URLSearchParams({
