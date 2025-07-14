@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fetchMuxTranscript } from "@/lib/server/utils/mux";
-import { db as rawDb, lesson as lessonTable } from "@potatix/db";
+import { database, lesson as lessonTable } from "@potatix/db";
 import { eq } from "drizzle-orm";
 import { generateChaptersFromTranscript } from '@/lib/server/services/ai';
 
@@ -10,12 +10,12 @@ export const dynamic = "force-dynamic";
 function convertTimeToSeconds(timeString: string): number {
   const [hours = 0, minutes = 0, seconds = 0] = timeString
     .split(":")
-    .map((part) => parseFloat(part));
+    .map((part) => Number.parseFloat(part));
 
   return hours * 3600 + minutes * 60 + seconds;
 }
 
-const database = rawDb!;
+// use singleton `database` directly from the DB package
 
 export async function GET(request: NextRequest) {
   try {
@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
     const timeRegex =
       /(\d{2}:\d{2}:\d{2}\.\d{3}) --> (\d{2}:\d{2}:\d{2}\.\d{3})/;
 
-    let currentSegment: TranscriptSegment | null = null;
+    let currentSegment: TranscriptSegment | undefined;
 
     for (const line of lines) {
       const match = line.match(timeRegex);
@@ -115,7 +115,7 @@ export async function GET(request: NextRequest) {
 
     // Process with Gemini
     try {
-      const chaptersRaw = await generateChaptersFromTranscript(structuredTranscript.substring(0, 100000));
+      const chaptersRaw = await generateChaptersFromTranscript(structuredTranscript.slice(0, 100_000));
 
       interface Chapter {
         id: string;
@@ -142,8 +142,8 @@ export async function GET(request: NextRequest) {
             .update(lessonTable)
             .set({ transcriptData: responseData, updatedAt: new Date() })
             .where(eq(lessonTable.id, lessonId));
-        } catch (err) {
-          console.error('Failed to update lesson transcript data:', err);
+        } catch (error) {
+          console.error('Failed to update lesson transcript data:', error);
         }
       }
 

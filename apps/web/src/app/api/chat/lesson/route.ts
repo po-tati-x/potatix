@@ -31,8 +31,7 @@ export async function POST(req: Request) {
       });
     }
 
-    const json = await req.json();
-    const { courseId, lessonTitle, messages } = bodySchema.parse(json);
+    const { courseId, lessonTitle, messages } = bodySchema.parse(await req.json());
 
     // Basic access check – ensure course / lesson exist & published
     const course = await courseService.getCourseById(courseId);

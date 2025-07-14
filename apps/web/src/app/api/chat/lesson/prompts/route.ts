@@ -22,17 +22,18 @@ export async function POST(req: Request) {
       });
     }
 
-    const json = await req.json();
-    const { courseId, lessonId, lessonTitle, count } = bodySchema.parse(json);
+    const parsed = bodySchema.parse(await req.json());
+    const { courseId, lessonId, lessonTitle, count } = parsed;
 
     // Minimal validation – ensure course exists
     const course = await courseService.getCourseById(courseId);
     if (!course) return new Response('Course not found', { status: 404 });
 
     // Check cached prompts for lesson
-    let cachedPrompts: string[] | null = null;
+    let cachedPrompts: string[] | undefined;
     if (lessonId) {
-      cachedPrompts = await lessonService.getLessonPrompts(lessonId);
+      const promptsFromDb = await lessonService.getLessonPrompts(lessonId);
+      if (promptsFromDb && promptsFromDb.length > 0) cachedPrompts = promptsFromDb;
     }
 
     if (cachedPrompts && cachedPrompts.length > 0) {
