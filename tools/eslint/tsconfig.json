@@ -1,0 +1,5 @@
+{
+  "extends": "@potatix/tsconfig/internal-package",
+  "include": ["types.d.ts"],
+  "exclude": ["node_modules"]
+} 

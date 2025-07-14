@@ -1,14 +1,23 @@
-import reactConfig from '@potatix/eslint-config/react';
-import nextPlugin from '@next/eslint-plugin-next';
+import nextConfig from '@potatix/eslint-config/next';
+import reactHooksExtra from 'eslint-plugin-react-hooks-extra';
 
 export default [
-  ...reactConfig,
+  ...nextConfig,
+  // Project-specific TypeScript context
+  {
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.json'],
+      },
+    },
+  },
+  // Local overrides
   {
     plugins: {
-      '@next/next': nextPlugin,
+      'react-hooks-extra': reactHooksExtra,
     },
     rules: {
-      ...nextPlugin.configs.recommended.rules,
+      'react-hooks-extra/no-direct-set-state-in-use-effect': 'error',
     },
   },
 ];

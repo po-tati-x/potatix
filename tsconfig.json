@@ -4,7 +4,9 @@
   "references": [
     { "path": "packages/auth" },
     { "path": "packages/db" },
-    { "path": "apps/web" }
+    { "path": "apps/web" },
+    { "path": "tools/tsconfig" },
+    { "path": "tools/eslint" }
   ],
   "compilerOptions": {
     "verbatimModuleSyntax": false
