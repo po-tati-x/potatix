@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/new-button";
 import { useCreateModule, useReorderModules } from "@/lib/client/hooks/use-courses";
 import type { Module, CreateModuleData } from "@/lib/shared/types/courses";
 import { CourseModuleEditor } from "@/components/features/courses/lessons/module-editor";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 interface CourseContentSectionProps {
@@ -25,12 +25,7 @@ export function CourseContentSection({
 }: CourseContentSectionProps) {
   const queryClient = useQueryClient();
 
-  const [localModules, setLocalModules] = useState<Module[] | null>(null);
-
-  // Whenever props.modules change (e.g., data fetched), reset localModules
-  useEffect(() => {
-    setLocalModules(null);
-  }, [modules]);
+  const [localModules, setLocalModules] = useState<Module[] | undefined>();
 
   const uiModules = localModules ?? modules;
 
@@ -56,7 +51,7 @@ export function CourseContentSection({
     });
   };
 
-  const moveModule = (index: number, direction: "up" | "down") => {
+  const moveModule = (index: number, direction: "up" | "down"): void => {
     const newIndex = direction === "up" ? index - 1 : index + 1;
     if (newIndex < 0 || newIndex >= uiModules.length) return;
 
@@ -72,7 +67,10 @@ export function CourseContentSection({
         orderedIds: reordered.map((m) => m.id),
       },
       {
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: ["courses", courseId] }),
+        onSuccess: () => {
+          setLocalModules(undefined); // Sync with server
+          void queryClient.invalidateQueries({ queryKey: ["courses", courseId] });
+        },
       },
     );
   };

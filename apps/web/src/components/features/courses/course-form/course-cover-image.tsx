@@ -9,7 +9,7 @@ import { openDefaultEditor } from '@pqina/pintura';
 import '@pqina/pintura/pintura.css';
 
 interface CourseCoverImageProps {
-  preview: string | null;
+  preview?: string;
   uploading: boolean;
   onImageChange: (file: File) => void;
   onImageRemove: () => void;
@@ -23,7 +23,7 @@ export function CourseCoverImage({
 }: CourseCoverImageProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const [localError, setLocalError] = useState<string | null>(null);
+  const [localError, setLocalError] = useState<string | undefined>();
 
   function resetInput() {
     if (inputRef.current) inputRef.current.value = "";
@@ -34,7 +34,7 @@ export function CourseCoverImage({
       if (file.size > 5 * 1024 * 1024) throw new Error("File too large (max 5 MB)");
       if (!file.type.startsWith("image/")) throw new Error("Only image files allowed");
 
-      setLocalError(null);
+      setLocalError(undefined);
 
       const editor = openDefaultEditor({
         src: file,
@@ -52,8 +52,8 @@ export function CourseCoverImage({
           out instanceof File ? out : new File([out], 'cover.png', { type: out.type || 'image/png' });
         onImageChange(processedFile);
       });
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to upload image";
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to upload image";
       toast.error(message);
       setLocalError(message);
     } finally {
@@ -144,7 +144,6 @@ export function CourseCoverImage({
             <label
               htmlFor="course-cover-image"
               className="flex flex-col items-center justify-center cursor-pointer hover:scale-105 transition-transform duration-200"
-              role="button"
             >
               <div className="h-10 w-10 text-neutral-400 mb-2 flex items-center justify-center">
                 <svg 

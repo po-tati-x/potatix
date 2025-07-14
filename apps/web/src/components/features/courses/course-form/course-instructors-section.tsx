@@ -24,23 +24,23 @@ export function CourseInstructorsSection({ courseId }: CourseInstructorsSectionP
     title: "",
     bio: "",
     credentialsInput: "",
-    preview: null,
-    file: null,
+    preview: undefined,
+    file: undefined,
   });
 
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | undefined>();
   const updateMutation = useUpdateCourseInstructor(courseId, editingId || "");
   const deleteMutation = useDeleteCourseInstructor(courseId);
 
   // Separate state for editing existing instructor
-  const [editForm, setEditForm] = useState<InstructorFormState & { titleOverride: string }>({
+  const [editForm, setEditForm] = useState<InstructorFormState>({
     name: "",
     title: "",
     bio: "",
     credentialsInput: "",
     titleOverride: "",
-    preview: null,
-    file: null,
+    preview: undefined,
+    file: undefined,
   });
 
   const resetForm = () =>
@@ -49,11 +49,11 @@ export function CourseInstructorsSection({ courseId }: CourseInstructorsSectionP
       title: "",
       bio: "",
       credentialsInput: "",
-      preview: null,
-      file: null,
+      preview: undefined,
+      file: undefined,
     });
 
-  const addInstructor = async () => {
+  const addInstructor = () => {
     if (!form.name.trim()) return;
 
     const credentialsArr = form.credentialsInput
@@ -70,11 +70,11 @@ export function CourseInstructorsSection({ courseId }: CourseInstructorsSectionP
         credentials: credentialsArr,
       },
       {
-        onSuccess: async (pivot) => {
+        onSuccess: (pivot) => {
           if (form.file) {
             const fd = new FormData();
             fd.append("file", form.file);
-            await instructorApi.uploadInstructorAvatar(pivot.instructorId, fd);
+            void instructorApi.uploadInstructorAvatar(pivot.instructorId, fd);
           }
           resetForm();
           setShowForm(false);
@@ -83,12 +83,12 @@ export function CourseInstructorsSection({ courseId }: CourseInstructorsSectionP
     );
   };
 
-  const removeInstructor = (pivotId: string, instructorId: string) => {
+  const removeInstructor = (_pivotId: string, instructorId: string) => {
     if (!confirm('Remove instructor?')) return;
     deleteMutation.mutate(instructorId);
   };
 
-  const handleEditStart = (ins: typeof instructors[number]) => {
+  const handleEditStart = (ins: (typeof instructors)[number]) => {
     setEditingId(ins.instructorId);
     setEditForm({
       name: ins.instructor.name,
@@ -96,25 +96,25 @@ export function CourseInstructorsSection({ courseId }: CourseInstructorsSectionP
       bio: ins.instructor.bio ?? "",
       credentialsInput: (ins.instructor.credentials ?? []).join(', '),
       titleOverride: ins.titleOverride ?? "",
-      preview: ins.instructor.avatarUrl ?? null,
-      file: null,
+      preview: ins.instructor.avatarUrl ?? undefined,
+      file: undefined,
     });
   };
 
   const handleEditCancel = () => {
-    setEditingId(null);
+    setEditingId(undefined);
     setEditForm({
       name: "",
       title: "",
       bio: "",
       credentialsInput: "",
       titleOverride: "",
-      preview: null,
-      file: null,
+      preview: undefined,
+      file: undefined,
     });
   };
 
-  const handleEditSave = async () => {
+  const handleEditSave = () => {
     if (!editingId) return;
     const credentialsArr = editForm.credentialsInput.split(',').map(c=>c.trim()).filter(Boolean);
 
@@ -127,14 +127,14 @@ export function CourseInstructorsSection({ courseId }: CourseInstructorsSectionP
         credentials: credentialsArr,
       },
       {
-        onSuccess: async () => {
+        onSuccess: () => {
           if (editForm.file) {
             const fd = new FormData();
             fd.append("file", editForm.file);
-            await instructorApi.uploadInstructorAvatar(editingId, fd);
+            void instructorApi.uploadInstructorAvatar(editingId, fd);
           }
-          setEditingId(null);
-          setEditForm({ name:"",title:"",bio:"",credentialsInput:"",titleOverride:"",preview:null,file:null });
+          setEditingId(undefined);
+          setEditForm({ name:"",title:"",bio:"",credentialsInput:"",titleOverride:"",preview:undefined,file:undefined });
         },
       },
     );
@@ -163,17 +163,17 @@ export function CourseInstructorsSection({ courseId }: CourseInstructorsSectionP
         {/* Empty state */}
         {isLoading ? (
           <p className="text-sm text-slate-500">Loading…</p>
-        ) : instructors.length === 0 && !showForm ? (
+        ) : (instructors.length === 0 && !showForm ? (
           <div className="text-center py-8 space-y-1 border border-dashed border-slate-300 rounded-md">
             <p className="text-sm text-slate-600">No instructors yet</p>
             <p className="text-xs text-slate-500">Click &#34;Add Instructor&#34; to invite someone</p>
           </div>
-        ) : null}
+        ) : undefined)}
 
         {/* Instructor list */}
         {instructors.map((ins) => (
           editingId === ins.instructorId ? (
-            <InstructorForm key={ins.id} form={editForm as any} setForm={setEditForm as any} onSubmit={handleEditSave} onCancel={handleEditCancel} isSaving={updateMutation.isPending} />
+            <InstructorForm key={ins.id} form={editForm} setForm={setEditForm} onSubmit={handleEditSave} onCancel={handleEditCancel} isSaving={updateMutation.isPending} />
           ) : (
             <div key={ins.id} className="flex items-center gap-3 border border-slate-200 rounded-md p-3">
               {ins.instructor.avatarUrl ? (
@@ -199,7 +199,7 @@ export function CourseInstructorsSection({ courseId }: CourseInstructorsSectionP
 
         {/* Add form */}
         {showForm && (
-          <InstructorForm form={form as any} setForm={setForm as any} onSubmit={addInstructor} onCancel={()=>{resetForm();setShowForm(false);}} isSaving={addInstructorMutation.isPending} />
+          <InstructorForm form={form} setForm={setForm} onSubmit={addInstructor} onCancel={()=>{resetForm();setShowForm(false);}} isSaving={addInstructorMutation.isPending} />
         )}
       </div>
     </div>

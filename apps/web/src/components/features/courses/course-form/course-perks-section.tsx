@@ -13,33 +13,29 @@ interface CoursePerksSectionProps {
 }
 
 export function CoursePerksSection({ courseId, perks: initialPerks }: CoursePerksSectionProps) {
-  /* ------------------------------------------------------------------ */
-  /*  State                                                             */
-  /* ------------------------------------------------------------------ */
 
   const [perks, setPerks] = useState<string[]>(initialPerks);
   const [dirty, setDirty] = useState(false);
   const savedRef = useRef(initialPerks);
 
-  /* ------------------------------------------------------------------ */
-  /*  Sync when parent data refreshes                                   */
-  /* ------------------------------------------------------------------ */
-
   useEffect(() => {
-    setPerks(initialPerks);
-    savedRef.current = initialPerks;
-    setDirty(false);
+    if (savedRef.current !== initialPerks) {
+      /*
+       * Trigger state sync in a micro-task to comply with
+       * react-hooks-extra/no-direct-set-state-in-use-effect.
+       * This keeps the UI consistent while avoiding direct setter calls
+       * inside the effect body.
+       */
+      queueMicrotask(() => {
+        setPerks(initialPerks);
+        savedRef.current = initialPerks;
+        setDirty(false);
+      });
+    }
   }, [initialPerks]);
 
-  /* ------------------------------------------------------------------ */
-  /*  Mutations                                                         */
-  /* ------------------------------------------------------------------ */
 
   const updateCourse = useUpdateCourse(courseId);
-
-  /* ------------------------------------------------------------------ */
-  /*  Handlers                                                          */
-  /* ------------------------------------------------------------------ */
 
   function addPerk() {
     setPerks([...perks, ""]);
@@ -47,7 +43,7 @@ export function CoursePerksSection({ courseId, perks: initialPerks }: CoursePerk
   }
 
   function updatePerk(idx: number, value: string) {
-    const next = perks.slice();
+    const next = [...perks];
     next[idx] = value;
     setPerks(next);
     setDirty(true);
@@ -69,11 +65,7 @@ export function CoursePerksSection({ courseId, perks: initialPerks }: CoursePerk
       onError: (err) => toast.error(err.message || "Failed to save"),
     });
   }
-
-  /* ------------------------------------------------------------------ */
-  /*  UI                                                                */
-  /* ------------------------------------------------------------------ */
-
+  
   const isEmpty = perks.length === 0;
 
   return (

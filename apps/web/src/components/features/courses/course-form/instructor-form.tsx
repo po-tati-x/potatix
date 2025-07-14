@@ -13,8 +13,8 @@ export interface InstructorFormState {
   title: string;
   bio: string;
   credentialsInput: string;
-  preview: string | null;
-  file: File | null;
+  preview?: string;
+  file?: File;
   /** optional field when editing existing instructor */
   titleOverride?: string;
 }
@@ -80,7 +80,7 @@ export function InstructorForm({ form, setForm, onSubmit, onCancel, isSaving }: 
                 <TooltipTrigger asChild>
                   <button
                     type="button"
-                    onClick={() => setForm((prev) => ({ ...prev, preview: null, file: null }))}
+                    onClick={() => setForm((prev) => ({ ...prev, preview: undefined, file: undefined }))}
                     className="absolute top-2 right-2 z-20 rounded-full bg-black/60 p-0.5 text-white opacity-0 transition-all duration-200 hover:bg-black/80 focus:outline-none focus:ring-2 focus:ring-emerald-400 group-hover:opacity-100"
                     aria-label="Remove image"
                     disabled={isSaving}

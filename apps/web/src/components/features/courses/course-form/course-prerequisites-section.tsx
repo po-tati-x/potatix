@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useReducer, useEffect, useRef } from "react";
 import { Plus, Trash2, Save, Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/new-button";
@@ -17,8 +17,50 @@ export function CoursePrerequisitesSection({ courseId, prerequisites: initial }:
   /*  State                                                             */
   /* ------------------------------------------------------------------ */
 
-  const [items, setItems] = useState<string[]>(initial);
-  const [dirty, setDirty] = useState(false);
+  interface State {
+    items: string[];
+    dirty: boolean;
+  }
+
+  type Action =
+    | { type: "reset"; payload: string[] }
+    | { type: "add" }
+    | { type: "update"; index: number; value: string }
+    | { type: "remove"; index: number }
+    | { type: "markSaved" };
+
+  function reducer(state: State, action: Action): State {
+    switch (action.type) {
+      case "reset": {
+        return { items: action.payload, dirty: false };
+      }
+      case "add": {
+        return { items: [...state.items, ""], dirty: true };
+      }
+      case "update": {
+        const next = [...state.items];
+        next[action.index] = action.value;
+        return { items: next, dirty: true };
+      }
+      case "remove": {
+        return {
+          items: state.items.filter((_, i) => i !== action.index),
+          dirty: true,
+        };
+      }
+      case "markSaved": {
+        return { ...state, dirty: false };
+      }
+      default: {
+        return state;
+      }
+    }
+  }
+
+  const [{ items, dirty }, dispatch] = useReducer(reducer, {
+    items: initial,
+    dirty: false,
+  } as State);
   const savedRef = useRef(initial);
 
   /* ------------------------------------------------------------------ */
@@ -26,9 +68,8 @@ export function CoursePrerequisitesSection({ courseId, prerequisites: initial }:
   /* ------------------------------------------------------------------ */
 
   useEffect(() => {
-    setItems(initial);
+    dispatch({ type: "reset", payload: initial });
     savedRef.current = initial;
-    setDirty(false);
   }, [initial]);
 
   /* ------------------------------------------------------------------ */
@@ -42,7 +83,7 @@ export function CoursePrerequisitesSection({ courseId, prerequisites: initial }:
       onSuccess: () => {
         toast.success("Prerequisites saved");
         savedRef.current = updated;
-        setDirty(false);
+        dispatch({ type: "markSaved" });
       },
       onError: (err) => toast.error(err.message || "Failed to save"),
     });
@@ -53,21 +94,15 @@ export function CoursePrerequisitesSection({ courseId, prerequisites: initial }:
   /* ------------------------------------------------------------------ */
 
   function addItem() {
-    setItems([...items, ""]);
-    setDirty(true);
+    dispatch({ type: "add" });
   }
 
   function updateItem(idx: number, value: string) {
-    const next = items.slice();
-    next[idx] = value;
-    setItems(next);
-    setDirty(true);
+    dispatch({ type: "update", index: idx, value });
   }
 
   function removeItem(idx: number) {
-    const next = items.filter((_, i) => i !== idx);
-    setItems(next);
-    setDirty(true);
+    dispatch({ type: "remove", index: idx });
   }
 
   /* ------------------------------------------------------------------ */

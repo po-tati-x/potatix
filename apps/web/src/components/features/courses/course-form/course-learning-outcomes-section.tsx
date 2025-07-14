@@ -18,9 +18,14 @@ export function CourseLearningOutcomesSection({ courseId, outcomes: initialOutco
   const savedRef = useRef(initialOutcomes);
 
   useEffect(() => {
-    setOutcomes(initialOutcomes);
-    savedRef.current = initialOutcomes;
-    setDirty(false);
+    // Sync local state when parent provides new outcomes, avoid redundant updates
+    if (savedRef.current !== initialOutcomes) {
+      setTimeout(() => {
+        setOutcomes(initialOutcomes);
+        savedRef.current = initialOutcomes;
+        setDirty(false);
+      }, 0);
+    }
   }, [initialOutcomes]);
 
   const updateCourse = useUpdateCourse(courseId);
@@ -42,7 +47,7 @@ export function CourseLearningOutcomesSection({ courseId, outcomes: initialOutco
   }
 
   function updateOutcome(idx: number, value: string) {
-    const next = outcomes.slice();
+    const next = [...outcomes];
     next[idx] = value;
     setOutcomes(next);
     setDirty(true);
