@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { apiAuth, createErrorResponse } from "@/lib/auth/api-auth";
 import type { AuthResult } from "@/lib/auth/api-auth";
-import { db, courseSchema } from "@potatix/db";
+import { database, courseSchema } from "@potatix/db";
 import { eq, and } from "drizzle-orm";
 import type {
   CourseProgress as BackendCourseProgress,
@@ -23,21 +23,14 @@ export async function GET(request: NextRequest) {
 
   try {
     // Total lessons in course
-    const totalLessonsResult = await db!
+    const totalLessonsResult = await database
       .select({ count: courseSchema.lesson.id })
       .from(courseSchema.lesson)
       .where(eq(courseSchema.lesson.courseId, id));
     const totalLessons = totalLessonsResult.length;
 
-    // Grab all lesson progress rows for this user & course
-    const rows: Array<{
-      id: string;
-      lessonId: string;
-      completed: Date | null;
-      lastPosition: number | null;
-      watchTimeSeconds: number | null;
-      updatedAt: Date;
-    }> = await db!
+    // Grab raw rows (may contain nulls)
+    const rawRows = await database
       .select({
         id: courseSchema.lessonProgress.id,
         lessonId: courseSchema.lessonProgress.lessonId,
@@ -53,6 +46,14 @@ export async function GET(request: NextRequest) {
           eq(courseSchema.lessonProgress.userId, auth.userId),
         ),
       );
+
+    // Normalise null → undefined for optional fields to keep types concise
+    const rows = rawRows.map((r) => ({
+      ...r,
+      completed: r.completed ?? undefined,
+      lastPosition: r.lastPosition ?? undefined,
+      watchTimeSeconds: r.watchTimeSeconds ?? undefined,
+    }));
 
     // Build map structure
     const lessonProgressEntries: Array<[string, BackendLessonProgress]> = rows.map((r) => [
@@ -106,12 +107,12 @@ export async function GET(request: NextRequest) {
     // Serialize Map → Array for transport
     const serialised = {
       ...payload,
-      lessonProgress: Array.from(lessonProgressEntries),
+      lessonProgress: [...lessonProgressEntries],
     };
 
-    return NextResponse.json({ data: serialised, error: null });
-  } catch (err) {
-    console.error('Failed to compute course progress', err);
+    return NextResponse.json({ data: serialised });
+  } catch (error) {
+    console.error('Failed to compute course progress', error);
     return createErrorResponse('Failed to fetch progress', 500);
   }
 } 
