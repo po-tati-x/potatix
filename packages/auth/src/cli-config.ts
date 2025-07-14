@@ -1,12 +1,13 @@
-import { createDb } from '@potatix/db/client';
+import { createDatabase } from '@potatix/db/client';
 import { betterAuth } from 'better-auth';
+import { env as environment } from './env.server';
 import { getBaseOptions } from './server';
 
 /**
  * @internal
  *
  * This export is needed strictly for the CLI to work with
- *     pnpm auth:schema:generate
+ *     bun run auth:schema:generate
  *
  * It should not be imported or used for any other purpose.
  *
@@ -14,5 +15,5 @@ import { getBaseOptions } from './server';
  * - https://www.better-auth.com/docs/concepts/cli
  */
 export const auth = betterAuth({
-  ...getBaseOptions(createDb()),
+  ...getBaseOptions(createDatabase({ databaseUrl: environment.DATABASE_URL })),
 });

@@ -2,15 +2,26 @@ import { type BetterAuthOptions, betterAuth } from 'better-auth';
 
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import type { DatabaseInstance } from '@potatix/db/client';
+import type { BetterAuthPlugin } from 'better-auth';
+import { env as environment } from './env.server';
 
 export interface AuthOptions {
   webUrl: string;
   authSecret: string;
-  db: DatabaseInstance;
-  plugins?: any[]; // Allow plugins to be passed
+  /**
+   * Database connection instance used by Better Auth. Renamed from the
+   * previous `db` to avoid abbreviations and satisfy the linter.
+   */
+  database: DatabaseInstance;
+  /**
+   * Optional Better-Auth plugins. The library does not expose proper typings,
+   * so we default to `unknown` to avoid the dreaded `any` while still allowing
+   * arbitrary plugin objects.
+   */
+  plugins?: BetterAuthPlugin[];
   cookieDomain: string;
   /**
-   * Social providers configuration forwarded to Better Auth `socialProviders` option.
+   * Social providers configuration forwarded sto Better Auth `socialProviders` option.
    * Use the same shape expected by Better Auth. Optional.
    */
   socialProviders?: Record<string, unknown>;
@@ -21,9 +32,9 @@ export type AuthInstance = ReturnType<typeof createAuth>;
 /**
  * This function is abstracted for schema generations in cli-config.ts
  */
-export const getBaseOptions = (db: DatabaseInstance) =>
+export const getBaseOptions = (database: DatabaseInstance) =>
   ({
-    database: drizzleAdapter(db, {
+    database: drizzleAdapter(database, {
       provider: 'pg',
     }),
 
@@ -36,9 +47,9 @@ export const getBaseOptions = (db: DatabaseInstance) =>
 
 export const createAuth = ({
   webUrl,
-  db,
+  database,
   authSecret,
-  plugins = [],
+  plugins = [] as BetterAuthPlugin[],
   cookieDomain,
   socialProviders,
 }: AuthOptions) => {
@@ -49,14 +60,12 @@ export const createAuth = ({
       return 'http:';
     }
   })();
-  const secureFlag = process.env.COOKIE_SECURE
-    ? process.env.COOKIE_SECURE === 'true'
-    : urlProtocol === 'https:';
+  const secureFlag = environment.COOKIE_SECURE ? environment.COOKIE_SECURE === 'true' : urlProtocol === 'https:';
 
   const sanitizedDomain = cookieDomain.replace(/^\./, "");
 
   return betterAuth({
-    ...getBaseOptions(db),
+    ...getBaseOptions(database),
     secret: authSecret,
     // Forward social providers configuration if provided
     ...(socialProviders ? { socialProviders } : {}),
@@ -97,7 +106,7 @@ export const createAuth = ({
         secure: secureFlag,
       },
       // Disable CSRF only in local dev where we rely on non-standard ports (e.g. :8888)
-      disableCSRFCheck: process.env.NODE_ENV !== 'production',
+      disableCSRFCheck: environment.NODE_ENV !== 'production',
     },
     plugins, // Add plugins support
   });
