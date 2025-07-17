@@ -49,8 +49,7 @@ export async function getViewerAccess(courseSlug: string): Promise<ViewerAccessR
 
   let isEnrolled = false;
   if (course) {
-    const typedSession = session as { user?: { id: string } };
-    const userId = typedSession.user?.id;
+    const userId = session?.user?.id;
     if (userId) {
       const enrollment = await enrollmentService.checkEnrollment(userId, course.id);
       isEnrolled = enrollment.enrolled;
@@ -58,4 +57,4 @@ export async function getViewerAccess(courseSlug: string): Promise<ViewerAccessR
   }
 
   return { course: course ?? undefined, session, isEnrolled };
-} 
+}
